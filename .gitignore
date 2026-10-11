@@ -11,3 +11,6 @@ __pycache__/
 .idea/
 Thumbs.db
 .DS_Store
+
+# Raw CWC export (103 MB, above GitHub's 100 MB file limit). Keep it locally only.
+data/raw/

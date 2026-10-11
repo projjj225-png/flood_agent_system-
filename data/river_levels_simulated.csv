@@ -1,0 +1,5 @@
+timestamp,station_id,river_level_m,source_type
+2026-10-10T08:00:00Z,UPPER_ANICUT_TEST,2.80,simulated
+2026-10-10T09:00:00Z,UPPER_ANICUT_TEST,2.95,simulated
+2026-10-10T10:00:00Z,UPPER_ANICUT_TEST,3.10,simulated
+2026-10-10T11:00:00Z,UPPER_ANICUT_TEST,3.35,simulated

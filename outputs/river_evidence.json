@@ -1,0 +1,808 @@
+{
+  "agent_name": "RiverMonitoringAgent",
+  "status": "PARTIAL",
+  "location": {
+    "latitude": 10.888611,
+    "longitude": 78.58,
+    "description": "Cauvery River near Upper Anicut, Tamil Nadu, India",
+    "timezone": "Asia/Kolkata"
+  },
+  "station_id": "UPPER_ANICUT",
+  "source": "CWC river water level telemetry (hourly), file rwl_tel_hr_cwc_009_2021_2025.csv, station UPPER ANICUT; converted by src.cwc_adapter",
+  "input_file": {
+    "path": "data/cwc/upper_anicut_hourly_2021_2025.csv",
+    "sha256": "0f04aacc68d492f65d73b0c00353c94898ba5a8bd7f48509d8ae876133a9727a"
+  },
+  "station_metadata": {
+    "station_id": "UPPER_ANICUT",
+    "station_name": "UPPER ANICUT",
+    "source_description": "CWC river water level telemetry (hourly), file rwl_tel_hr_cwc_009_2021_2025.csv, station UPPER ANICUT; converted by src.cwc_adapter",
+    "agency_as_stated_in_file": "CWC",
+    "attributes_from_file": {
+      "Agency": "CWC",
+      "State": "Tamil Nadu",
+      "District": "Tiruchirappalli",
+      "Tehsil": "TIRUCHIRAPPALLI",
+      "River": "Cauvery",
+      "Basin": "Cauvery",
+      "Tributary": "-",
+      "Local River": "Cauvery",
+      "Latitude": "10.88861111",
+      "Longitude": "78.58000000",
+      "Is_DischargeDataAvailable": "Yes",
+      "RL_of_zeroGauge": "72.6000",
+      "MeanSeaLevel": "0"
+    },
+    "attributes_inconsistent_across_rows": [],
+    "raw_file": {
+      "name": "rwl_tel_hr_cwc_009_2021_2025.csv",
+      "sha256": "e0ae1026357ea56ab3d1c28fd4f30a9619b713126d84bf7ed9238e54ae0824d6"
+    },
+    "normalized_file": "upper_anicut_hourly_2021_2025.csv",
+    "rows_converted": 25453,
+    "unparseable_timestamps_passed_through": 0,
+    "source_type": "historical",
+    "timestamp_interpretation": {
+      "raw_format": "DD-MM-YYYY HH:MM (no timezone in file)",
+      "assumed_utc_offset": "+05:30",
+      "status": "ASSUMED",
+      "note": "The export does not state its timezone. Offset applied by assumption; verify with the data provider."
+    },
+    "level_interpretation": {
+      "status": "ASSUMED",
+      "note": "Values are copied as reported in metres. The file does not state the datum; compare with RL_of_zeroGauge before interpreting them as gauge height or reduced level."
+    },
+    "notes": [
+      "Raw telemetry: values are not quality-controlled by this converter.",
+      "The download origin of the file is not verified by the software."
+    ]
+  },
+  "source_type": "historical",
+  "observed_at": "2025-12-29T23:30:00+00:00",
+  "retrieved_at": null,
+  "river_level_m": 74.9,
+  "level_change_m": -0.004,
+  "rate_of_change_m_per_hour": -0.0013,
+  "trend": {
+    "status": "AVAILABLE",
+    "method": "Latest observation compared with the earliest observation within the preceding 3.0 h window.",
+    "window_hours": 3.0,
+    "baseline_observed_at": "2025-12-29T20:30:00+00:00",
+    "baseline_level_m": 74.904,
+    "latest_observed_at": "2025-12-29T23:30:00+00:00",
+    "latest_level_m": 74.9,
+    "duration_hours": 3.0,
+    "level_change_m": -0.004,
+    "rate_of_change_m_per_hour": -0.0013,
+    "direction": "FALLING",
+    "observations_in_window": 4,
+    "reason": null
+  },
+  "freshness": {
+    "status": "FRESH",
+    "reference_time": "2025-12-30T00:30:00+00:00",
+    "max_age_hours": 3.0,
+    "age_minutes": 60.0,
+    "age_hours": 1.0,
+    "retrieval_time_available": false,
+    "retrieval_lag_minutes": null,
+    "reason": null,
+    "reference_mode": "AS_OF_REPLAY"
+  },
+  "data_quality": {
+    "rows_read": 25453,
+    "valid_rows": 25374,
+    "rejected_rows": 79,
+    "duplicate_rows_removed": 0,
+    "conflicting_duplicate_rows": 0,
+    "out_of_order_rows": 0,
+    "rejected_rows_without_time": 0,
+    "station_observations_used": 13220,
+    "excluded_after_reference_time": 0,
+    "other_station_rows": 0,
+    "qc": {
+      "configured": true,
+      "valid_min_m": 70.0,
+      "valid_max_m": 80.0,
+      "max_jump_m": 1.0,
+      "invalid_values_m": [
+        72.0
+      ],
+      "reference": "Prototype QC derived from rwl_tel_hr_cwc_009_2021_2025.csv (not official). Smooth, physically plausible runs stay within 71.0-75.2 m; values outside 70-80 m (e.g. 1-3 m in early 2021, 100-1070 m spikes) are telemetry errors. 72.0 m repeats exactly 4059 times, in runs up to 1084 h and between 73.0x m readings, so it is treated as a fill value. Corrupted readings typically jump by whole metres, hence max_jump_m 1.0.",
+      "checked": 25374,
+      "accepted": 13220,
+      "rejected_negative": 0,
+      "rejected_placeholder": 4059,
+      "rejected_out_of_range": 7459,
+      "rejected_spike": 636,
+      "spike_check_skipped": 1975
+    },
+    "recent_quality": {
+      "status": "ACCEPTABLE",
+      "window_hours": 24.0,
+      "window_start": "2025-12-29T00:30:00+00:00",
+      "window_end": "2025-12-30T00:30:00+00:00",
+      "readings_in_window": 17,
+      "rejected_in_window": 0,
+      "rejected_fraction": 0.0,
+      "suspect_fraction_limit": 0.2,
+      "reason": null
+    },
+    "source_types_present": [
+      "historical"
+    ],
+    "evidence_grade": "HISTORICAL",
+    "is_simulated": false,
+    "is_verified_live": false,
+    "verification_status": "UNVERIFIED"
+  },
+  "threshold_status": "UNKNOWN",
+  "threshold_evaluation": {
+    "status": "UNKNOWN",
+    "warning_level_m": null,
+    "danger_level_m": null,
+    "threshold_reference": null,
+    "compared_level_m": 74.9,
+    "based_on_stale_data": false,
+    "reason": "No warning/danger thresholds are configured for this station. No official values are assumed."
+  },
+  "station_summaries": {
+    "UPPER_ANICUT": {
+      "latest_observed_at": "2025-12-29T23:30:00+00:00",
+      "latest_river_level_m": 74.9,
+      "latest_source_type": "historical",
+      "valid_observations": 25374,
+      "qc_accepted_observations": 13220
+    }
+  },
+  "field_categories": {
+    "observed": [
+      "observed_at",
+      "retrieved_at",
+      "river_level_m",
+      "source_type",
+      "station_id"
+    ],
+    "derived": [
+      "level_change_m",
+      "rate_of_change_m_per_hour",
+      "trend",
+      "freshness"
+    ],
+    "interpretation": [
+      "threshold_status",
+      "threshold_evaluation"
+    ]
+  },
+  "errors": [
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25424: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25345: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25262: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25178: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25103: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25056: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25030: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 24896: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 24893: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 24889: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 24867: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 24851: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 24801: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 24774: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 24659: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 24609: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 24607: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 24556: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 24531: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 24482: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 24402: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 24267: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 24238: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 24130: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 24079: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 24000: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 23774: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 23570: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 23493: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 23454: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 23432: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 23429: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 23372: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 23258: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 23151: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 22938: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 22750: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 22734: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 22722: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 22721: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 22698: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 22661: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 22656: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 22504: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 22381: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 22374: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 22361: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 22172: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 21901: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "NON_NUMERIC_LEVEL",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 21656: river_level_m 'NaN' is not a finite number."
+    },
+    {
+      "code": "PLACEHOLDER_VALUE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25418 (2025-12-28T05:30:00+00:00): river_level_m 72.0 is a configured placeholder value, not a measurement."
+    },
+    {
+      "code": "OUT_OF_RANGE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25405 (2025-12-27T16:30:00+00:00): river_level_m 86.501 is outside the QC range 70.0-80.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25393 (2025-12-27T00:30:00+00:00): river_level_m 74.8 differs from the recent median 73.136 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25392 (2025-12-26T23:30:00+00:00): river_level_m 74.875 differs from the recent median 73.136 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25391 (2025-12-26T22:30:00+00:00): river_level_m 74.963 differs from the recent median 73.136 m by more than 1.0 m."
+    },
+    {
+      "code": "OUT_OF_RANGE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25379 (2025-12-26T08:30:00+00:00): river_level_m 328.604 is outside the QC range 70.0-80.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25370 (2025-12-25T21:30:00+00:00): river_level_m 73.028 differs from the recent median 74.976 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25369 (2025-12-25T20:30:00+00:00): river_level_m 73.015 differs from the recent median 74.976 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25368 (2025-12-25T19:30:00+00:00): river_level_m 73.002 differs from the recent median 74.976 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25367 (2025-12-25T18:30:00+00:00): river_level_m 74.989 differs from the recent median 73.034 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25366 (2025-12-25T16:30:00+00:00): river_level_m 74.976 differs from the recent median 73.024 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25365 (2025-12-25T15:30:00+00:00): river_level_m 74.978 differs from the recent median 73.024 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25363 (2025-12-25T13:30:00+00:00): river_level_m 73.034 differs from the recent median 74.977 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25362 (2025-12-25T12:30:00+00:00): river_level_m 73.024 differs from the recent median 74.985 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25361 (2025-12-25T11:30:00+00:00): river_level_m 73.016 differs from the recent median 74.985 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25356 (2025-12-25T05:30:00+00:00): river_level_m 73.011 differs from the recent median 74.983 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25355 (2025-12-25T04:30:00+00:00): river_level_m 73.013 differs from the recent median 74.983 m by more than 1.0 m."
+    },
+    {
+      "code": "PLACEHOLDER_VALUE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25349 (2025-12-24T09:30:00+00:00): river_level_m 72.0 is a configured placeholder value, not a measurement."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25348 (2025-12-24T08:30:00+00:00): river_level_m 73.017 differs from the recent median 74.966 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25310 (2025-12-22T13:30:00+00:00): river_level_m 74.971 differs from the recent median 73.027 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25309 (2025-12-22T12:30:00+00:00): river_level_m 74.974 differs from the recent median 73.027 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25305 (2025-12-22T05:30:00+00:00): river_level_m 73.035 differs from the recent median 74.927 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25304 (2025-12-22T04:30:00+00:00): river_level_m 73.032 differs from the recent median 74.927 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25303 (2025-12-22T03:30:00+00:00): river_level_m 73.011 differs from the recent median 74.927 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25280 (2025-12-21T04:30:00+00:00): river_level_m 74.967 differs from the recent median 73.01 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25279 (2025-12-21T03:30:00+00:00): river_level_m 74.981 differs from the recent median 73.01 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25278 (2025-12-21T02:30:00+00:00): river_level_m 74.99 differs from the recent median 73.01 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25277 (2025-12-21T01:30:00+00:00): river_level_m 73.003 differs from the recent median 74.948 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25276 (2025-12-21T00:30:00+00:00): river_level_m 73.01 differs from the recent median 74.948 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25275 (2025-12-20T23:30:00+00:00): river_level_m 73.004 differs from the recent median 74.948 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25270 (2025-12-20T18:30:00+00:00): river_level_m 74.944 differs from the recent median 73.025 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25269 (2025-12-20T17:30:00+00:00): river_level_m 74.963 differs from the recent median 73.024 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25268 (2025-12-20T16:30:00+00:00): river_level_m 74.991 differs from the recent median 73.021 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25264 (2025-12-20T12:30:00+00:00): river_level_m 73.017 differs from the recent median 74.998 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25263 (2025-12-20T11:30:00+00:00): river_level_m 73.01 differs from the recent median 74.998 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25259 (2025-12-20T07:30:00+00:00): river_level_m 73.005 differs from the recent median 74.988 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25257 (2025-12-20T05:30:00+00:00): river_level_m 73.005 differs from the recent median 74.98 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25207 (2025-12-17T10:30:00+00:00): river_level_m 74.967 differs from the recent median 73.035 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25206 (2025-12-17T09:30:00+00:00): river_level_m 74.981 differs from the recent median 73.035 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25205 (2025-12-17T08:30:00+00:00): river_level_m 74.983 differs from the recent median 73.035 m by more than 1.0 m."
+    },
+    {
+      "code": "PLACEHOLDER_VALUE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25202 (2025-12-17T05:30:00+00:00): river_level_m 72.0 is a configured placeholder value, not a measurement."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25182 (2025-12-16T08:30:00+00:00): river_level_m 73.015 differs from the recent median 74.965 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25181 (2025-12-16T07:30:00+00:00): river_level_m 73.018 differs from the recent median 74.965 m by more than 1.0 m."
+    },
+    {
+      "code": "PLACEHOLDER_VALUE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25167 (2025-12-15T08:30:00+00:00): river_level_m 72.0 is a configured placeholder value, not a measurement."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25139 (2025-12-14T02:30:00+00:00): river_level_m 74.856 differs from the recent median 73.044 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25138 (2025-12-14T01:30:00+00:00): river_level_m 74.889 differs from the recent median 73.028 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25137 (2025-12-14T00:30:00+00:00): river_level_m 74.943 differs from the recent median 73.028 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25135 (2025-12-13T22:30:00+00:00): river_level_m 73.028 differs from the recent median 74.938 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25134 (2025-12-13T21:30:00+00:00): river_level_m 73.044 differs from the recent median 74.938 m by more than 1.0 m."
+    },
+    {
+      "code": "SPIKE",
+      "severity": "error",
+      "field": "river_level_m",
+      "message": "Row 25133 (2025-12-13T20:30:00+00:00): river_level_m 73.027 differs from the recent median 74.938 m by more than 1.0 m."
+    }
+  ],
+  "warnings": [
+    {
+      "code": "ROW_ISSUES_TRUNCATED",
+      "severity": "warning",
+      "field": null,
+      "message": "Only the first 50 of 79 row issues (most recent first) are listed; see data_quality for totals."
+    },
+    {
+      "code": "QC_ISSUES_TRUNCATED",
+      "severity": "warning",
+      "field": null,
+      "message": "Only the first 50 of 12154 QC rejections (most recent first) are listed; see data_quality.qc for totals."
+    },
+    {
+      "code": "THRESHOLDS_NOT_CONFIGURED",
+      "severity": "warning",
+      "field": "threshold_status",
+      "message": "No warning/danger thresholds are configured for this station. No official values are assumed."
+    }
+  ],
+  "data_notes": [
+    "River levels come from a CSV file of historical (e.g. converted CWC telemetry) or simulated observations. No verified live river-level source is connected in this version.",
+    "Readings rejected by validation or quality control are not used, corrected or replaced; they are counted in data_quality.",
+    "Rows with source_type 'simulated' are fabricated test values and must never be presented as actual river measurements.",
+    "No official Upper Anicut warning or danger levels are built in; threshold status is UNKNOWN unless thresholds are configured explicitly.",
+    "This agent reports evidence only. It does not assign disaster states and does not declare an emergency from a river reading.",
+    "river_level_m is in metres as reported by the data file; the datum (gauge zero or reduced level) is not part of the CSV schema; see station_metadata if provided.",
+    "location describes the study site; station coordinates are not part of the CSV schema."
+  ]
+}

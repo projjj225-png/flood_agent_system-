@@ -1,0 +1,8 @@
+{
+  "_comment": "EXAMPLE ONLY. These are made-up test values for the simulated station UPPER_ANICUT_TEST. They are NOT official Upper Anicut warning or danger levels. Replace them only with values from an authoritative source and record that source in 'reference'.",
+  "UPPER_ANICUT_TEST": {
+    "warning_level_m": 3.0,
+    "danger_level_m": 4.0,
+    "reference": "TEST VALUES - not official; for software testing only"
+  }
+}
