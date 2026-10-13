@@ -134,7 +134,11 @@
     "evidence_grade": "HISTORICAL",
     "is_simulated": false,
     "is_verified_live": false,
-    "verification_status": "UNVERIFIED"
+    "verification_status": "UNVERIFIED",
+    "source_verification": {
+      "status": "NOT_APPLICABLE",
+      "reason": "No live-source verification was supplied (CSV input)."
+    }
   },
   "threshold_status": "UNKNOWN",
   "threshold_evaluation": {
@@ -142,6 +146,9 @@
     "warning_level_m": null,
     "danger_level_m": null,
     "threshold_reference": null,
+    "threshold_is_official": false,
+    "threshold_datum": null,
+    "data_datum": null,
     "compared_level_m": 74.9,
     "based_on_stale_data": false,
     "reason": "No warning/danger thresholds are configured for this station. No official values are assumed."
@@ -797,10 +804,10 @@
     }
   ],
   "data_notes": [
-    "River levels come from a CSV file of historical (e.g. converted CWC telemetry) or simulated observations. No verified live river-level source is connected in this version.",
+    "River levels come from a CSV file: historical (e.g. converted CWC telemetry), simulated, or a snapshot fetched from the live NWDP/CWC API. Only a snapshot that passed the live connector's verification (see data_quality.source_verification) counts as verified.",
     "Readings rejected by validation or quality control are not used, corrected or replaced; they are counted in data_quality.",
     "Rows with source_type 'simulated' are fabricated test values and must never be presented as actual river measurements.",
-    "No official Upper Anicut warning or danger levels are built in; threshold status is UNKNOWN unless thresholds are configured explicitly.",
+    "No official Upper Anicut warning or danger levels are built in; threshold status is UNKNOWN unless thresholds are configured explicitly (see threshold_evaluation.threshold_is_official).",
     "This agent reports evidence only. It does not assign disaster states and does not declare an emergency from a river reading.",
     "river_level_m is in metres as reported by the data file; the datum (gauge zero or reduced level) is not part of the CSV schema; see station_metadata if provided.",
     "location describes the study site; station coordinates are not part of the CSV schema."

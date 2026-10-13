@@ -14,3 +14,7 @@ Thumbs.db
 
 # Raw CWC export (103 MB, above GitHub's 100 MB file limit). Keep it locally only.
 data/raw/
+
+# Runtime artefacts (live snapshots, raw API responses, audit log)
+outputs/live/
+outputs/audit/

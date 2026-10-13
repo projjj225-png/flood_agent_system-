@@ -62,9 +62,13 @@ SOURCE_HISTORICAL = "historical"
 SOURCE_LIVE = "live"  # claimed live by whoever wrote the CSV; never verified here
 ALLOWED_SOURCE_TYPES = (SOURCE_SIMULATED, SOURCE_HISTORICAL, SOURCE_LIVE)
 
-# Evidence grades for downstream modules. VERIFIED_LIVE is defined for the
-# future but is never produced by this version (no verified source exists).
+# Evidence grades for downstream modules. VERIFIED_LIVE is produced only when
+# the live connector's verification passed for exactly this input file (hash
+# match), every station row is source_type "live", and the reading is FRESH.
 GRADE_VERIFIED_LIVE = "VERIFIED_LIVE"
+# Source identity verified by the live connector, but the latest reading is
+# not fresh: provenance is known, currency is not.
+GRADE_VERIFIED_SOURCE_STALE = "VERIFIED_SOURCE_STALE"
 GRADE_UNVERIFIED_LIVE = "UNVERIFIED_LIVE"
 GRADE_HISTORICAL = "HISTORICAL"
 GRADE_SIMULATED = "SIMULATED"
@@ -103,19 +107,30 @@ SPIKE_REFERENCE_HOURS = 6.0
 DEFAULT_QUALITY_WINDOW_HOURS = 24.0
 DEFAULT_SUSPECT_FRACTION = 0.2
 
+# Datums a level or threshold can be expressed in.
+DATUM_GAUGE_HEIGHT = "gauge_height"
+DATUM_REDUCED_LEVEL = "reduced_level"
+ALLOWED_DATUMS = (DATUM_GAUGE_HEIGHT, DATUM_REDUCED_LEVEL)
+
+SOURCE_VERIFIED = "VERIFIED"
+SOURCE_VERIFICATION_FAILED = "FAILED"
+SOURCE_VERIFICATION_NOT_APPLICABLE = "NOT_APPLICABLE"
+
 QUALITY_ACCEPTABLE = "ACCEPTABLE"
 QUALITY_SUSPECT = "SUSPECT"
 QUALITY_UNAVAILABLE = "UNAVAILABLE"
 
 DATA_NOTES = [
-    "River levels come from a CSV file of historical (e.g. converted CWC telemetry) or "
-    "simulated observations. No verified live river-level source is connected in this version.",
+    "River levels come from a CSV file: historical (e.g. converted CWC telemetry), simulated, "
+    "or a snapshot fetched from the live NWDP/CWC API. Only a snapshot that passed the live "
+    "connector's verification (see data_quality.source_verification) counts as verified.",
     "Readings rejected by validation or quality control are not used, corrected or replaced; "
     "they are counted in data_quality.",
     "Rows with source_type 'simulated' are fabricated test values and must never "
     "be presented as actual river measurements.",
     "No official Upper Anicut warning or danger levels are built in; threshold "
-    "status is UNKNOWN unless thresholds are configured explicitly.",
+    "status is UNKNOWN unless thresholds are configured explicitly "
+    "(see threshold_evaluation.threshold_is_official).",
     "This agent reports evidence only. It does not assign disaster states and "
     "does not declare an emergency from a river reading.",
     "river_level_m is in metres as reported by the data file; the datum (gauge zero "
@@ -523,16 +538,28 @@ def validate_thresholds(config: dict[str, Any] | None) -> dict[str, dict[str, An
         if levels["warning_level_m"] >= levels["danger_level_m"]:
             raise ValueError(f"{station!r}: warning_level_m must be below danger_level_m.")
         reference = entry.get("reference")
-        clean[station] = {**levels,
-                          "reference": reference if isinstance(reference, str) and reference
-                          else None}
+        reference = reference if isinstance(reference, str) and reference.strip() else None
+        official = entry.get("official", False)
+        if not isinstance(official, bool):
+            raise ValueError(f"{station!r}: official must be true or false.")
+        if official and reference is None:
+            raise ValueError(f"{station!r}: official thresholds need a 'reference' "
+                             "(authority, document, date).")
+        datum = entry.get("datum")
+        if datum is not None and datum not in ALLOWED_DATUMS:
+            raise ValueError(f"{station!r}: datum must be one of {', '.join(ALLOWED_DATUMS)}.")
+        clean[station] = {**levels, "reference": reference, "official": official,
+                          "datum": datum}
     return clean
 
 
 def evaluate_thresholds(level_m: float | None, thresholds: dict[str, Any] | None,
-                        based_on_stale_data: bool = False) -> dict[str, Any]:
+                        based_on_stale_data: bool = False,
+                        data_datum: str | None = None) -> dict[str, Any]:
     """Compare a level with configured thresholds. UNKNOWN if either is missing.
 
+    If both the thresholds and the data declare a datum and they differ, the
+    comparison would be meaningless, so the status is UNKNOWN.
     This is an interpretation of one reading only. It is not a disaster state.
     """
     result: dict[str, Any] = {
@@ -540,6 +567,9 @@ def evaluate_thresholds(level_m: float | None, thresholds: dict[str, Any] | None
         "warning_level_m": None,
         "danger_level_m": None,
         "threshold_reference": None,
+        "threshold_is_official": False,
+        "threshold_datum": None,
+        "data_datum": data_datum,
         "compared_level_m": level_m,
         "based_on_stale_data": based_on_stale_data,
         "reason": None,
@@ -551,6 +581,12 @@ def evaluate_thresholds(level_m: float | None, thresholds: dict[str, Any] | None
     result["warning_level_m"] = thresholds["warning_level_m"]
     result["danger_level_m"] = thresholds["danger_level_m"]
     result["threshold_reference"] = thresholds.get("reference")
+    result["threshold_is_official"] = bool(thresholds.get("official", False))
+    result["threshold_datum"] = thresholds.get("datum")
+    if result["threshold_datum"] and data_datum and result["threshold_datum"] != data_datum:
+        result["reason"] = (f"Datum mismatch: thresholds are '{result['threshold_datum']}' but "
+                            f"the data are '{data_datum}'; no comparison was made.")
+        return result
     if level_m is None:
         result["reason"] = "No valid river level is available to compare."
         return result
@@ -758,6 +794,8 @@ class RiverMonitoringAgent:
         clock: Any = None,
         qc: dict[str, Any] | None = None,
         station_metadata: dict[str, Any] | None = None,
+        source_verification: dict[str, Any] | None = None,
+        data_datum: str | None = None,
         quality_window_hours: float = DEFAULT_QUALITY_WINDOW_HOURS,
         suspect_fraction: float = DEFAULT_SUSPECT_FRACTION,
     ):
@@ -779,6 +817,15 @@ class RiverMonitoringAgent:
         self.thresholds = validate_thresholds(thresholds)
         self.qc = validate_qc_config(qc)
         self.station_metadata = copy.deepcopy(station_metadata)
+        if source_verification is not None and not isinstance(source_verification, dict):
+            raise ValueError("source_verification must be a dict")
+        # Result of src.river_sources.verify_live_payloads for the snapshot
+        # file passed as input_path. It is trusted only if its snapshot_sha256
+        # matches the file actually read.
+        self.source_verification = copy.deepcopy(source_verification)
+        if data_datum is not None and data_datum not in ALLOWED_DATUMS:
+            raise ValueError(f"data_datum must be one of {', '.join(ALLOWED_DATUMS)}")
+        self.data_datum = data_datum
         self.max_age_hours = float(max_age_hours)
         self.trend_window_hours = float(trend_window_hours)
         self.quality_window_hours = float(quality_window_hours)
@@ -839,6 +886,7 @@ class RiverMonitoringAgent:
                 "is_simulated": None,
                 "is_verified_live": False,
                 "verification_status": "UNVERIFIED",
+                "source_verification": self._verification_block(None, set()),
             },
             "threshold_status": THRESHOLD_UNKNOWN,
             "threshold_evaluation": evaluate_thresholds(None, None),
@@ -848,6 +896,38 @@ class RiverMonitoringAgent:
             "warnings": [],
             "data_notes": list(DATA_NOTES),
         }
+
+    def _verification_block(self, file_sha256: str | None,
+                            source_types: set[str]) -> dict[str, Any]:
+        """Decide whether the live connector's verification applies to this input."""
+        sv = self.source_verification
+        if sv is None:
+            return {"status": SOURCE_VERIFICATION_NOT_APPLICABLE,
+                    "reason": "No live-source verification was supplied (CSV input)."}
+        block = {
+            "status": SOURCE_VERIFICATION_FAILED,
+            "provider": sv.get("provider"),
+            "connector_status": sv.get("status"),
+            "failed_checks": list(sv.get("failed_checks") or []),
+            "retrieved_at": sv.get("retrieved_at"),
+            "resource": sv.get("resource"),
+            "snapshot_sha256": sv.get("snapshot_sha256"),
+            "snapshot_hash_matches": bool(file_sha256)
+            and sv.get("snapshot_sha256") == file_sha256,
+            "reason": None,
+        }
+        if sv.get("status") != SOURCE_VERIFIED:
+            block["reason"] = ("Live-source verification failed: "
+                               + ", ".join(block["failed_checks"] or ["unknown"]) + ".")
+        elif not block["snapshot_hash_matches"]:
+            block["reason"] = ("The input file is not the snapshot that was verified "
+                               "(SHA-256 mismatch).")
+        elif source_types != {SOURCE_LIVE}:
+            block["reason"] = ("Verified snapshots must contain only source_type 'live' rows "
+                               f"(found {sorted(source_types) or 'none'}).")
+        else:
+            block["status"] = SOURCE_VERIFIED
+        return block
 
     def _finish(self, result: dict[str, Any]) -> dict[str, Any]:
         self._result = result
@@ -971,6 +1051,12 @@ class RiverMonitoringAgent:
         source_types = {o["source_type"] for o in rows}
         quality["source_types_present"] = sorted(source_types)
         quality["evidence_grade"] = evidence_grade(source_types)
+        verification = self._verification_block(loaded["sha256"], source_types)
+        quality["source_verification"] = verification
+        if self.source_verification is not None and verification["status"] != SOURCE_VERIFIED:
+            result["warnings"].append(_error(
+                "LIVE_SOURCE_NOT_VERIFIED", verification["reason"],
+                "data_quality.source_verification", severity="warning"))
         quality["is_simulated"] = SOURCE_SIMULATED in source_types
         if SOURCE_SIMULATED in source_types:
             result["warnings"].append(_error(
@@ -980,8 +1066,9 @@ class RiverMonitoringAgent:
         if SOURCE_LIVE in source_types:
             result["warnings"].append(_error(
                 "UNVERIFIED_LIVE_LABEL",
-                "Some rows are labelled 'live' in the CSV, but no verified live source is "
-                "connected; they are treated as unverified.", "source_type", severity="warning"))
+                "Some rows are labelled 'live' in the CSV; unless data_quality."
+                "source_verification is VERIFIED they are treated as unverified.",
+                "source_type", severity="warning"))
         if len(source_types) > 1:
             result["warnings"].append(_error(
                 "MIXED_SOURCE_TYPES",
@@ -1000,6 +1087,11 @@ class RiverMonitoringAgent:
         if stale:
             result["warnings"].append(_error(
                 "STALE_OBSERVATION", freshness["reason"], "observed_at", severity="warning"))
+        if verification["status"] == SOURCE_VERIFIED:
+            quality["verification_status"] = "VERIFIED"
+            quality["is_verified_live"] = not stale
+            quality["evidence_grade"] = (GRADE_VERIFIED_SOURCE_STALE if stale
+                                         else GRADE_VERIFIED_LIVE)
 
         trend = calculate_trend(rows, self.trend_window_hours)
         result["trend"] = trend
@@ -1010,13 +1102,20 @@ class RiverMonitoringAgent:
                 "TREND_UNAVAILABLE", trend["reason"], "trend", severity="warning"))
 
         evaluation = evaluate_thresholds(latest["river_level_m"], self.thresholds.get(station),
-                                         based_on_stale_data=stale)
+                                         based_on_stale_data=stale, data_datum=self.data_datum)
         result["threshold_evaluation"] = evaluation
         result["threshold_status"] = evaluation["status"]
         if evaluation["status"] == THRESHOLD_UNKNOWN:
+            code = ("THRESHOLD_DATUM_MISMATCH" if evaluation["reason"]
+                    and evaluation["reason"].startswith("Datum mismatch")
+                    else "THRESHOLDS_NOT_CONFIGURED")
+            result["warnings"].append(_error(code, evaluation["reason"], "threshold_status",
+                                             severity="warning"))
+        elif not evaluation["threshold_is_official"]:
             result["warnings"].append(_error(
-                "THRESHOLDS_NOT_CONFIGURED", evaluation["reason"], "threshold_status",
-                severity="warning"))
+                "THRESHOLDS_NOT_OFFICIAL",
+                "Configured thresholds are not marked official; treat the threshold status "
+                "as indicative only.", "threshold_evaluation", severity="warning"))
 
         # Rejected rows older than the quality window are listed in `errors` but do
         # not lower the status; rejected rows with no readable time always do.
@@ -1026,6 +1125,17 @@ class RiverMonitoringAgent:
                     and recent["rejected_in_window"] == 0
                     and quality["rejected_rows_without_time"] == 0)
         result["status"] = STATUS_OK if complete else STATUS_PARTIAL
+        return self._finish(result)
+
+    def unavailable(self, errors: list[dict[str, Any]]) -> dict[str, Any]:
+        """Record and return a DATA_UNAVAILABLE result without reading the input.
+
+        Used when the source itself could not be obtained (e.g. a live API
+        outage). Every measurement is null; the errors explain why.
+        """
+        reference_time, mode = self._reference_time()
+        result = self._base_result(reference_time, mode, None)
+        result["errors"].extend(copy.deepcopy(errors))
         return self._finish(result)
 
     def to_dict(self) -> dict[str, Any]:
@@ -1131,6 +1241,8 @@ def main(argv: list[str] | None = None) -> int:
                         help="JSON file with station QC settings (valid range, max jump).")
     parser.add_argument("--station-metadata", default=None,
                         help="Station metadata JSON (e.g. written by src.cwc_adapter).")
+    parser.add_argument("--data-datum", default=None, choices=ALLOWED_DATUMS,
+                        help="Datum of the levels in the input (checked against thresholds).")
     parser.add_argument("--json", action="store_true", help="Print the full result as JSON.")
     parser.add_argument("--save", action="store_true",
                         help=f"Write the result to {DEFAULT_OUTPUT_PATH.relative_to(PROJECT_DIR).as_posix()}.")
@@ -1153,7 +1265,7 @@ def main(argv: list[str] | None = None) -> int:
         agent = RiverMonitoringAgent(
             args.input, station_id=args.station, thresholds=thresholds,
             max_age_hours=args.max_age_hours, trend_window_hours=args.trend_window_hours,
-            as_of=as_of, qc=qc, station_metadata=metadata)
+            as_of=as_of, qc=qc, station_metadata=metadata, data_datum=args.data_datum)
     except ValueError as exc:
         parser.error(str(exc))
 

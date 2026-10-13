@@ -4,8 +4,9 @@ Prototype location: **Cauvery River near Upper Anicut, Tamil Nadu, India**
 (latitude 10.888611, longitude 78.580000, timezone Asia/Kolkata).
 
 **Current progress:** Phase 1, components 1 and 2: the **Weather Agent** and the
-**River Monitoring Agent** (CSV-based: real historical CWC telemetry for Upper Anicut 2021–2025, plus
-simulated test data; no verified live river source yet).
+**River Monitoring Agent**, with a river evidence service and a local HTTP API. Data sources: the National Water
+Data Portal's CWC telemetry API (verified, but its latest Upper Anicut data is months old), real historical
+CWC telemetry 2021–2025, and simulated test data.
 Nothing else is implemented yet. That includes evidence conflict detection, trust scoring, risk assessment,
 disaster-state logic, capability control and the dashboard.
 
@@ -16,12 +17,21 @@ flood_agent_system/
 ├── src/
 │   ├── __init__.py
 │   ├── weather_agent.py            # The Weather Agent
-│   ├── river_monitoring_agent.py   # The River Monitoring Agent (CSV input, QC)
-│   └── cwc_adapter.py              # Converts the raw CWC telemetry export to the agent's schema
+│   ├── river_monitoring_agent.py   # The River Monitoring Agent (CSV input, QC, thresholds)
+│   ├── cwc_adapter.py              # Converts the raw CWC telemetry export to the agent's schema
+│   ├── river_sources.py            # Live NWDP/CWC API connector: retries + verification
+│   ├── river_service.py            # Entry point: modes, fallback, conflicts, audit, envelope
+│   ├── river_api.py                # Read-only local HTTP API
+│   └── audit_log.py                # Append-only JSONL audit log
 ├── tests/
 │   ├── test_weather_agent.py            # Offline tests (mocked API, no internet needed)
 │   ├── test_river_monitoring_agent.py   # Offline tests (temporary CSV files)
-│   └── test_cwc_adapter.py              # Offline tests for the CWC converter
+│   ├── test_cwc_adapter.py              # Offline tests for the CWC converter
+│   ├── test_river_sources.py            # Connector: verification, retries, failures
+│   ├── test_river_service.py            # Service: modes, fallback, conflicts, audit, CLI
+│   ├── test_river_api.py                # HTTP API end to end (local sockets)
+│   ├── test_river_real_data.py          # Regression tests on the real CWC data
+│   └── nwdp_fixtures.py                 # API-shaped fixtures (provenance in the file)
 ├── data/
 │   ├── raw/                        # Put rwl_tel_hr_cwc_009_2021_2025.csv here (gitignored, 103 MB)
 │   ├── cwc/
@@ -29,9 +39,10 @@ flood_agent_system/
 │   │   └── upper_anicut_station.json          # Station attributes, provenance, assumptions
 │   └── river_levels_simulated.csv  # FABRICATED test levels, not real measurements
 ├── config/
+│   ├── river_agent.json               # Service config: station, live source, paths
 │   ├── river_qc.json                  # Prototype QC settings (data-derived, NOT official)
 │   └── river_thresholds.example.json  # TEST thresholds only, not official levels
-├── outputs/                  # Live weather samples + latest river evidence (river_evidence.json)
+├── outputs/                  # Weather samples, river_evidence.json; live/ and audit/ (gitignored)
 ├── pytest.ini                # Lets pytest find the src package
 ├── requirements.txt          # requests + pytest (pinned)
 ├── .gitignore
@@ -169,10 +180,160 @@ The code refuses to save results with the status `DATA_UNAVAILABLE`.
 
 # River Monitoring Agent
 
-> **Important:** no verified **live** river-level source is connected. The agent reads river levels from a CSV file:
-> - **Historical:** real CWC hourly telemetry for the `UPPER ANICUT` station, 2021–2025, converted from
->   `rwl_tel_hr_cwc_009_2021_2025.csv` (see [Real data](#real-data-cwc-telemetry-20212025)).
+> **Status of the live source (checked 2026-10-13):** the agent can fetch CWC telemetry for Upper Anicut from
+> the **National Water Data Portal's documented CKAN API** and verify where it came from. However, the provider's
+> newest Upper Anicut reading was **03-06-2026 21:00 IST** (more than 4 months old), so live evidence is
+> currently graded `VERIFIED_SOURCE_STALE`, **not** current. The connector has been tested offline with responses
+> that mirror the real API. Run `python -m src.river_service --probe` on your PC to demonstrate the Python
+> connection yourself (see [Live data](#live-data-cwc-via-the-national-water-data-portal)).
+>
+> Other sources:
+> - **Historical:** real CWC hourly telemetry 2021–2025 (`data/cwc/`, see [Real data](#real-data-cwc-telemetry-20212025)).
 > - **Simulated:** `data/river_levels_simulated.csv` holds **fabricated** test values. Never present them as real measurements.
+
+## River evidence service (recommended entry point)
+
+`src/river_service.py` wraps the agent for the Weather Agent and the future orchestrator. It handles:
+- source selection;
+- live fetching and verification;
+- a labelled fallback;
+- cross-source conflict checks;
+- audit logging;
+- a stable output envelope.
+
+```python
+from src.river_service import RiverEvidenceService
+
+service = RiverEvidenceService.from_file("config/river_agent.json")
+evidence = service.get_evidence(mode="auto")      # JSON-compatible dict
+if not evidence["decision_support"]["current_evidence_usable"]:
+    ...  # river conditions are UNKNOWN - never assume safe
+```
+
+| Mode | What it does | `source_label` |
+|---|---|---|
+| `auto` (default) | Tries live. If the API is unreachable or verification fails, it falls back to the historical CSV with a `HISTORICAL_FALLBACK_USED` warning. | `LIVE_VERIFIED`, `LIVE_UNVERIFIED` or `HISTORICAL_FALLBACK` |
+| `live` | Live only, no fallback. An outage gives `DATA_UNAVAILABLE`. | `LIVE_VERIFIED`, `LIVE_UNVERIFIED` or `LIVE_UNAVAILABLE` |
+| `historical` | Committed real CWC data 2021–2025. Supports `as_of` replay. | `HISTORICAL_CSV` |
+| `simulated` | Fabricated test data. Supports `as_of`. | `SIMULATED_TEST_DATA` |
+
+`as_of` is refused for `live`/`auto`, because live data describe the present.
+
+### Command line
+
+```powershell
+python -m src.river_service                                   # auto mode, readable summary
+python -m src.river_service --probe                           # live connectivity probe with every verification check
+python -m src.river_service --mode historical --as-of 2025-12-30T06:00:00+05:30 --json
+python -m src.river_service --mode simulated --as-of 2026-10-10T12:00:00Z
+python -m src.river_service --mode auto --save                # writes outputs/river_evidence.json
+```
+Exit codes: `0` = evidence produced (`OK`/`PARTIAL`), `1` = `DATA_UNAVAILABLE`, `2` = configuration error.
+
+### Local HTTP API (read-only)
+
+```powershell
+python -m src.river_api --port 8765
+```
+
+| Request | Returns |
+|---|---|
+| `GET /health` | `{"status": "ok", "schema_version": "1.0"}` |
+| `GET /river/evidence?mode=auto` | The full evidence JSON |
+| `GET /river/evidence?mode=historical&as_of=2025-12-30T06:00:00%2B05:30` | A replay (encode `+` as `%2B`) |
+| `GET /river/summary?mode=auto` | IDs plus the `decision_support` block only |
+
+- **Binding:** it listens on `127.0.0.1` only, unless you pass `--host`.
+- **Caching:** `live`/`auto` results are cached for `--cache-seconds` (default 300) to protect the provider. The cache age is shown in `cache_age_seconds` and the `X-Evidence-Cache-Age` header.
+- **Errors:** bad requests return `400`, POST returns `405`. Internal errors return `500` with `"status": "DATA_UNAVAILABLE"`, never data.
+
+### Evidence envelope (added to the agent's fields; existing fields unchanged)
+
+| Field | Meaning |
+|---|---|
+| `schema_version` | `"1.0"`. Bump it on breaking changes. |
+| `evidence_id` | SHA-256 of the evidence without `run_id`/`generated_at`/`audit`. The same input gives the same ID, which makes replays reproducible. |
+| `run_id`, `generated_at` | ID and UTC time of this run (see the audit log). |
+| `mode_requested`, `source_label` | What was asked for, and what the data actually are. |
+| `fallback` | `{used, reason}`. |
+| `live_fetch` | `attempted`, `status` (`FETCHED`/`UNAVAILABLE`/`DISABLED`), `error`, every HTTP `attempts` entry (URL, parameters, status, bytes, SHA-256, retry delay), `verification` (all checks), `snapshot_path`, `snapshot_sha256`, `raw_paths`, `retrieved_at`. |
+| `cross_source_check` | Readings at the same station and time compared across sources: `status` (`CONSISTENT`/`CONFLICT`/`NO_OVERLAP`/`NOT_CHECKED`), `conflicts`, `conflicts_affecting_current_evidence`, `examples`. |
+| `decision_support` | `current_evidence_usable` (bool), `reasons_not_usable`, `river_level_m` (`null` unless usable), `last_known_level_m`/`_observed_at`, `trend_direction`, `rate_of_change_m_per_hour`, `threshold_status`. |
+| `audit` | `log_path`, `run_id`, `events_written`, `write_errors`. |
+| `data_quality.source_verification` | `NOT_APPLICABLE` (CSV), `VERIFIED` or `FAILED`, with the reason, `failed_checks`, `snapshot_hash_matches` and resource details. |
+
+**`current_evidence_usable` is true only if all of these hold:**
+- a reading exists;
+- the source is verified live;
+- freshness is `FRESH`;
+- recent quality is `ACCEPTABLE`;
+- there is no fallback;
+- no source conflict affects the current readings.
+
+Otherwise the orchestrator must treat river conditions as **unknown**, never as safe. Every rule is deterministic Python; no LLM is involved.
+
+### Evidence grades
+
+| Grade | Meaning |
+|---|---|
+| `VERIFIED_LIVE` | Live snapshot, all verification checks passed, the file hash matches the verified snapshot, and the latest reading is fresh. |
+| `VERIFIED_SOURCE_STALE` | Same as above, but the latest reading is not fresh. This is the **current real situation** for Upper Anicut. |
+| `UNVERIFIED_LIVE` | Rows labelled `live` that did not pass verification, or a CSV that merely claims to be live. |
+| `HISTORICAL`, `SIMULATED`, `MIXED_UNVERIFIED`, `UNAVAILABLE` | As before. |
+
+## Live data: CWC via the National Water Data Portal
+
+**Provider:** National Water Data Portal (NWDP), run by the National Water Informatics Centre (NWIC), Ministry of Jal Shakti. The data producer is CWC.
+
+The portal runs CKAN 2.11, so it has the standard, publicly documented **CKAN Action API**. No credentials are needed or used. The identifiers below were read from the API on 2026-10-13:
+
+| Item | Value |
+|---|---|
+| API base | `https://nwdp.nwic.gov.in/api/3/action/` |
+| Dataset | "River Water Level (Telemetry - Hourly), Central Water Commission (CWC)", id `68600163-c5a0-4327-aa1a-fa7157b86cce`, licence "Other (Open)" |
+| Resource | "River Water Level CWC Cauvery (2026 - 2030) Telemetry Hourly", id `d027c5ac-379d-4ac2-8ced-97b02b6edbc0`, DataStore active |
+| Station filter | `Station = "UPPER ANICUT"` (1,696 rows on 2026-10-13) |
+| Level field / unit | `River Water Level Telemetry Hourly (meter)`, metres |
+| Time field | `Data Acquisition Time`, `DD-MM-YYYY HH:MM`, no timezone; **IST assumed** |
+| Station attributes | Agency CWC; lat 10.88861111, lon 78.58000000; `RL_of_zeroGauge` 72.6; Tiruchirappalli, Tamil Nadu |
+
+**Each live fetch makes two requests.** Each request uses a 5 s connect / 30 s read timeout and up to 3 attempts. Timeouts, connection errors, 429 and 5xx are retried after 2 s and then 5 s; other 4xx errors are not retried.
+1. `resource_show?id=<resource>` to get the dataset, name and `last_modified`.
+2. `datastore_search?resource_id=<resource>&filters={"Station":"UPPER ANICUT"}&sort=_id desc&limit=72` to get the newest 72 rows.
+
+**Verification** (`src/river_sources.py`). The data count as verified only if every check passes:
+- **Identity:** resource ID, dataset ID and resource name match the config; the DataStore resource ID matches.
+- **Format:** required fields are present; the level field declares metres.
+- **Content:** at least one record; every record's station name, agency, coordinates (±0.001°) and gauge zero (±0.001 m) match the config.
+- **Time:** timestamps parse, and none are more than 1 h later than the retrieval time (this catches timezone errors).
+
+Verification proves where the data came from. QC and freshness then judge the values and how current they are.
+
+**Audit files** (gitignored), written on every fetch:
+- `outputs/live/`: the raw `resource_show` and `datastore_search` JSON, plus a normalized snapshot CSV with `retrieved_at`, whose SHA-256 is recorded.
+- `outputs/audit/river_audit.jsonl`: one JSON line per event: `run_started`, `live_fetch_ok`/`live_fetch_failed`, `live_verification`, `fallback_used`, `evidence_produced`.
+
+**What was observed on 2026-10-13:**
+- **Freshness:** the resource's `last_modified` is updated daily, but its newest rows for every station are from late May / early June 2026, and the newest Upper Anicut row is 03-06-2026 21:00 IST.
+- **Corruption:** many values are still corrupted (151–350 m), alternating with about 71.7–71.9 m.
+- **Result:** the agent reports `VERIFIED_SOURCE_STALE`, `STALE` freshness and `SUSPECT` recent quality, with `current_evidence_usable: false`. This is the correct and safe outcome.
+
+**Limitations:**
+- **Demonstration:** this development environment could not reach `nwdp.nwic.gov.in`; its proxy refused the connection. That exercised the outage path (`LIVE_UNAVAILABLE`/fallback), but the Python connector itself has not been shown to connect from here. Run `--probe` on a machine with internet access.
+- **Terms:** the licence is "Other (Open)". Confirm the portal's terms and acceptable request rates with NWIC (helpdesk-nwic@gov.in) before polling regularly.
+- **Not real-time:** the portal publishes data with a lag of months, so it is not a real-time warning feed. CWC's operational flood-forecasting feed has no documented public API.
+
+## Service configuration (`config/river_agent.json`)
+
+| Section | Keys |
+|---|---|
+| `station` | `station_id`, `provider_station_name`, `agency`, `river`, `latitude`, `longitude`, `rl_zero_gauge_m`, `timestamp_utc_offset` + `timestamp_offset_status` (`ASSUMED`), `data_datum` (`reduced_level`/`gauge_height`) + `data_datum_status` |
+| `live` | `enabled`, `api_base_url` (https only), `allowed_hosts`, `dataset_id`, `resource_id`, `resource_name`, `station_field`, `time_field`, `level_field`, `records_to_fetch` (1–1000), `timeout_seconds` [connect, read], `max_attempts` (1–10), `backoff_seconds`, `coordinate_tolerance_deg`, `rl_zero_tolerance_m` |
+| `historical` / `simulated` | Data file paths, plus station metadata or station ID |
+| top level | `qc_path`, `thresholds_path` (`null` = none configured), `max_age_hours`, `trend_window_hours`, `quality_window_hours`, `suspect_fraction`, `cross_check` {`enabled`, `paths`, `tolerance_m`} |
+| `outputs` | `snapshot_dir`, `audit_log`, `evidence` |
+
+When the 2026–2030 resource is superseded (for example, a 2031–2035 file), update `resource_id` and `resource_name` from the portal. Verification will fail until you do, so a silent mismatch is impossible.
 
 ## Architecture
 
@@ -351,10 +512,24 @@ print(result["status"], result["river_level_m"], result["data_quality"]["recent_
 ## Running the tests
 
 ```powershell
-python -m pytest tests/test_river_monitoring_agent.py tests/test_cwc_adapter.py -v   # River + adapter
-python -m pytest -v                                                                 # whole project
+python -m pytest -v                                   # everything (216 tests)
+python -m pytest tests/test_river_sources.py -v       # live connector: verification, retries, failures
+python -m pytest tests/test_river_service.py -v       # service: modes, fallback, conflicts, audit, CLI
+python -m pytest tests/test_river_api.py -v           # HTTP API end to end
+python -m pytest tests/test_river_real_data.py -v     # regression on real CWC data
 ```
-The tests write small temporary CSV files and need neither internet access nor the 103 MB raw file.
+
+| File | Tests | Covers |
+|---|---|---|
+| `test_weather_agent.py` | 34 | Weather Agent (unchanged) |
+| `test_river_monitoring_agent.py` | 89 | Validation, freshness, trend, thresholds, QC, replay |
+| `test_cwc_adapter.py` | 14 | CWC export converter |
+| `test_river_sources.py` | 34 | Unit and failure-mode tests: each verification check, retries (timeout, 429, 5xx), no retry on 4xx, invalid JSON, CKAN failure, config validation, conversion |
+| `test_river_service.py` | 29 | Integration tests: verified fresh/stale live data, verification failure, outage (live vs auto), fallback, tampered snapshot, conflict downgrade, deterministic `evidence_id`, audit trail and audit failure, official thresholds/datum, CLI end to end |
+| `test_river_api.py` | 10 | HTTP end to end: health, evidence, summary, caching, 400/404/405/500 |
+| `test_river_real_data.py` | 6 | Real-data regression tests (counts, replays, why QC is needed) |
+
+All tests are offline. Live API responses are replaced by fixtures shaped like the real ones; their provenance is described in `tests/nwdp_fixtures.py`.
 
 ## Evidence output schema
 
@@ -400,9 +575,15 @@ Simulated example: (3.35 − 2.80) m over 3 h = 0.1833 m/h. Real example (as of 
 No official Upper Anicut warning or danger levels are built in, and **none are included for the real station**. Supply them as JSON with a citable `reference`:
 
 ```json
-{ "UPPER_ANICUT": { "warning_level_m": 0.0, "danger_level_m": 0.0, "reference": "authority, document, date" } }
+{ "UPPER_ANICUT": { "warning_level_m": 0.0, "danger_level_m": 0.0, "official": true,
+                    "datum": "reduced_level", "reference": "authority, document, date" } }
 ```
-(The zeros are placeholders; fill in authoritative values.) Both levels are required and the warning level must be below the danger level. A malformed configuration stops the program. A station with no entry gets `UNKNOWN`.
+(The zeros are placeholders; fill in authoritative values.)
+- **Validation:** both levels are required, and the warning level must be below the danger level. A malformed configuration stops the program.
+- **`official`:** `true` requires a `reference`. Thresholds not marked official produce a `THRESHOLDS_NOT_OFFICIAL` warning.
+- **`datum`:** `gauge_height` or `reduced_level`. If it differs from the data's datum (`station.data_datum` in the service config, or `--data-datum`), the result is `UNKNOWN` with a `THRESHOLD_DATUM_MISMATCH` warning, and no comparison is made.
+- **Missing entry:** a station with no entry gets `UNKNOWN`.
+- **Using it:** set `thresholds_path` in `config/river_agent.json` to the file.
 Thresholds must be on the same datum as the data. These readings appear to be reduced levels (around 72–75 m), so thresholds expressed as gauge heights would need `RL_of_zeroGauge` (72.6 m) added. Confirm this with the provider.
 `config/river_thresholds.example.json` holds **made-up TEST values** for the simulated station only.
 
@@ -422,11 +603,10 @@ Thresholds must be on the same datum as the data. These readings appear to be re
 - **No high-water validation:** the file contains no credible readings above about 75.2 m, so the agent's behaviour in a real flood has **not** been tested on real data.
 - **Simulated data** (`UPPER_ANICUT_TEST`) only tests the software. That station and its thresholds are invented.
 
-## What is still needed for a verified live river-level source
+## What is still needed
 
-1. **An authoritative live provider** for Upper Anicut (CWC or the Tamil Nadu Water Resources Department), with documented access terms. No endpoint is assumed here.
-2. **Confirmation from the provider** of the timezone, datum and the meaning of 72.0 m, and of any QC flags the provider itself applies.
-3. **Official warning and danger levels** for the station, on the same datum, with a citable reference.
-4. **A fetcher** that writes the normalized schema with `retrieved_at`, tested offline with mocked responses.
-5. **A verification rule** (trusted endpoint, authentication, response checks). Only that rule should ever set `is_verified_live` / `VERIFIED_LIVE`.
-6. **QC bounds reviewed by a hydrologist**, and a `max_age_hours` justified by the source's reporting interval.
+1. **A fresher live feed.** NWDP's API is genuine and verified, but its Upper Anicut data currently lag by months. For real-time use, ask CWC or NWIC (helpdesk-nwic@gov.in) for operational access, or for confirmation of the update schedule. Then point `live` at that source; verification will check it.
+2. **Confirmation from the provider** of the timezone (IST assumed), the datum (reduced level assumed), the meaning of 72.0 m, and any QC flags the provider itself applies.
+3. **Official warning and danger levels** for the station, with datum and reference. None are configured, because none were found published.
+4. **QC bounds reviewed by a hydrologist**, and a `max_age_hours` justified by the feed's real reporting interval.
+5. **A demonstration on your machine:** `python -m src.river_service --probe`.
