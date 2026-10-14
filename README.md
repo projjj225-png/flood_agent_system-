@@ -3,12 +3,15 @@
 Prototype location: **Cauvery River near Upper Anicut, Tamil Nadu, India**
 (latitude 10.888611, longitude 78.580000, timezone Asia/Kolkata).
 
-**Current progress:** Phase 1, components 1 and 2: the **Weather Agent** and the
-**River Monitoring Agent**, with a river evidence service and a local HTTP API. Data sources: the National Water
-Data Portal's CWC telemetry API (verified, but its latest Upper Anicut data is months old), real historical
-CWC telemetry 2021–2025, and simulated test data.
-Nothing else is implemented yet. That includes evidence conflict detection, trust scoring, risk assessment,
-disaster-state logic (the disaster state is currently supplied by the caller) and the dashboard.
+**Current progress:** the **Weather Agent** and the **River Monitoring Agent** work individually and together:
+- river evidence service and local HTTP API;
+- cross-source conflict detection with authorized reverification;
+- state-aware capability control with an evidence gate;
+- a **combined Weather + River evidence workflow** with cross-agent checks.
+
+River data sources: the National Water Data Portal's CWC telemetry API (verified, but its latest Upper Anicut data is
+months old), real historical CWC telemetry 2021–2025, and simulated test data. Not implemented yet: risk assessment,
+an automatic disaster-state manager (the state is supplied by the caller), recovery-aware revocation and the dashboard.
 
 ## Project structure
 
@@ -25,7 +28,8 @@ flood_agent_system/
 │   ├── audit_log.py                # Append-only JSONL audit log
 │   ├── capability_control.py       # State allowlists + evidence gate (never executes actions)
 │   ├── evidence_reverification.py  # Conflict policy + actual re-check of conflicting readings
-│   └── river_agent_workflow.py     # Full loop: evidence -> conflicts -> reverification -> permissions
+│   ├── river_agent_workflow.py     # Full loop: evidence -> conflicts -> reverification -> permissions
+│   └── flood_evidence_workflow.py  # Weather + River combined evidence, cross-agent checks, permissions
 ├── tests/
 │   ├── test_weather_agent.py            # Offline tests (mocked API, no internet needed)
 │   ├── test_river_monitoring_agent.py   # Offline tests (temporary CSV files)
@@ -37,6 +41,7 @@ flood_agent_system/
 │   ├── test_capability_control.py       # State allowlists, audit-gated execution
 │   ├── test_evidence_reverification.py  # Conflict policy
 │   ├── test_river_workflow.py           # Integrated workflow: real conflicts, reverification, permissions
+│   ├── test_flood_evidence_workflow.py  # Weather + River combined workflow
 │   └── nwdp_fixtures.py                 # API-shaped fixtures (provenance in the file)
 ├── data/
 │   ├── raw/                        # Put rwl_tel_hr_cwc_009_2021_2025.csv here (gitignored, 103 MB)
@@ -47,6 +52,7 @@ flood_agent_system/
 │   └── river_levels_simulated.csv  # FABRICATED test levels, not real measurements
 ├── config/
 │   ├── river_agent.json               # Service config: station, live source, paths
+│   ├── flood_evidence.json            # Combined workflow alignment limits (prototype)
 │   ├── river_qc.json                  # Prototype QC settings (data-derived, NOT official)
 │   └── river_thresholds.example.json  # TEST thresholds only, not official levels
 ├── outputs/                  # Weather samples, river_evidence.json; live/ and audit/ (gitignored)
@@ -348,6 +354,50 @@ Exit codes: `0` = done, `1` = evidence unavailable, `2` = config error or audit 
 
 **Real data today:** the verified NWDP live data for Upper Anicut is months old, so `--mode live`/`auto` always ends `RESTRICTED` (`EVIDENCE_STALE`, …). No independent second source for the real station is configured (`reverification.independent_paths` is empty), so a conflict on real data can never be `RESOLVED`. It stays restricted until a genuine independent source is added.
 
+## Combined Weather + River evidence (`src/flood_evidence_workflow.py`)
+
+This runs both agents together and produces one combined evidence record and one permission decision. It is audited in `outputs/audit/flood_evidence_audit.jsonl`, under the same `run_id` as the river steps.
+
+1. **Weather evidence:** `WeatherAgent.run()` gives live, model-based Open-Meteo data, labelled `WEATHER_LIVE_MODEL`. With `--weather-file`, a saved sample is replayed instead (`WEATHER_REPLAY`). The Weather Agent is unchanged; a missing 24 h total stays `null` with its reason.
+2. **River evidence:** the full River Agent workflow, including real conflict detection and authorized reverification.
+3. **Cross-agent checks (blocking):**
+
+   | Check | Fails when | Reason code |
+   |---|---|---|
+   | `weather_freshness` | The weather "current" time is older than `max_weather_age_hours` (3 h), or later than the reference time | `WEATHER_STALE`, `WEATHER_AFTER_REFERENCE_TIME` |
+   | `time_alignment` | River and weather observation times are more than `max_time_skew_hours` (3 h) apart | `CROSS_AGENT_TIME_SKEW` |
+   | `location_alignment` | The weather grid cell is more than `max_location_distance_km` (10 km) from the river station (currently 4.53 km) | `CROSS_AGENT_LOCATION_MISMATCH` |
+   | any check | Required times or coordinates are missing | `CROSS_AGENT_CHECK_NOT_EVALUATED` |
+
+   These limits live in `config/flood_evidence.json`. They are prototype settings for evidence alignment, **not** flood thresholds.
+4. **Hydrological observations (informational, never blocking).** The river trend is reported next to the modelled rain in the last 3 h, e.g. "rise without local modelled rain: check upstream releases". No validated rainfall–river rule exists for Upper Anicut: upstream catchment rain and Mettur releases, with their travel time, dominate. So these observations never change a decision.
+5. **Permissions:** `authorize_with_evidence` runs on the **combined** assessment. Real-world capabilities need **all** of the following, and even then are only `PERMITTED_PENDING_HUMAN_APPROVAL`:
+   - eligible river evidence (verified live, fresh, acceptable, not simulated, no unresolved conflict);
+   - live, available, fresh weather that isn't replayed;
+   - every blocking cross-agent check passing.
+
+   Reasons are reported separately as `river_reasons`, `weather_reasons` and `cross_agent_reasons`. If the audit log is incomplete, the result is `RESTRICTED`.
+
+Output fields:
+- **Identity:** `schema_version`, `combined_id` (deterministic for replays), `run_id`, `reference_time`.
+- **Evidence:** `weather` (label, status, age, current values, rainfall windows, grid location, reasons) and `river` (label, level, freshness, cross-source check, reverification outcome, assessment, IDs).
+- **Checks:** `cross_agent_checks`, `hydrological_observations`, `combined_assessment`.
+- **Decisions:** `capability_decisions`, `real_world_authorization`, `audit`.
+
+```powershell
+python -m src.flood_evidence_workflow --river-mode auto --state ALERT                       # live weather + live/fallback river
+python -m src.flood_evidence_workflow --river-mode simulated --scenario conflict-resolves --state EMERGENCY --weather-file outputs/weather_live_20261010T082315Z.json
+python -m src.flood_evidence_workflow --river-mode historical --as-of 2025-12-30T06:00:00+05:30 --state ALERT --weather-file outputs/weather_live_20261010T082315Z.json
+python -m src.flood_evidence_workflow --river-mode auto --state EMERGENCY --save            # writes outputs/flood_evidence.json
+```
+Exit codes: `0` = done, `2` = config error or audit write failure.
+
+**Today's real result:**
+- **River:** the verified live data is months old, so it's restricted.
+- **Weather:** the live Open-Meteo call works on your PC, but cross-agent time alignment fails, because the newest river reading is from June 2026.
+
+So `--river-mode auto` ends `RESTRICTED` with explicit reasons. That is the intended safe outcome.
+
 ## Live data: CWC via the National Water Data Portal
 
 **Provider:** National Water Data Portal (NWDP), run by the National Water Informatics Centre (NWIC), Ministry of Jal Shakti. The data producer is CWC.
@@ -579,7 +629,8 @@ print(result["status"], result["river_level_m"], result["data_quality"]["recent_
 ## Running the tests
 
 ```powershell
-python -m pytest -v                                   # everything (267 tests)
+python -m pytest -v                                   # everything (285 tests)
+python -m pytest tests/test_flood_evidence_workflow.py -v   # Weather + River combined
 python -m pytest tests/test_river_workflow.py -v      # workflow: conflicts, reverification, permissions
 python -m pytest tests/test_river_sources.py -v       # live connector: verification, retries, failures
 python -m pytest tests/test_river_service.py -v       # service: modes, fallback, conflicts, audit, CLI
@@ -598,6 +649,7 @@ python -m pytest tests/test_river_real_data.py -v     # regression on real CWC d
 | `test_river_real_data.py` | 6 | Real-data regression tests (counts, replays, why QC is needed) |
 | `test_capability_control.py` | 13 | State allowlists, unknown state, audit-gated execution |
 | `test_evidence_reverification.py` | 9 | Conflict policy, audited reverification request |
+| `test_flood_evidence_workflow.py` | 18 | Combined: eligible path (only human approval), weather outage/stale/replay/future, location and time mismatch, river problem with good weather, observations never block, audit linkage and failure, deterministic `combined_id`, settings, CLI |
 | `test_river_workflow.py` | 28 | No injected conflicts; value-driven conflicts; all four scenarios; `NORMAL` cannot reverify; live verified/stale/outage; live conflict resolved by re-fetch plus independent source; primary changed; outage during re-check; conflicting source can't be its own tie-breaker; audit failure revokes permissions; capability classification; CLI |
 
 All tests are offline. Live API responses are replaced by fixtures shaped like the real ones; their provenance is described in `tests/nwdp_fixtures.py`.

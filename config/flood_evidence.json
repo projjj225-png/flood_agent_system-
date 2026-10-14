@@ -1,0 +1,8 @@
+{
+  "_comment": "Combined Weather + River evidence settings. These limits are prototype choices for evidence alignment, NOT hydrological or official flood thresholds.",
+  "max_weather_age_hours": 3.0,
+  "max_time_skew_hours": 3.0,
+  "max_location_distance_km": 10.0,
+  "audit_log": "outputs/audit/flood_evidence_audit.jsonl",
+  "output": "outputs/flood_evidence.json"
+}

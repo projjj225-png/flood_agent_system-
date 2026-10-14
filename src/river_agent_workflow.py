@@ -280,6 +280,7 @@ def run_river_workflow(
         "river_level_m": ds.get("last_known_level_m") if evidence_assessment["eligible"] else None,
         "simulated_river_level_m": (ds.get("last_known_level_m")
                                     if simulation_evidence_eligible else None),
+        "trend_direction": ds.get("trend_direction"),
         "evidence_freshness": freshness,
         "evidence_quality": recent,
         "source_verified": bool(((evidence or {}).get("data_quality") or {}).get(
