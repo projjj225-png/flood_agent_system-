@@ -123,6 +123,17 @@ def test_real_live_data_is_verified_but_stale(tmp_path):
     assert ds["current_evidence_usable"] is False
     assert ds["river_level_m"] is None  # never handed out as current
     assert any("STALE" in r for r in ds["reasons_not_usable"])
+    
+
+def test_auto_mode_keeps_stale_live_evidence_unusable(tmp_path):
+    evidence = make_service(tmp_path, ok_session()).get_evidence("auto")
+
+    assert evidence["source_label"] == LABEL_LIVE_VERIFIED
+    assert evidence["freshness"]["status"] == "STALE"
+    assert evidence["data_quality"]["is_verified_live"] is False
+    assert evidence["decision_support"]["current_evidence_usable"] is False
+    assert evidence["decision_support"]["river_level_m"] is None
+
 
 
 def test_real_live_data_at_its_own_time_is_suspect(tmp_path):
