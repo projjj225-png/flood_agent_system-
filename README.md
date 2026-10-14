@@ -8,7 +8,7 @@ Prototype location: **Cauvery River near Upper Anicut, Tamil Nadu, India**
 Data Portal's CWC telemetry API (verified, but its latest Upper Anicut data is months old), real historical
 CWC telemetry 2021–2025, and simulated test data.
 Nothing else is implemented yet. That includes evidence conflict detection, trust scoring, risk assessment,
-disaster-state logic, capability control and the dashboard.
+disaster-state logic (the disaster state is currently supplied by the caller) and the dashboard.
 
 ## Project structure
 
@@ -22,7 +22,10 @@ flood_agent_system/
 │   ├── river_sources.py            # Live NWDP/CWC API connector: retries + verification
 │   ├── river_service.py            # Entry point: modes, fallback, conflicts, audit, envelope
 │   ├── river_api.py                # Read-only local HTTP API
-│   └── audit_log.py                # Append-only JSONL audit log
+│   ├── audit_log.py                # Append-only JSONL audit log
+│   ├── capability_control.py       # State allowlists + evidence gate (never executes actions)
+│   ├── evidence_reverification.py  # Conflict policy + actual re-check of conflicting readings
+│   └── river_agent_workflow.py     # Full loop: evidence -> conflicts -> reverification -> permissions
 ├── tests/
 │   ├── test_weather_agent.py            # Offline tests (mocked API, no internet needed)
 │   ├── test_river_monitoring_agent.py   # Offline tests (temporary CSV files)
@@ -31,12 +34,16 @@ flood_agent_system/
 │   ├── test_river_service.py            # Service: modes, fallback, conflicts, audit, CLI
 │   ├── test_river_api.py                # HTTP API end to end (local sockets)
 │   ├── test_river_real_data.py          # Regression tests on the real CWC data
+│   ├── test_capability_control.py       # State allowlists, audit-gated execution
+│   ├── test_evidence_reverification.py  # Conflict policy
+│   ├── test_river_workflow.py           # Integrated workflow: real conflicts, reverification, permissions
 │   └── nwdp_fixtures.py                 # API-shaped fixtures (provenance in the file)
 ├── data/
 │   ├── raw/                        # Put rwl_tel_hr_cwc_009_2021_2025.csv here (gitignored, 103 MB)
 │   ├── cwc/
 │   │   ├── upper_anicut_hourly_2021_2025.csv  # Real CWC telemetry, Upper Anicut, normalized
 │   │   └── upper_anicut_station.json          # Station attributes, provenance, assumptions
+│   ├── simulated/                  # FABRICATED comparison sources for workflow scenarios
 │   └── river_levels_simulated.csv  # FABRICATED test levels, not real measurements
 ├── config/
 │   ├── river_agent.json               # Service config: station, live source, paths
@@ -281,6 +288,66 @@ Otherwise the orchestrator must treat river conditions as **unknown**, never as 
 | `UNVERIFIED_LIVE` | Rows labelled `live` that did not pass verification, or a CSV that merely claims to be live. |
 | `HISTORICAL`, `SIMULATED`, `MIXED_UNVERIFIED`, `UNAVAILABLE` | As before. |
 
+## River Agent workflow: conflicts, reverification, permissions
+
+`src/river_agent_workflow.py` is the complete River Agent loop. Each step is deterministic Python and is recorded in `outputs/audit/river_workflow_audit.jsonl`.
+
+1. **Evidence.** `RiverEvidenceService.get_evidence()` in mode `live`, `auto`, `historical` or `simulated`.
+2. **Conflict detection.** The service compares readings at the same station and timestamp across sources (`cross_source_check`). A conflict is a difference above `tolerance_m` (0.005 m). **No conflict is injected in code.**
+3. **Conflict policy.** `evidence_reverification.assess_conflict()` decides whether a conflict that affects current evidence requires reverification.
+4. **Reverification.** It runs only if the disaster state allows `request_evidence_reverification`, and goes through `capability_control.execute_if_authorized()`, so it is audited and fails closed:
+   - **Re-obtain the primary source:** a new live fetch in live mode, or a re-read of the file otherwise.
+   - **Check it hasn't changed:** each conflicting reading must have the same value on re-check.
+   - **Check an independent source:** the conflicting value is compared with sources that are neither the primary nor the conflicting source (`reverify_conflicts()`).
+
+   | Outcome | When |
+   |---|---|
+   | `RESOLVED` | For every conflicting reading, the primary is unchanged and an independent source agrees with the primary but not with the conflicting source. |
+   | `CONFLICT_PERSISTS` | Any reading where the independent source backs the other value, sources disagree, the primary changed or went missing, or no independent reading exists. |
+   | `FAILED` | The primary is unavailable on re-check, or no independent source could be read. |
+   | `NOT_AUTHORIZED` | The state's allowlist doesn't include `request_evidence_reverification` (e.g. `NORMAL`), or the decision couldn't be audited. |
+
+   Values are never averaged, picked or corrected. Reverification only decides whether the restriction may be lifted.
+5. **Permissions** (`capability_control.authorize_with_evidence`) apply two fail-closed gates to each requested capability:
+   - **State gate:** the capability must be on the state's allowlist (your `STATE_CAPABILITIES`, unchanged).
+   - **Evidence gate:** applies to *real-world* capabilities (`prepare_advisory`, `propose_evacuation_plan`, `request_human_emergency_authorization`). They need evidence that is not simulated, `LIVE_VERIFIED` with `is_verified_live`, `FRESH`, `ACCEPTABLE` in recent quality, not a fallback, and free of unresolved conflicts. Anything else is denied with reason codes (`EVIDENCE_SIMULATED`, `EVIDENCE_STALE`, `EVIDENCE_NOT_VERIFIED_LIVE`, `EVIDENCE_UNRESOLVED_CONFLICT`, …).
+   - **Even when both gates pass,** the decision is `PERMITTED_PENDING_HUMAN_APPROVAL` and `real_world_authorization` is `HUMAN_AUTHORIZATION_REQUIRED`. The system never self-authorizes or executes an action.
+   - **Other capabilities:** read-only ones (`read_*`) and internal ones (`request_evidence_reverification`, `prepare_recovery_assessment`) need only the state gate.
+   - **Audit failure:** if a decision cannot be written to the audit log, that permission is revoked (`AUDIT_WRITE_FAILED`). An incomplete workflow audit forces `RESTRICTED`.
+
+Key result fields:
+- **Identity:** `decision_id` (deterministic), `service_evidence_id`.
+- **Comparison and reverification:** `cross_source_check`, `reverification` (outcome, per-conflict statuses, independent sources and errors, `fresh_evidence_id`).
+- **Permissions:** `evidence_assessment` (eligible, reasons), `capability_decisions`, `real_world_authorization`.
+- **Levels:** `river_level_m`, which is `null` unless the evidence is eligible. For simulated runs: `simulated_river_level_m` and `simulation_permission`.
+
+### Simulated scenarios are data, not code
+
+The scenario only chooses **which fabricated source files** are compared (see `data/simulated/README.md`). The outcome comes from the values in them:
+
+| `--scenario` | Second source (11:00 UTC) | Independent source | Result in `ALERT`/`EMERGENCY` |
+|---|---|---|---|
+| `no-conflict` | 3.352 m (within tolerance) | – | `CONSISTENT`, `SIMULATION_ALLOWED` |
+| `conflict-resolves` | 3.80 m | 3.35 m (backs primary) | `RESOLVED`, `SIMULATION_ALLOWED` |
+| `conflict-persists` | 3.80 m | 3.80 m (backs other) | `CONFLICT_PERSISTS`, `SIMULATION_RESTRICTED` |
+| `reverification-fails` | 3.80 m | missing file | `FAILED`, `SIMULATION_RESTRICTED` |
+
+In every scenario, `real_world_authorization` is `RESTRICTED` and real-world capabilities are denied with `EVIDENCE_SIMULATED`.
+
+### Commands
+
+```powershell
+python -m src.river_agent_workflow --mode simulated --scenario conflict-resolves --state ALERT
+python -m src.river_agent_workflow --mode simulated --scenario conflict-persists --state EMERGENCY
+python -m src.river_agent_workflow --mode simulated --scenario conflict-resolves --state NORMAL     # reverification NOT_AUTHORIZED
+python -m src.river_agent_workflow --mode auto --state EMERGENCY                                   # live if reachable, else labelled fallback
+python -m src.river_agent_workflow --mode historical --as-of 2025-12-30T06:00:00+05:30 --state ALERT
+python -m src.river_agent_workflow --mode live --state EMERGENCY --capability read_river --capability propose_evacuation_plan
+```
+Exit codes: `0` = done, `1` = evidence unavailable, `2` = config error or audit write failure.
+
+**Real data today:** the verified NWDP live data for Upper Anicut is months old, so `--mode live`/`auto` always ends `RESTRICTED` (`EVIDENCE_STALE`, …). No independent second source for the real station is configured (`reverification.independent_paths` is empty), so a conflict on real data can never be `RESOLVED`. It stays restricted until a genuine independent source is added.
+
 ## Live data: CWC via the National Water Data Portal
 
 **Provider:** National Water Data Portal (NWDP), run by the National Water Informatics Centre (NWIC), Ministry of Jal Shakti. The data producer is CWC.
@@ -512,7 +579,8 @@ print(result["status"], result["river_level_m"], result["data_quality"]["recent_
 ## Running the tests
 
 ```powershell
-python -m pytest -v                                   # everything (216 tests)
+python -m pytest -v                                   # everything (267 tests)
+python -m pytest tests/test_river_workflow.py -v      # workflow: conflicts, reverification, permissions
 python -m pytest tests/test_river_sources.py -v       # live connector: verification, retries, failures
 python -m pytest tests/test_river_service.py -v       # service: modes, fallback, conflicts, audit, CLI
 python -m pytest tests/test_river_api.py -v           # HTTP API end to end
@@ -525,9 +593,12 @@ python -m pytest tests/test_river_real_data.py -v     # regression on real CWC d
 | `test_river_monitoring_agent.py` | 89 | Validation, freshness, trend, thresholds, QC, replay |
 | `test_cwc_adapter.py` | 14 | CWC export converter |
 | `test_river_sources.py` | 34 | Unit and failure-mode tests: each verification check, retries (timeout, 429, 5xx), no retry on 4xx, invalid JSON, CKAN failure, config validation, conversion |
-| `test_river_service.py` | 29 | Integration tests: verified fresh/stale live data, verification failure, outage (live vs auto), fallback, tampered snapshot, conflict downgrade, deterministic `evidence_id`, audit trail and audit failure, official thresholds/datum, CLI end to end |
+| `test_river_service.py` | 30 | Integration tests: verified fresh/stale live data, verification failure, outage (live vs auto), fallback, tampered snapshot, conflict downgrade, deterministic `evidence_id`, audit trail and audit failure, official thresholds/datum, CLI end to end |
 | `test_river_api.py` | 10 | HTTP end to end: health, evidence, summary, caching, 400/404/405/500 |
 | `test_river_real_data.py` | 6 | Real-data regression tests (counts, replays, why QC is needed) |
+| `test_capability_control.py` | 13 | State allowlists, unknown state, audit-gated execution |
+| `test_evidence_reverification.py` | 9 | Conflict policy, audited reverification request |
+| `test_river_workflow.py` | 28 | No injected conflicts; value-driven conflicts; all four scenarios; `NORMAL` cannot reverify; live verified/stale/outage; live conflict resolved by re-fetch plus independent source; primary changed; outage during re-check; conflicting source can't be its own tie-breaker; audit failure revokes permissions; capability classification; CLI |
 
 All tests are offline. Live API responses are replaced by fixtures shaped like the real ones; their provenance is described in `tests/nwdp_fixtures.py`.
 
@@ -605,8 +676,9 @@ Thresholds must be on the same datum as the data. These readings appear to be re
 
 ## What is still needed
 
-1. **A fresher live feed.** NWDP's API is genuine and verified, but its Upper Anicut data currently lag by months. For real-time use, ask CWC or NWIC (helpdesk-nwic@gov.in) for operational access, or for confirmation of the update schedule. Then point `live` at that source; verification will check it.
-2. **Confirmation from the provider** of the timezone (IST assumed), the datum (reduced level assumed), the meaning of 72.0 m, and any QC flags the provider itself applies.
-3. **Official warning and danger levels** for the station, with datum and reference. None are configured, because none were found published.
-4. **QC bounds reviewed by a hydrologist**, and a `max_age_hours` justified by the feed's real reporting interval.
-5. **A demonstration on your machine:** `python -m src.river_service --probe`.
+1. **An independent second source for Upper Anicut**, e.g. manual gauge readings or a state WRD feed, added to `reverification.independent_paths`. Without one, conflicts on real data cannot be resolved.
+2. **A fresher live feed.** NWDP's API is genuine and verified, but its Upper Anicut data currently lag by months. For real-time use, ask CWC or NWIC (helpdesk-nwic@gov.in) for operational access, or for confirmation of the update schedule. Then point `live` at that source; verification will check it.
+3. **Confirmation from the provider** of the timezone (IST assumed), the datum (reduced level assumed), the meaning of 72.0 m, and any QC flags the provider itself applies.
+4. **Official warning and danger levels** for the station, with datum and reference. None are configured, because none were found published.
+5. **QC bounds reviewed by a hydrologist**, and a `max_age_hours` justified by the feed's real reporting interval.
+6. **Live connectivity has been demonstrated:** your PC's runs on 2026-10-13 fetched and `VERIFIED` real NWDP data (snapshots in `outputs/live/`).

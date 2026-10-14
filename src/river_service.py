@@ -71,6 +71,7 @@ LABEL_SIMULATED = "SIMULATED_TEST_DATA"
 
 DEFAULT_CONFIG_PATH = PROJECT_DIR / "config" / "river_agent.json"
 VOLATILE_KEYS = ("evidence_id", "run_id", "generated_at", "audit")
+MAX_CONFLICT_DETAILS = 1000
 
 
 # --------------------------------------------------------------------------
@@ -90,6 +91,8 @@ def cross_check_sources(primary_path: Path, station_id: str, other_paths: list[P
         "status": "NOT_CHECKED", "compared_with": [], "overlapping_timestamps": 0,
         "conflicts": 0, "conflicts_affecting_current_evidence": 0,
         "tolerance_m": tolerance_m, "examples": [],
+        # Every conflict (capped) so reverification can re-check each one.
+        "conflict_details": [],
     }
 
     def readings(path: Path) -> dict[datetime, float]:
@@ -112,11 +115,14 @@ def cross_check_sources(primary_path: Path, station_id: str, other_paths: list[P
                 block["conflicts"] += 1
                 current = moment > window_start or (latest is not None and moment == latest)
                 block["conflicts_affecting_current_evidence"] += int(current)
+                detail = {
+                    "observed_at": moment.isoformat(), "primary_m": primary[moment],
+                    "other_m": secondary[moment], "other_source": Path(other).as_posix(),
+                    "difference_m": round(difference, 4), "affects_current_evidence": current}
                 if len(block["examples"]) < 10:
-                    block["examples"].append({
-                        "observed_at": moment.isoformat(), "primary_m": primary[moment],
-                        "other_m": secondary[moment], "other_source": Path(other).as_posix(),
-                        "difference_m": round(difference, 4)})
+                    block["examples"].append(detail)
+                if len(block["conflict_details"]) < MAX_CONFLICT_DETAILS:
+                    block["conflict_details"].append(detail)
     if block["compared_with"]:
         block["status"] = ("CONFLICT" if block["conflicts"] else
                            "CONSISTENT" if block["overlapping_timestamps"] else "NO_OVERLAP")
@@ -199,6 +205,10 @@ class RiverEvidenceService:
     def from_file(cls, path: str | Path = DEFAULT_CONFIG_PATH, **kwargs: Any) -> "RiverEvidenceService":
         return cls(load_service_config(path), **kwargs)
 
+    def resolve_path(self, value: str | Path | None) -> Path | None:
+        """Resolve a config-style path (relative to the project folder)."""
+        return self._path(str(value)) if value else None
+
     def _path(self, value: str | None) -> Path | None:
         if not value:
             return None
@@ -245,8 +255,11 @@ class RiverEvidenceService:
         path = self._path(hist["path"])
         return self._agent(path, self.station["station_id"], as_of, metadata).run(), path
 
-    def get_evidence(self, mode: str = MODE_AUTO,
-                     as_of: datetime | None = None) -> dict[str, Any]:
+    def get_evidence(self, mode: str = MODE_AUTO, as_of: datetime | None = None,
+                     cross_check_paths: list[str | Path] | None = None) -> dict[str, Any]:
+        """Produce evidence. ``cross_check_paths`` overrides the configured
+        comparison sources for this call (simulated sources for simulated
+        mode, real sources otherwise; they are never mixed by default)."""
         if mode not in MODES:
             raise ValueError(f"mode must be one of {', '.join(MODES)}")
         if as_of is not None and as_of.tzinfo is None:
@@ -305,7 +318,8 @@ class RiverEvidenceService:
         evidence["source_label"] = label
         evidence["fallback"] = fallback
         evidence["live_fetch"] = live_fetch
-        evidence["cross_source_check"] = self._cross_check(evidence, primary_path, label)
+        evidence["cross_source_check"] = self._cross_check(evidence, primary_path, label,
+                                                           cross_check_paths)
         evidence["decision_support"] = decision_support(evidence)
         evidence["run_id"] = run_id
         evidence["generated_at"] = self.clock().astimezone(timezone.utc).isoformat()
@@ -371,15 +385,22 @@ class RiverEvidenceService:
         return block, evidence, Path(snap["snapshot_path"])
 
     def _cross_check(self, evidence: dict[str, Any], primary_path: Path | None,
-                     label: str) -> dict[str, Any]:
+                     label: str, override_paths: list[str | Path] | None = None
+                     ) -> dict[str, Any]:
         cfg = self.config.get("cross_check") or {}
-        if not cfg.get("enabled") or primary_path is None or label == LABEL_SIMULATED \
-                or evidence["status"] == STATUS_UNAVAILABLE:
+        if override_paths is not None:
+            paths = list(override_paths)
+        elif label == LABEL_SIMULATED:
+            # Simulated evidence is only ever compared with simulated sources.
+            paths = (self.config.get("simulated") or {}).get("cross_check_paths", [])
+        else:
+            paths = cfg.get("paths", []) if cfg.get("enabled") else []
+        if not paths or primary_path is None or evidence["status"] == STATUS_UNAVAILABLE:
             return {"status": "NOT_CHECKED"}
         reference = parse_timestamp(evidence["freshness"]["reference_time"])
         block = cross_check_sources(
             primary_path, evidence["station_id"],
-            [self._path(p) for p in cfg.get("paths", [])], reference,
+            [self._path(str(p)) for p in paths], reference,
             tolerance_m=cfg.get("tolerance_m", 0.005),
             latest_observed_at=evidence["observed_at"],
             quality_window_hours=self.config.get("quality_window_hours", 24.0))
