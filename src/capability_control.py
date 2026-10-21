@@ -35,6 +35,9 @@ STATE_CAPABILITIES = {
         "read_river",
         "read_traffic",
         "prepare_advisory",
+        # Re-checking conflicting evidence is a read-only safety action; without
+        # it a conflict detected in NORMAL could never be cleared.
+        "request_evidence_reverification",
     }),
     DisasterState.ALERT: frozenset({
         "read_weather",
@@ -79,6 +82,7 @@ EVIDENCE_NOT_VERIFIED_LIVE = "EVIDENCE_NOT_VERIFIED_LIVE"
 EVIDENCE_STALE = "EVIDENCE_STALE"
 EVIDENCE_QUALITY_NOT_ACCEPTABLE = "EVIDENCE_QUALITY_NOT_ACCEPTABLE"
 EVIDENCE_HISTORICAL_FALLBACK = "EVIDENCE_HISTORICAL_FALLBACK"
+EVIDENCE_INCOMPLETE = "EVIDENCE_INCOMPLETE"
 EVIDENCE_UNRESOLVED_CONFLICT = "EVIDENCE_UNRESOLVED_CONFLICT"
 EVIDENCE_NOT_ASSESSED = "EVIDENCE_NOT_ASSESSED"
 
@@ -203,6 +207,9 @@ def assess_evidence_for_authorization(
         reasons.append(EVIDENCE_STALE)
     if (quality.get("recent_quality") or {}).get("status") != "ACCEPTABLE":
         reasons.append(EVIDENCE_QUALITY_NOT_ACCEPTABLE)
+    if ((quality.get("recent_quality") or {}).get("completeness") or {}).get("status") \
+            == "INCOMPLETE":
+        reasons.append(EVIDENCE_INCOMPLETE)
     if (evidence.get("fallback") or {}).get("used"):
         reasons.append(EVIDENCE_HISTORICAL_FALLBACK)
     conflicts = (evidence.get("cross_source_check") or {}).get(

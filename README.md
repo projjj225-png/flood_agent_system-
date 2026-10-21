@@ -3,15 +3,17 @@
 Prototype location: **Cauvery River near Upper Anicut, Tamil Nadu, India**
 (latitude 10.888611, longitude 78.580000, timezone Asia/Kolkata).
 
-**Current progress:** the **Weather Agent** and the **River Monitoring Agent** work individually and together:
-- river evidence service and local HTTP API;
-- cross-source conflict detection with authorized reverification;
-- state-aware capability control with an evidence gate;
-- a **combined Weather + River evidence workflow** with cross-agent checks.
+**Current progress:** all eight components from the research plan are implemented:
+1. Weather Agent
+2. River Monitoring Agent (live NWDP/CWC API, historical and simulated data, QC)
+3. Evidence verification and conflict detection, with authorized reverification
+4. Risk assessment engine
+5. Disaster state manager
+6. Capability (permission) controller with an evidence gate
+7. Recovery-aware permission revocation
+8. Audit logs and a static dashboard
 
-River data sources: the National Water Data Portal's CWC telemetry API (verified, but its latest Upper Anicut data is
-months old), real historical CWC telemetry 2021–2025, and simulated test data. Not implemented yet: risk assessment,
-an automatic disaster-state manager (the state is supplied by the caller), recovery-aware revocation and the dashboard.
+The full cycle runs end to end on a fabricated flood event. On **real** Upper Anicut data the system reports risk `UNKNOWN` (never "safe") until three inputs exist: fresh live data, official thresholds, and an independent second source (see "Inputs only you can supply").
 
 ## Project structure
 
@@ -29,7 +31,11 @@ flood_agent_system/
 │   ├── capability_control.py       # State allowlists + evidence gate (never executes actions)
 │   ├── evidence_reverification.py  # Conflict policy + actual re-check of conflicting readings
 │   ├── river_agent_workflow.py     # Full loop: evidence -> conflicts -> reverification -> permissions
-│   └── flood_evidence_workflow.py  # Weather + River combined evidence, cross-agent checks, permissions
+│   ├── flood_evidence_workflow.py  # Weather + River combined evidence, cross-agent checks, permissions
+│   ├── risk_assessment.py          # Deterministic risk (thresholds, trend projection, IMD heavy rain)
+│   ├── disaster_state_manager.py   # NORMAL/ALERT/EMERGENCY/RECOVERY + revocation, persisted
+│   ├── flood_orchestrator.py       # Full cycle + simulated flood event replay
+│   └── dashboard.py                # Static HTML dashboard
 ├── tests/
 │   ├── test_weather_agent.py            # Offline tests (mocked API, no internet needed)
 │   ├── test_river_monitoring_agent.py   # Offline tests (temporary CSV files)
@@ -42,6 +48,8 @@ flood_agent_system/
 │   ├── test_evidence_reverification.py  # Conflict policy
 │   ├── test_river_workflow.py           # Integrated workflow: real conflicts, reverification, permissions
 │   ├── test_flood_evidence_workflow.py  # Weather + River combined workflow
+│   ├── test_risk_and_state.py           # Risk engine and state manager
+│   ├── test_flood_orchestrator.py       # Orchestrator, simulated event, dashboard
 │   └── nwdp_fixtures.py                 # API-shaped fixtures (provenance in the file)
 ├── data/
 │   ├── raw/                        # Put rwl_tel_hr_cwc_009_2021_2025.csv here (gitignored, 103 MB)
@@ -119,7 +127,7 @@ python -m pip install -r requirements.txt
 python -m src.weather_agent            # readable summary
 python -m src.weather_agent --json     # full structured result as JSON
 python -m src.weather_agent --save     # also save to outputs/ (only if retrieval succeeded)
-python -m src.weather_agent --past-days 1   # adds yesterday's hours so the 24 h total can be computed
+python -m src.weather_agent --past-days 0   # today only (default is 1, which the 24 h total needs)
 ```
 
 From Python:
@@ -168,9 +176,7 @@ An hour counts as completed once *T* is at or before the reference time (by defa
 For example, at 14:20 IST the last completed hour is the one ending at 14:00. The 3 h total therefore uses the hours ending at 12:00, 13:00 and 14:00 (the period 11:00–14:00).
 If any required hour is missing from the series or is null, that total is `UNAVAILABLE`. It is never partly summed.
 
-**Note on the 24 h total:** the configured endpoint returns hourly data starting at 00:00 today (IST).
-Before midnight, fewer than 24 completed hours are available, so the 24 h total is normally `UNAVAILABLE` with an explanation.
-To make it available, run with `--past-days 1`. This adds `past_days=1` to the request.
+**Note on the 24 h total:** the agent requests `past_days=1` by default, so the hourly series starts at 00:00 IST yesterday and all 24 completed hours are present at any time of day. With `--past-days 0` (or `past_days=None`), a series that starts at 00:00 today makes the 24 h total `UNAVAILABLE` before midnight, with an explanation. It is never summed partially.
 
 ## Limitations of Open-Meteo model-based data
 
@@ -311,7 +317,7 @@ Otherwise the orchestrator must treat river conditions as **unknown**, never as 
    | `RESOLVED` | For every conflicting reading, the primary is unchanged and an independent source agrees with the primary but not with the conflicting source. |
    | `CONFLICT_PERSISTS` | Any reading where the independent source backs the other value, sources disagree, the primary changed or went missing, or no independent reading exists. |
    | `FAILED` | The primary is unavailable on re-check, or no independent source could be read. |
-   | `NOT_AUTHORIZED` | The state's allowlist doesn't include `request_evidence_reverification` (e.g. `NORMAL`), or the decision couldn't be audited. |
+   | `NOT_AUTHORIZED` | The state is unknown, or the decision couldn't be audited. Every known state, including `NORMAL`, allows `request_evidence_reverification`, because it is a read-only safety action. |
 
    Values are never averaged, picked or corrected. Reverification only decides whether the restriction may be lifted.
 5. **Permissions** (`capability_control.authorize_with_evidence`) apply two fail-closed gates to each requested capability:
@@ -353,6 +359,75 @@ python -m src.river_agent_workflow --mode live --state EMERGENCY --capability re
 Exit codes: `0` = done, `1` = evidence unavailable, `2` = config error or audit write failure.
 
 **Real data today:** the verified NWDP live data for Upper Anicut is months old, so `--mode live`/`auto` always ends `RESTRICTED` (`EVIDENCE_STALE`, …). No independent second source for the real station is configured (`reverification.independent_paths` is empty), so a conflict on real data can never be `RESOLVED`. It stays restricted until a genuine independent source is added.
+
+## Full system: risk, disaster state, revocation, dashboard
+
+`src/flood_orchestrator.py` runs one complete cycle. Every step is deterministic Python and is audited in `outputs/audit/flood_orchestrator_audit.jsonl`:
+
+**combined evidence → risk → disaster state → capability revocation → permissions**
+
+### Risk engine (`src/risk_assessment.py`)
+
+| Rule | Result |
+|---|---|
+| Evidence not usable (real: combined assessment not eligible; simulated: simulation not eligible) | `UNKNOWN`, never `LOW` |
+| No thresholds configured | `UNKNOWN` (`THRESHOLDS_NOT_AVAILABLE`) |
+| Below warning / at or above warning / at or above danger | `LOW` / `HIGH` / `SEVERE` |
+| Rising, and at the current rate the warning level is reached within 6 h | `LOW` → `MODERATE` |
+| Rising, and at the current rate the danger level is reached within 6 h | `HIGH` → `SEVERE` |
+| Usable 24 h modelled rain ≥ 64.5 mm (IMD "heavy rain" category) | `LOW` → `MODERATE` (rain can only escalate) |
+
+- **Indicative results:** thresholds not marked `official` make the result `indicative: true`.
+- **Settings:** the 6 h lead time is a prototype setting (`trend_lead_time_hours`).
+
+### Disaster state manager (`src/disaster_state_manager.py`)
+
+- **Targets:** `LOW` → `NORMAL`, `MODERATE`/`HIGH` → `ALERT`, `SEVERE` → `EMERGENCY`.
+- **Escalation is immediate.** De-escalation needs consecutive evaluations: `ALERT` → `NORMAL` after 3, `EMERGENCY` → `RECOVERY` after 3, `RECOVERY` → `NORMAL` after 6.
+- **No shortcuts:** `EMERGENCY` never goes straight to `NORMAL`.
+- **`UNKNOWN` risk holds the current state** and resets the count. Missing evidence never lowers a state.
+- **Recovery-aware revocation:** every transition lists the capabilities `revoked` and `granted` and audits them as `capabilities_changed`. For example, `EMERGENCY` → `RECOVERY` revokes `propose_evacuation_plan` and `request_human_emergency_authorization`.
+- **State files:** the state is persisted in `outputs/state/disaster_state.json` (real), written atomically. **Simulated runs use `outputs/state/simulated_disaster_state.json`.** The two can't be mixed, so simulated evidence can never change the real state.
+
+### Permissions
+
+Decisions are taken under the **new** state, using the combined evidence gate. Real-world capabilities still need verified, fresh, complete, conflict-free live river evidence plus usable live weather. Even then they are only `PERMITTED_PENDING_HUMAN_APPROVAL`. Simulated runs are always `RESTRICTED`.
+
+### Simulated flood event (the full, "perfect" demonstration)
+
+`data/simulated/flood_event_upper_anicut_test.csv` is **fabricated**: 84 hourly readings that rise from 2.50 m to 4.66 m and fall back. It uses the TEST thresholds (3.0 / 4.0 m, not official).
+
+```powershell
+python -m src.flood_orchestrator --simulate-event
+python -m src.dashboard --timeline outputs/simulated_flood_event_timeline.json
+```
+
+Result: `NORMAL` → `ALERT` (13:30, level 2.74 m, warning projected) → `EMERGENCY` (18:30, 3.34 m, danger projected) → `RECOVERY` (next day 23:30, 3.82 m, revokes the emergency capabilities) → `NORMAL` (2.68 m after sustained `LOW`). `real_world_authorization` is `RESTRICTED` in all 84 hours.
+
+### Real / live cycle
+
+```powershell
+python -m src.flood_orchestrator --river-mode auto --output outputs/flood_cycle.json
+python -m src.dashboard --cycle outputs/flood_cycle.json --timeline outputs/simulated_flood_event_timeline.json
+```
+
+Today this gives risk `UNKNOWN` and the state held, with every reason listed, because the real inputs are missing (see below). The tests show that with verified, fresh live river data, fresh weather and configured thresholds, the same code reaches `EMERGENCY` and `PERMITTED_PENDING_HUMAN_APPROVAL`.
+
+### Dashboard (`src/dashboard.py`)
+
+`outputs/dashboard.html` is a self-contained page that works in light and dark mode. It shows:
+- **Current cycle:** state, risk, river, authorization, reasons and capability table.
+- **Event timeline:** river level with the warning and danger lines and a coloured state band, plus a table of transitions with revoked and granted capabilities.
+
+Simulated sections carry a banner.
+
+### Inputs only you can supply (templates included; nothing is invented)
+
+| Input | Template | Without it |
+|---|---|---|
+| Official warning/danger levels (with datum and reference) | `config/river_thresholds.official.template.json`. It's refused until the nulls are filled; then set `thresholds_path`. | Risk is `UNKNOWN` |
+| Independent second source (manual gauge / TN WRD) | `data/manual/upper_anicut_manual_readings.template.csv` plus `data/manual/README.md` | Real conflicts can't be detected or resolved |
+| Fresh live CWC data | `live` section of `config/river_agent.json` | Evidence is `STALE`, so risk is `UNKNOWN` |
 
 ## Combined Weather + River evidence (`src/flood_evidence_workflow.py`)
 
@@ -537,7 +612,7 @@ These findings come from inspecting the Upper Anicut series:
 | No credible high-water readings | every smooth run (6+ hourly readings changing < 0.3 m/h) stays within 71.0–75.2 m; Aug–Oct 2022 is almost entirely corrupted | high levels in this file **cannot** be verified |
 | Gaps | 72 gaps longer than 24 h, the longest Sep 2021 → May 2022 | freshness and trend become unavailable |
 
-Result over the whole record: **13,220 of 25,374 numeric readings (52%) pass QC.** The rest are rejected and counted, never corrected.
+Result over the whole record: **13,010 of 25,374 numeric readings (51%) pass QC.** The rest are rejected and counted, never corrected.
 
 ### Quality control (`config/river_qc.json`)
 
@@ -556,6 +631,9 @@ The rules run in order, for each station, on data known at the reference time:
    - Only past readings are used, so replay stays causal.
    - The references are raw readings, not just accepted ones, so the check cannot lock itself out. A genuine sustained step is held back for about 3 readings, then accepted.
    - With fewer than 3 references (for example after a gap), the check is skipped and counted in `spike_check_skipped`.
+4. **Post-gap confirmation:** a reading whose spike check was skipped is accepted only if another in-range reading within 6 h, before or after it, agrees within `max_jump_m`. Only data known at the reference time are used. Otherwise it is rejected as `UNCONFIRMED_AFTER_GAP`.
+   - On the real record this rejects 210 readings, 46 of them corrupted values above 75.2 m. One is the 75.859 m reading of 27-09-2022, which used to be reported as "latest" in the 2022 flood-season replay.
+   - It also rejects 164 plausible-looking readings that sit alone between gaps. A lone reading can't be told apart from a telemetry error, so it is counted, not trusted.
 
 Without QC settings for a station, only negative levels are rejected, and a `QC_NOT_CONFIGURED` warning is added. A negative `valid_min_m` is allowed for gauges that read below their zero.
 
@@ -570,7 +648,7 @@ Without QC settings for a station, only negative levels are rejected, and a `QC_
 - If more than **20%** were rejected, the status is `SUSPECT`, a `SUSPECT_RECENT_DATA` warning is added and the overall status cannot be `OK`. If the sensor is producing garbage, even the readings that passed QC are doubtful.
 - With no readings in the window, the status is `UNAVAILABLE`.
 - Both limits are configurable in Python (`quality_window_hours`, `suspect_fraction`).
-- Hours with no row at all are not counted. Compare `readings_in_window` with the window length.
+- **Missing hours are counted** (`recent_quality.completeness`). When `expected_interval_hours` is set (1.0 in the service config), the expected hourly readings run from the window start (or the first reading of the series) to the latest reading. If more than 25% are missing (`max_missing_fraction`), completeness is `INCOMPLETE`: an `INCOMPLETE_RECENT_DATA` warning is added, status cannot be `OK`, and real-world capabilities are blocked (`EVIDENCE_INCOMPLETE`). On the real data at 30-12-2025 06:00 IST, 6 of 23 expected readings are missing, so completeness is `INCOMPLETE`.
 
 ### Running on the real data
 
@@ -629,7 +707,8 @@ print(result["status"], result["river_level_m"], result["data_quality"]["recent_
 ## Running the tests
 
 ```powershell
-python -m pytest -v                                   # everything (285 tests)
+python -m pytest -v                                   # everything (327 tests)
+python -m pytest tests/test_risk_and_state.py tests/test_flood_orchestrator.py -v   # risk, state, orchestrator, dashboard
 python -m pytest tests/test_flood_evidence_workflow.py -v   # Weather + River combined
 python -m pytest tests/test_river_workflow.py -v      # workflow: conflicts, reverification, permissions
 python -m pytest tests/test_river_sources.py -v       # live connector: verification, retries, failures
@@ -640,17 +719,19 @@ python -m pytest tests/test_river_real_data.py -v     # regression on real CWC d
 
 | File | Tests | Covers |
 |---|---|---|
-| `test_weather_agent.py` | 34 | Weather Agent (unchanged) |
-| `test_river_monitoring_agent.py` | 89 | Validation, freshness, trend, thresholds, QC, replay |
+| `test_weather_agent.py` | 36 | Weather Agent, including the 24 h total with the default `past_days=1` |
+| `test_river_monitoring_agent.py` | 95 | Validation, freshness, trend, thresholds, QC, replay |
 | `test_cwc_adapter.py` | 14 | CWC export converter |
 | `test_river_sources.py` | 34 | Unit and failure-mode tests: each verification check, retries (timeout, 429, 5xx), no retry on 4xx, invalid JSON, CKAN failure, config validation, conversion |
 | `test_river_service.py` | 30 | Integration tests: verified fresh/stale live data, verification failure, outage (live vs auto), fallback, tampered snapshot, conflict downgrade, deterministic `evidence_id`, audit trail and audit failure, official thresholds/datum, CLI end to end |
 | `test_river_api.py` | 10 | HTTP end to end: health, evidence, summary, caching, 400/404/405/500 |
-| `test_river_real_data.py` | 6 | Real-data regression tests (counts, replays, why QC is needed) |
+| `test_river_real_data.py` | 8 | Real-data regression tests (counts, replays, why QC is needed) |
 | `test_capability_control.py` | 13 | State allowlists, unknown state, audit-gated execution |
 | `test_evidence_reverification.py` | 9 | Conflict policy, audited reverification request |
+| `test_risk_and_state.py` | 19 | Risk rules (unusable evidence never LOW, projection, heavy rain only escalates, missing rain), state transitions (immediate escalation, EMERGENCY via RECOVERY, persistence, UNKNOWN holds), revocation, state files |
+| `test_flood_orchestrator.py` | 11 | Simulated event full cycle and revocation, never authorizes real world, first hour UNKNOWN, live verified drives EMERGENCY + human approval, stale data holds state, no thresholds gives UNKNOWN, dashboard |
 | `test_flood_evidence_workflow.py` | 18 | Combined: eligible path (only human approval), weather outage/stale/replay/future, location and time mismatch, river problem with good weather, observations never block, audit linkage and failure, deterministic `combined_id`, settings, CLI |
-| `test_river_workflow.py` | 28 | No injected conflicts; value-driven conflicts; all four scenarios; `NORMAL` cannot reverify; live verified/stale/outage; live conflict resolved by re-fetch plus independent source; primary changed; outage during re-check; conflicting source can't be its own tie-breaker; audit failure revokes permissions; capability classification; CLI |
+| `test_river_workflow.py` | 30 | No injected conflicts; value-driven conflicts; all four scenarios; `NORMAL` can reverify, unknown state cannot; incomplete data alone blocks real-world use; live verified/stale/outage; live conflict resolved by re-fetch plus independent source; primary changed; outage during re-check; conflicting source can't be its own tie-breaker; audit failure revokes permissions; capability classification; CLI |
 
 All tests are offline. Live API responses are replaced by fixtures shaped like the real ones; their provenance is described in `tests/nwdp_fixtures.py`.
 
@@ -726,11 +807,13 @@ Thresholds must be on the same datum as the data. These readings appear to be re
 - **No high-water validation:** the file contains no credible readings above about 75.2 m, so the agent's behaviour in a real flood has **not** been tested on real data.
 - **Simulated data** (`UPPER_ANICUT_TEST`) only tests the software. That station and its thresholds are invented.
 
-## What is still needed
+## What is still needed for perfect output on real data
 
-1. **An independent second source for Upper Anicut**, e.g. manual gauge readings or a state WRD feed, added to `reverification.independent_paths`. Without one, conflicts on real data cannot be resolved.
-2. **A fresher live feed.** NWDP's API is genuine and verified, but its Upper Anicut data currently lag by months. For real-time use, ask CWC or NWIC (helpdesk-nwic@gov.in) for operational access, or for confirmation of the update schedule. Then point `live` at that source; verification will check it.
-3. **Confirmation from the provider** of the timezone (IST assumed), the datum (reduced level assumed), the meaning of 72.0 m, and any QC flags the provider itself applies.
-4. **Official warning and danger levels** for the station, with datum and reference. None are configured, because none were found published.
-5. **QC bounds reviewed by a hydrologist**, and a `max_age_hours` justified by the feed's real reporting interval.
-6. **Live connectivity has been demonstrated:** your PC's runs on 2026-10-13 fetched and `VERIFIED` real NWDP data (snapshots in `outputs/live/`).
+The code is complete. What remains are **real inputs**, which must come from authorities and must not be invented:
+
+1. **Fresh live CWC data.** NWDP's API is genuine and verified, but its newest Upper Anicut reading is from 03-06-2026. Ask NWIC (helpdesk-nwic@gov.in) or CWC for current or operational data, then point `live` at that source; verification checks it automatically.
+2. **Official warning and danger levels** with datum and reference. Fill `config/river_thresholds.official.template.json` and set `thresholds_path`.
+3. **An independent second source**, such as manual gauge readings or a TN WRD feed. See `data/manual/README.md`.
+4. **Confirmation from the provider** of the timezone (IST assumed), the datum (reduced level assumed) and the meaning of 72.0 m. Also a hydrologist's review of the QC bounds, the 6 h lead time and the state-persistence counts.
+
+Live connectivity has been demonstrated: your PC's runs on 2026-10-13 fetched and `VERIFIED` real NWDP data (snapshots in `outputs/live/`).

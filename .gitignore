@@ -21,3 +21,6 @@ outputs/audit/
 
 # Workflow audit logs written to outputs/
 outputs/*_audit.jsonl
+
+# Disaster state files (runtime)
+outputs/state/

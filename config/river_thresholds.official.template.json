@@ -1,0 +1,10 @@
+{
+  "_comment": "TEMPLATE - not loadable until filled. Copy to config/river_thresholds.official.json, replace the nulls with values from an authoritative source (e.g. CWC or Tamil Nadu WRD), set 'datum' to match the data ('reduced_level' for the CWC telemetry used here, or 'gauge_height'), cite the source in 'reference', then set \"thresholds_path\": \"config/river_thresholds.official.json\" in config/river_agent.json. No values are filled in here because none were found published for Upper Anicut.",
+  "UPPER_ANICUT": {
+    "warning_level_m": null,
+    "danger_level_m": null,
+    "official": true,
+    "datum": "reduced_level",
+    "reference": "Authority, document title, date, URL"
+  }
+}

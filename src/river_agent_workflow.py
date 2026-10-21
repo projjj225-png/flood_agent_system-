@@ -281,6 +281,10 @@ def run_river_workflow(
         "simulated_river_level_m": (ds.get("last_known_level_m")
                                     if simulation_evidence_eligible else None),
         "trend_direction": ds.get("trend_direction"),
+        "rate_of_change_m_per_hour": ds.get("rate_of_change_m_per_hour"),
+        "threshold_status": (evidence or {}).get("threshold_status", "UNKNOWN"),
+        "threshold_evaluation": (evidence or {}).get("threshold_evaluation"),
+        "last_known_level_m": ds.get("last_known_level_m"),
         "evidence_freshness": freshness,
         "evidence_quality": recent,
         "source_verified": bool(((evidence or {}).get("data_quality") or {}).get(

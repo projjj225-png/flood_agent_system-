@@ -72,6 +72,7 @@ DEFAULT_SETTINGS = {
 
 WEATHER_LIVE = "WEATHER_LIVE_MODEL"
 WEATHER_REPLAY = "WEATHER_REPLAY"
+WEATHER_NOT_REQUESTED = "WEATHER_NOT_REQUESTED"
 
 # Combined-assessment reason codes added on top of the river reasons.
 WEATHER_UNAVAILABLE = "WEATHER_UNAVAILABLE"
@@ -261,6 +262,7 @@ def run_flood_evidence_workflow(
     agent_id: str = "flood_evidence_orchestrator",
     clock: Callable[[], datetime] | None = None,
     run_id: str | None = None,
+    use_weather: bool = True,
 ) -> dict[str, Any]:
     settings = settings or load_settings()
     clock = clock or (lambda: datetime.now(timezone.utc))
@@ -270,7 +272,11 @@ def run_flood_evidence_workflow(
                   capabilities=list(capabilities))
 
     # 1. Weather
-    if weather_file:
+    if not use_weather:
+        weather_result = {"status": WEATHER_UNAVAILABLE_STATUS, "current_weather": {},
+                          "errors": [{"code": "WEATHER_NOT_REQUESTED"}]}
+        weather_label = WEATHER_NOT_REQUESTED
+    elif weather_file:
         document = load_json_file(weather_file, "Weather sample")
         weather_result = document.get("result", document) if isinstance(document, dict) else {}
         weather_label = WEATHER_REPLAY
@@ -310,6 +316,11 @@ def run_flood_evidence_workflow(
         "service_evidence_id": river["service_evidence_id"],
         "river_decision_id": river["decision_id"],
         "river_trend_direction": river["trend_direction"],
+        "rate_of_change_m_per_hour": river["rate_of_change_m_per_hour"],
+        "threshold_status": river["threshold_status"],
+        "threshold_evaluation": river["threshold_evaluation"],
+        "last_known_level_m": river["last_known_level_m"],
+        "simulation_evidence_eligible": river["simulation_evidence_eligible"],
     }
 
     # 3-4. Cross-agent checks and observations

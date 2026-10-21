@@ -16,3 +16,14 @@ injected in code; every conflict comes from comparing these values.
 
 The `reverification-fails` scenario points at an independent source that
 does not exist, so the re-check cannot be completed and the result is FAILED.
+
+## Fabricated flood event: `flood_event_upper_anicut_test.csv`
+
+84 hourly readings (2026-10-11 00:00 UTC to 2026-10-14 11:00 UTC) for the
+test station `UPPER_ANICUT_TEST`. The level starts at 2.50 m for 12 h, rises
+0.12 m/h to a 4.66 m peak, holds for 4 h, then falls 0.06 m/h back to 2.50 m.
+It is used with the TEST thresholds in `config/river_thresholds.example.json`
+(warning 3.0 m, danger 4.0 m, not official) by
+`python -m src.flood_orchestrator --simulate-event` to show the whole
+NORMAL -> ALERT -> EMERGENCY -> RECOVERY -> NORMAL cycle. It is not real
+Cauvery data.
