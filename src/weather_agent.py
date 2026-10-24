@@ -58,6 +58,11 @@ CURRENT_VARIABLES = (
 ACCUMULATION_WINDOWS_HOURS = (3, 6, 24)
 ACCUMULATION_VARIABLES = ("precipitation", "rain")
 
+# Open-Meteo `past_days`: 1 adds yesterday's hours so the 24 h rainfall total
+# over completed hours can always be computed (without it the hourly series
+# starts at 00:00 IST today and the 24 h total is unavailable before midnight).
+DEFAULT_PAST_DAYS = 1
+
 # (connect timeout, read timeout) in seconds.
 DEFAULT_TIMEOUT = (5, 20)
 
@@ -242,15 +247,15 @@ class WeatherAgent:
         longitude: float = LONGITUDE,
         timezone_name: str = TIMEZONE,
         timeout: float | tuple[float, float] = DEFAULT_TIMEOUT,
-        past_days: int | None = None,
+        past_days: int | None = DEFAULT_PAST_DAYS,
         session: Any = None,
     ):
         self.latitude = latitude
         self.longitude = longitude
         self.timezone_name = timezone_name
         self.timeout = timeout
-        # Optional: Open-Meteo `past_days` adds earlier hours to the hourly
-        # series. Not sent by default so the configured endpoint is unchanged.
+        # Open-Meteo `past_days` adds earlier hours to the hourly series.
+        # Default 1 (see DEFAULT_PAST_DAYS); None omits the parameter.
         self.past_days = past_days
         # Anything with a requests-compatible .get() (injectable for tests).
         self.session = session if session is not None else requests
@@ -649,8 +654,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--json", action="store_true", help="Print the full result as JSON.")
     parser.add_argument("--save", action="store_true",
                         help="Save the result to outputs/ (only if retrieval succeeded).")
-    parser.add_argument("--past-days", type=int, default=None,
-                        help="Optional Open-Meteo past_days (e.g. 1 to enable the 24h total).")
+    parser.add_argument("--past-days", type=int, default=DEFAULT_PAST_DAYS,
+                        help=f"Open-Meteo past_days (default {DEFAULT_PAST_DAYS}, needed for the "
+                             "24 h rainfall total; 0 = today only).")
     args = parser.parse_args(argv)
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")  # Windows consoles default to cp1252 ("°")

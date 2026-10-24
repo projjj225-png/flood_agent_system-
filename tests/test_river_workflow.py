@@ -106,12 +106,19 @@ def test_resolved_conflict_records_per_conflict_evidence(tmp_path):
     assert result["conflicts_remaining"] == 0
 
 
-def test_normal_state_cannot_reverify(tmp_path):
+def test_normal_state_can_reverify(tmp_path):
+    result = run_simulated_scenario("conflict-resolves", make_service(tmp_path),
+                                    audit(tmp_path), as_of=SIM_AS_OF, disaster_state="NORMAL")
+    assert result["reverification"]["outcome"] == "RESOLVED"
+
+
+def test_unknown_state_cannot_reverify(tmp_path):
     log = audit(tmp_path)
     result = run_simulated_scenario("conflict-resolves", make_service(tmp_path), log,
-                                    as_of=SIM_AS_OF, disaster_state="NORMAL")
+                                    as_of=SIM_AS_OF, disaster_state="PANIC")
     assert result["reverification"]["outcome"] == "NOT_AUTHORIZED"
-    assert result["reverification"]["authorization_decision"]["reason"] == "CAPABILITY_DENIED"
+    assert result["reverification"]["authorization_decision"]["reason"] == \
+        "UNKNOWN_DISASTER_STATE"
     assert result["simulation_permission"] == "SIMULATION_RESTRICTED"
     events = [e["event"] for e in read_audit_log(log.path)]
     assert "evidence_reverification_requested" not in events
@@ -334,3 +341,13 @@ def test_cli_simulated_scenario(tmp_path, capsys):
 def test_cli_rejects_scenario_outside_simulated(tmp_path):
     with pytest.raises(SystemExit):
         workflow.main(["--mode", "historical", "--scenario", "no-conflict"])
+
+
+def test_incomplete_recent_data_alone_blocks_real_world(tmp_path):
+    evidence = make_service(tmp_path, clean_live_session()).get_evidence("live")
+    assert assess_evidence_for_authorization(evidence)["eligible"] is True
+    evidence["data_quality"]["recent_quality"]["completeness"]["status"] = "INCOMPLETE"
+    assessment = assess_evidence_for_authorization(evidence)
+    assert assessment["reasons"] == ["EVIDENCE_INCOMPLETE"]
+    d = authorize_with_evidence("EMERGENCY", "propose_evacuation_plan", "a", assessment)
+    assert d["allowed"] is False and d["evidence_reasons"] == ["EVIDENCE_INCOMPLETE"]

@@ -116,6 +116,11 @@ SOURCE_VERIFIED = "VERIFIED"
 SOURCE_VERIFICATION_FAILED = "FAILED"
 SOURCE_VERIFICATION_NOT_APPLICABLE = "NOT_APPLICABLE"
 
+COMPLETENESS_COMPLETE = "COMPLETE"
+COMPLETENESS_INCOMPLETE = "INCOMPLETE"
+COMPLETENESS_NOT_CHECKED = "NOT_CHECKED"
+DEFAULT_MAX_MISSING_FRACTION = 0.25
+
 QUALITY_ACCEPTABLE = "ACCEPTABLE"
 QUALITY_SUSPECT = "SUSPECT"
 QUALITY_UNAVAILABLE = "UNAVAILABLE"
@@ -676,6 +681,13 @@ def apply_quality_control(observations: list[dict[str, Any]],
          readings from the preceding 6 h (raw, so one bad acceptance cannot
          lock the check). With fewer than 3 references the check is skipped
          and counted.
+      3. Post-gap confirmation (if max_jump_m is set): a reading whose spike
+         check was skipped (too few recent references, e.g. right after a
+         gap) is accepted only if another in-range reading within 6 h
+         (before or after, among data known at the reference time) agrees
+         with it within max_jump_m. Otherwise it is rejected as
+         UNCONFIRMED_AFTER_GAP: a lone value after a gap cannot be told apart
+         from a telemetry error.
     Rejected readings are never corrected or replaced; they are just not used.
     """
     ordered = sorted(observations, key=lambda o: o["observed_at"])
@@ -688,12 +700,13 @@ def apply_quality_control(observations: list[dict[str, Any]],
         "reference": qc["reference"] if qc else None,
         "checked": len(ordered), "accepted": 0,
         "rejected_negative": 0, "rejected_placeholder": 0, "rejected_out_of_range": 0,
-        "rejected_spike": 0,
+        "rejected_spike": 0, "rejected_unconfirmed": 0,
         "spike_check_skipped": 0,
     }
     accepted: list[dict[str, Any]] = []
     rejected: list[dict[str, Any]] = []
     in_range_history: list[dict[str, Any]] = []
+    candidates: list[int] = []  # indexes in in_range_history needing confirmation
 
     def reject(obs: dict[str, Any], code: str, counter: str, message: str) -> None:
         summary[counter] += 1
@@ -724,6 +737,7 @@ def apply_quality_control(observations: list[dict[str, Any]],
             in_range_history.append(obs)
             if len(refs) < SPIKE_MIN_REFERENCES:
                 summary["spike_check_skipped"] += 1
+                candidates.append(len(in_range_history) - 1)
             else:
                 median = statistics.median(refs)
                 if abs(level - median) > qc["max_jump_m"]:
@@ -732,18 +746,87 @@ def apply_quality_control(observations: list[dict[str, Any]],
                            f"{round(median, 3)} m by more than {qc['max_jump_m']} m.")
                     continue
         accepted.append(obs)
+
+    window = timedelta(hours=SPIKE_REFERENCE_HOURS)
+    unconfirmed = set()
+    for index in candidates:
+        obs = in_range_history[index]
+        neighbours = []
+        for step in (-1, 1):
+            j = index + step
+            while 0 <= j < len(in_range_history) and abs(
+                    in_range_history[j]["observed_at"] - obs["observed_at"]) <= window:
+                neighbours.append(in_range_history[j]["river_level_m"])
+                j += step
+        if not any(abs(v - obs["river_level_m"]) <= qc["max_jump_m"] for v in neighbours):
+            unconfirmed.add(id(obs))
+            reject(obs, "UNCONFIRMED_AFTER_GAP", "rejected_unconfirmed",
+                   f"river_level_m {obs['river_level_m']} could not be confirmed: no other "
+                   f"reading within {SPIKE_REFERENCE_HOURS:g} h agrees within "
+                   f"{qc['max_jump_m']} m" + ("" if neighbours else " (none nearby)") + ".")
+    if unconfirmed:
+        accepted = [o for o in accepted if id(o) not in unconfirmed]
+        rejected.sort(key=lambda o: o["observed_at"])
     summary["accepted"] = len(accepted)
     return accepted, rejected, summary
+
+
+def assess_completeness(times: list[datetime], window_start: datetime,
+                        expected_interval_hours: float | None,
+                        max_missing_fraction: float = DEFAULT_MAX_MISSING_FRACTION,
+                        series_start: datetime | None = None) -> dict[str, Any]:
+    """How many expected readings in the window are missing (pure)."""
+    block: dict[str, Any] = {"status": COMPLETENESS_NOT_CHECKED,
+                             "expected_interval_hours": expected_interval_hours,
+                             "expected": None, "present": len(set(times)), "missing": None,
+                             "missing_fraction": None,
+                             "max_missing_fraction": max_missing_fraction, "reason": None}
+    if not expected_interval_hours:
+        block["reason"] = "No expected reporting interval configured."
+        return block
+    if not times:
+        block.update(status=COMPLETENESS_INCOMPLETE, expected=None,
+                     reason="No readings in the window.")
+        return block
+    latest = max(times)
+    interval = timedelta(hours=expected_interval_hours)
+    if series_start is not None and series_start > window_start:
+        expected = int(round((latest - series_start) / interval)) + 1
+    else:
+        expected = int(round((latest - window_start) / interval))
+    expected = max(expected, 1)
+    present = min(len(set(times)), expected)
+    missing = expected - present
+    fraction = missing / expected
+    block.update(expected=expected, present=present, missing=missing,
+                 missing_fraction=round(fraction, 4))
+    if fraction > max_missing_fraction:
+        block["status"] = COMPLETENESS_INCOMPLETE
+        block["reason"] = (f"{missing} of {expected} expected readings are missing "
+                           f"({round(100 * fraction, 1)}% > "
+                           f"{round(100 * max_missing_fraction, 1)}%).")
+    else:
+        block["status"] = COMPLETENESS_COMPLETE
+    return block
 
 
 def assess_recent_quality(accepted_times: list[datetime], rejected_times: list[datetime],
                           reference_time: datetime,
                           window_hours: float = DEFAULT_QUALITY_WINDOW_HOURS,
-                          suspect_fraction: float = DEFAULT_SUSPECT_FRACTION) -> dict[str, Any]:
+                          suspect_fraction: float = DEFAULT_SUSPECT_FRACTION,
+                          expected_interval_hours: float | None = None,
+                          max_missing_fraction: float = DEFAULT_MAX_MISSING_FRACTION,
+                          series_start: datetime | None = None) -> dict[str, Any]:
     """Share of rejected readings in (reference_time - window, reference_time].
 
     Rejected readings include unusable rows (e.g. NaN), conflicting duplicates
     and QC rejections. Above `suspect_fraction` the evidence is SUSPECT.
+
+    Completeness (only when expected_interval_hours is given): readings that
+    never arrived are counted too. Expected readings run from the window start
+    (or the first reading of the series, if later) to the latest reading in
+    the window; if more than `max_missing_fraction` are missing, completeness
+    is INCOMPLETE.
     """
     start = reference_time - timedelta(hours=window_hours)
     good = sum(start < t <= reference_time for t in accepted_times)
@@ -760,6 +843,9 @@ def assess_recent_quality(accepted_times: list[datetime], rejected_times: list[d
         "suspect_fraction_limit": suspect_fraction,
         "reason": None,
     }
+    result["completeness"] = assess_completeness(
+        [t for t in list(accepted_times) + list(rejected_times) if start < t <= reference_time],
+        start, expected_interval_hours, max_missing_fraction, series_start)
     if total == 0:
         result["reason"] = "No readings in the quality window."
         return result
@@ -798,6 +884,8 @@ class RiverMonitoringAgent:
         data_datum: str | None = None,
         quality_window_hours: float = DEFAULT_QUALITY_WINDOW_HOURS,
         suspect_fraction: float = DEFAULT_SUSPECT_FRACTION,
+        expected_interval_hours: float | None = None,
+        max_missing_fraction: float = DEFAULT_MAX_MISSING_FRACTION,
     ):
         if station_id is not None and not STATION_ID_PATTERN.match(station_id):
             raise ValueError(f"Invalid station_id: {station_id!r}")
@@ -830,6 +918,16 @@ class RiverMonitoringAgent:
         self.trend_window_hours = float(trend_window_hours)
         self.quality_window_hours = float(quality_window_hours)
         self.suspect_fraction = float(suspect_fraction)
+        if expected_interval_hours is not None and (
+                isinstance(expected_interval_hours, bool)
+                or not isinstance(expected_interval_hours, (int, float))
+                or expected_interval_hours <= 0):
+            raise ValueError("expected_interval_hours must be a positive number or None")
+        if isinstance(max_missing_fraction, bool) or not isinstance(
+                max_missing_fraction, (int, float)) or not 0 <= max_missing_fraction < 1:
+            raise ValueError("max_missing_fraction must be between 0 and 1")
+        self.expected_interval_hours = expected_interval_hours
+        self.max_missing_fraction = float(max_missing_fraction)
         # as_of fixes the reference time for deterministic historical replay.
         self.as_of = as_of.astimezone(timezone.utc) if as_of else None
         # Injectable clock (returns an aware datetime) for tests.
@@ -1028,10 +1126,17 @@ class RiverMonitoringAgent:
         rejected_times = [o["observed_at"] for o in rejected] + [
             moment for name, moment in loaded["rejected_points"]
             if name == station and moment <= reference_time]
+        all_times = [o["observed_at"] for o in accepted] + rejected_times
         recent = assess_recent_quality([o["observed_at"] for o in accepted], rejected_times,
                                        reference_time, self.quality_window_hours,
-                                       self.suspect_fraction)
+                                       self.suspect_fraction, self.expected_interval_hours,
+                                       self.max_missing_fraction,
+                                       min(all_times) if all_times else None)
         quality["recent_quality"] = recent
+        if recent["completeness"]["status"] == COMPLETENESS_INCOMPLETE:
+            result["warnings"].append(_error(
+                "INCOMPLETE_RECENT_DATA", recent["completeness"]["reason"],
+                "data_quality.recent_quality.completeness", severity="warning"))
         if recent["status"] == QUALITY_SUSPECT:
             result["warnings"].append(_error(
                 "SUSPECT_RECENT_DATA", recent["reason"], "data_quality.recent_quality",
@@ -1123,6 +1228,7 @@ class RiverMonitoringAgent:
                     and evaluation["status"] != THRESHOLD_UNKNOWN
                     and recent["status"] == QUALITY_ACCEPTABLE
                     and recent["rejected_in_window"] == 0
+                    and recent["completeness"]["status"] != COMPLETENESS_INCOMPLETE
                     and quality["rejected_rows_without_time"] == 0)
         result["status"] = STATUS_OK if complete else STATUS_PARTIAL
         return self._finish(result)

@@ -140,6 +140,8 @@ def decision_support(evidence: dict[str, Any]) -> dict[str, Any]:
                        f"source {evidence.get('source_label')}).")
     if evidence["freshness"]["status"] != FRESHNESS_FRESH:
         reasons.append(f"Freshness is {evidence['freshness']['status']}.")
+    if (quality.get("recent_quality", {}).get("completeness") or {}).get("status") == "INCOMPLETE":
+        reasons.append("Recent data are incomplete (too many missing readings).")
     if quality.get("recent_quality", {}).get("status") != QUALITY_ACCEPTABLE:
         reasons.append(f"Recent data quality is "
                        f"{quality.get('recent_quality', {}).get('status')}.")
@@ -226,6 +228,8 @@ class RiverEvidenceService:
             trend_window_hours=cfg.get("trend_window_hours", 3.0),
             quality_window_hours=cfg.get("quality_window_hours", 24.0),
             suspect_fraction=cfg.get("suspect_fraction", 0.2),
+            expected_interval_hours=cfg.get("expected_interval_hours"),
+            max_missing_fraction=cfg.get("max_missing_fraction", 0.25),
             as_of=as_of, clock=self.clock, station_metadata=metadata,
             source_verification=verification,
             data_datum=self.station.get("data_datum") if real_station else None)

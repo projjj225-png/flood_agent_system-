@@ -24,7 +24,7 @@ CONFIGURED_URL = (
     "&hourly=precipitation,rain,wind_gusts_10m,wind_speed_10m,precipitation_probability,"
     "temperature_2m,relative_humidity_2m&current=temperature_2m,relative_humidity_2m,"
     "precipitation,rain,wind_speed_10m,wind_direction_10m,wind_gusts_10m"
-    "&timezone=Asia%2FKolkata"
+    "&timezone=Asia%2FKolkata&past_days=1"
 )
 IST = timezone(timedelta(hours=5, minutes=30))
 # Hourly series in the fixture starts here (local IST time) and lasts 72 hours.
@@ -434,3 +434,20 @@ def test_save_labels_file_with_retrieval_time(tmp_path):
     saved = json.loads(path.read_text(encoding="utf-8"))
     assert saved["retrieved_at"] == RETRIEVED_AT.isoformat()
     assert saved["raw_api_response"] == payload
+
+
+def test_default_request_covers_24_completed_hours():
+    """With the default past_days=1 the series starts yesterday, so the 24 h
+    total is available at any time of day (here 00:20 IST, just after midnight)."""
+    agent = WeatherAgent()
+    assert agent.past_days == 1
+    start = datetime(2026, 10, 9, 0, 0, tzinfo=IST)  # yesterday 00:00, as past_days=1 returns
+    payload = make_payload(start=start, hours=24 * 8)
+    early = datetime(2026, 10, 10, 0, 20, tzinfo=IST)
+    result = agent.parse_response(payload, early.astimezone(timezone.utc))
+    window = result["rainfall_accumulation"]["windows"]["24h"]["precipitation"]
+    assert window["status"] == "AVAILABLE" and window["total"] is not None
+
+
+def test_past_days_can_be_omitted():
+    assert "past_days" not in WeatherAgent(past_days=None).source_url

@@ -765,3 +765,58 @@ def test_project_qc_config_file_is_valid():
     config = json.loads((Path(__file__).resolve().parent.parent / "config" / "river_qc.json")
                         .read_text(encoding="utf-8"))
     assert UA in validate_qc_config(config)
+
+
+# ---- completeness and post-gap confirmation -----------------------------------
+
+from src.river_monitoring_agent import assess_completeness  # noqa: E402
+
+
+def test_completeness_counts_missing_readings():
+    ref = datetime(2025, 12, 28, 12, 0, tzinfo=timezone.utc)
+    start = ref - timedelta(hours=24)
+    every_hour = [ref - timedelta(hours=h) for h in range(24)]
+    assert assess_completeness(every_hour, start, 1.0)["status"] == "COMPLETE"
+    sparse = every_hour[::2]  # every other hour
+    block = assess_completeness(sparse, start, 1.0)
+    assert (block["expected"], block["present"], block["missing"]) == (24, 12, 12)
+    assert block["status"] == "INCOMPLETE"
+    assert assess_completeness(sparse, start, None)["status"] == "NOT_CHECKED"
+
+
+def test_completeness_counts_from_series_start():
+    ref = datetime(2025, 12, 28, 12, 0, tzinfo=timezone.utc)
+    recent = [ref - timedelta(hours=h) for h in range(4)]  # series began 3 h ago
+    block = assess_completeness(recent, ref - timedelta(hours=24), 1.0, series_start=recent[-1])
+    assert (block["expected"], block["missing"], block["status"]) == (4, 0, "COMPLETE")
+
+
+def test_incomplete_data_blocks_ok(tmp_path):
+    rows = ua_rows(["74.9", "74.91", "74.92", "74.93"])
+    rows = [rows[0], rows[3]]  # 3 h span, 2 of 4 hourly readings
+    thresholds = {UA: {"warning_level_m": 76.0, "danger_level_m": 78.0, "reference": "TEST"}}
+    result = run_agent(tmp_path, rows, qc={UA: {"valid_min_m": 70.0, "valid_max_m": 80.0}},
+                       thresholds=thresholds, expected_interval_hours=1.0,
+                       as_of=datetime(2025, 12, 28, 3, 30, tzinfo=timezone.utc))
+    assert result["data_quality"]["recent_quality"]["completeness"]["status"] == "INCOMPLETE"
+    assert result["status"] == STATUS_PARTIAL
+
+
+def test_lone_reading_after_gap_is_unconfirmed():
+    levels = [74.9, 74.91, 74.92, 74.93, 74.95]
+    accepted, rejected, summary = apply_quality_control(qc_obs(levels, gap_after=3), ua_qc())
+    assert [o["qc_code"] for o in rejected] == ["UNCONFIRMED_AFTER_GAP"]
+    assert rejected[0]["river_level_m"] == 74.95
+    assert summary["rejected_unconfirmed"] == 1
+
+
+def test_post_gap_reading_confirmed_by_neighbour():
+    levels = [74.9, 74.91, 74.92, 74.93, 76.5, 76.52]
+    accepted, rejected, _ = apply_quality_control(qc_obs(levels, gap_after=3), ua_qc())
+    assert rejected == []
+
+
+def test_post_gap_disagreeing_pair_is_rejected():
+    levels = [74.9, 74.91, 74.92, 74.93, 79.5, 74.95]
+    accepted, rejected, _ = apply_quality_control(qc_obs(levels, gap_after=3), ua_qc())
+    assert {o["river_level_m"] for o in rejected} == {79.5, 74.95}

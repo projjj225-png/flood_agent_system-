@@ -44,7 +44,7 @@ def test_whole_record_qc_counts():
     result = run(datetime(2025, 12, 30, 6, 0, tzinfo=IST))
     qc = result["data_quality"]["qc"]
     assert (qc["accepted"], qc["rejected_placeholder"], qc["rejected_out_of_range"],
-            qc["rejected_spike"]) == (13220, 4059, 7459, 636)
+            qc["rejected_spike"], qc["rejected_unconfirmed"]) == (13010, 4059, 7459, 636, 210)
 
 
 def test_latest_clean_reading():
@@ -78,3 +78,22 @@ def test_without_qc_garbage_would_pass():
                                   as_of=datetime(2024, 8, 5, 4, 0, tzinfo=IST)).run()
     assert result["river_level_m"] > 100
     assert "QC_NOT_CONFIGURED" in {w["code"] for w in result["warnings"]}
+
+
+def test_corrupted_post_gap_value_no_longer_passes():
+    """Before post-gap confirmation, 75.859 m (27-09-2022, corrupted) was the
+    'latest' reading at this replay time. Now it is rejected."""
+    result = run(datetime(2022, 10, 5, 12, 0, tzinfo=IST))
+    assert result["river_level_m"] != 75.859
+    assert result["data_quality"]["qc"]["rejected_unconfirmed"] > 0
+
+
+def test_missing_hours_are_counted():
+    result = RiverMonitoringAgent(DATA, station_id="UPPER_ANICUT", qc=load_qc_file(QC),
+                                  expected_interval_hours=1.0,
+                                  as_of=datetime(2025, 12, 30, 6, 0, tzinfo=IST)).run()
+    completeness = result["data_quality"]["recent_quality"]["completeness"]
+    assert (completeness["expected"], completeness["present"], completeness["missing"]) == \
+        (23, 17, 6)
+    assert completeness["status"] == "INCOMPLETE"
+    assert "INCOMPLETE_RECENT_DATA" in {w["code"] for w in result["warnings"]}

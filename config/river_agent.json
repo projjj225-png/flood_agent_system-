@@ -72,5 +72,7 @@
     "independent_paths": [],
     "simulated_independent_paths": [],
     "tolerance_m": 0.005
-  }
+  },
+  "expected_interval_hours": 1.0,
+  "max_missing_fraction": 0.25
 }
