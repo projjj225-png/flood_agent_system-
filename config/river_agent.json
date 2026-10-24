@@ -1,0 +1,76 @@
+{
+  "_comment": "River Monitoring service configuration. Relative paths are resolved from the project folder. Live-source identifiers below were read from the National Water Data Portal's CKAN API on 2026-10-13 (resource_show / package_show). Timestamp offset and data datum are ASSUMPTIONS until confirmed by the provider.",
+  "station": {
+    "station_id": "UPPER_ANICUT",
+    "provider_station_name": "UPPER ANICUT",
+    "agency": "CWC",
+    "river": "Cauvery",
+    "latitude": 10.88861111,
+    "longitude": 78.58,
+    "rl_zero_gauge_m": 72.6,
+    "timestamp_utc_offset": "+05:30",
+    "timestamp_offset_status": "ASSUMED",
+    "data_datum": "reduced_level",
+    "data_datum_status": "ASSUMED"
+  },
+  "live": {
+    "enabled": true,
+    "provider": "NWDP_CKAN",
+    "api_base_url": "https://nwdp.nwic.gov.in/api/3/action/",
+    "allowed_hosts": [
+      "nwdp.nwic.gov.in"
+    ],
+    "dataset_id": "68600163-c5a0-4327-aa1a-fa7157b86cce",
+    "dataset_title": "River Water Level (Telemetry - Hourly), Central Water Commission (CWC)",
+    "resource_id": "d027c5ac-379d-4ac2-8ced-97b02b6edbc0",
+    "resource_name": "River Water Level CWC Cauvery (2026 - 2030) Telemetry Hourly",
+    "station_field": "Station",
+    "time_field": "Data Acquisition Time",
+    "level_field": "River Water Level Telemetry Hourly (meter)",
+    "records_to_fetch": 72,
+    "timeout_seconds": [
+      5,
+      30
+    ],
+    "max_attempts": 3,
+    "backoff_seconds": [
+      2,
+      5
+    ],
+    "coordinate_tolerance_deg": 0.001,
+    "rl_zero_tolerance_m": 0.001
+  },
+  "historical": {
+    "path": "data/cwc/upper_anicut_hourly_2021_2025.csv",
+    "station_metadata": "data/cwc/upper_anicut_station.json"
+  },
+  "simulated": {
+    "path": "data/river_levels_simulated.csv",
+    "station_id": "UPPER_ANICUT_TEST",
+    "cross_check_paths": []
+  },
+  "qc_path": "config/river_qc.json",
+  "thresholds_path": null,
+  "max_age_hours": 3.0,
+  "trend_window_hours": 3.0,
+  "quality_window_hours": 24.0,
+  "suspect_fraction": 0.2,
+  "cross_check": {
+    "enabled": true,
+    "paths": [
+      "data/cwc/upper_anicut_hourly_2021_2025.csv"
+    ],
+    "tolerance_m": 0.005
+  },
+  "outputs": {
+    "snapshot_dir": "outputs/live",
+    "audit_log": "outputs/audit/river_audit.jsonl",
+    "evidence": "outputs/river_evidence.json"
+  },
+  "reverification": {
+    "_comment": "Independent sources used to re-check conflicting readings. None are configured for the real station because no second real source for Upper Anicut is available; conflicts on real data therefore stay unresolved (restricted) until one is added.",
+    "independent_paths": [],
+    "simulated_independent_paths": [],
+    "tolerance_m": 0.005
+  }
+}

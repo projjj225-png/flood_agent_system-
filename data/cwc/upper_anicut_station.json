@@ -1,0 +1,44 @@
+{
+  "station_id": "UPPER_ANICUT",
+  "station_name": "UPPER ANICUT",
+  "source_description": "CWC river water level telemetry (hourly), file rwl_tel_hr_cwc_009_2021_2025.csv, station UPPER ANICUT; converted by src.cwc_adapter",
+  "agency_as_stated_in_file": "CWC",
+  "attributes_from_file": {
+    "Agency": "CWC",
+    "State": "Tamil Nadu",
+    "District": "Tiruchirappalli",
+    "Tehsil": "TIRUCHIRAPPALLI",
+    "River": "Cauvery",
+    "Basin": "Cauvery",
+    "Tributary": "-",
+    "Local River": "Cauvery",
+    "Latitude": "10.88861111",
+    "Longitude": "78.58000000",
+    "Is_DischargeDataAvailable": "Yes",
+    "RL_of_zeroGauge": "72.6000",
+    "MeanSeaLevel": "0"
+  },
+  "attributes_inconsistent_across_rows": [],
+  "raw_file": {
+    "name": "rwl_tel_hr_cwc_009_2021_2025.csv",
+    "sha256": "e0ae1026357ea56ab3d1c28fd4f30a9619b713126d84bf7ed9238e54ae0824d6"
+  },
+  "normalized_file": "upper_anicut_hourly_2021_2025.csv",
+  "rows_converted": 25453,
+  "unparseable_timestamps_passed_through": 0,
+  "source_type": "historical",
+  "timestamp_interpretation": {
+    "raw_format": "DD-MM-YYYY HH:MM (no timezone in file)",
+    "assumed_utc_offset": "+05:30",
+    "status": "ASSUMED",
+    "note": "The export does not state its timezone. Offset applied by assumption; verify with the data provider."
+  },
+  "level_interpretation": {
+    "status": "ASSUMED",
+    "note": "Values are copied as reported in metres. The file does not state the datum; compare with RL_of_zeroGauge before interpreting them as gauge height or reduced level."
+  },
+  "notes": [
+    "Raw telemetry: values are not quality-controlled by this converter.",
+    "The download origin of the file is not verified by the software."
+  ]
+}
