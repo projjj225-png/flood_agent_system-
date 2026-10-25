@@ -1,0 +1,27 @@
+{
+  "_comment": "Risk Assessment Engine settings. PROTOTYPE values chosen for software development; none is an official flood threshold, and none has been calibrated against observed floods at Upper Anicut. They must be reviewed by a hydrologist before any operational use.",
+  "categories": {
+    "LOW": "Usable river evidence below the configured warning level, no notable rise, and no heavy observed or forecast rainfall. Not a guarantee of safety.",
+    "MODERATE": "At least one elevated indicator: the river is rising, receding from above the warning level, or there is heavy observed or forecast rainfall. Closer monitoring is warranted.",
+    "HIGH": "River at or above the configured warning level, a rapid rise, very heavy rainfall, or rising water combined with heavy rainfall.",
+    "CRITICAL": "River at or above the configured danger level, or at or above the warning level and rising with heavy rainfall. Only river evidence can produce CRITICAL.",
+    "INDETERMINATE": "No defensible assessment: river evidence is missing, stale, of poor quality or in unresolved conflict, or a LOW result lacks the evidence it requires. Never read as LOW."
+  },
+  "river": {
+    "rise_m_per_hour": 0.10,
+    "rapid_rise_m_per_hour": 0.30,
+    "reference": "Prototype rates of rise, not derived from hydrological analysis. They are compared with the River Monitoring Agent's trend (3 h window by default)."
+  },
+  "rainfall": {
+    "observed_24h_mm": {"MODERATE": 64.5, "HIGH": 115.6},
+    "forecast_mm": {"MODERATE": 64.5, "HIGH": 204.5},
+    "forecast_hours": 24,
+    "intensifying_ratio": 1.5,
+    "intensifying_min_6h_mm": 10.0,
+    "reference": "Breakpoints follow the India Meteorological Department's 24-hour rainfall intensity terms (heavy 64.5 mm, very heavy 115.6 mm, extremely heavy 204.5 mm). Those terms describe point rainfall amounts. They are NOT flood thresholds for Upper Anicut, and here they are applied to Open-Meteo model output, not to rain-gauge observations. Forecasts need a higher amount than observations to reach HIGH because they are less certain."
+  },
+  "river_response_lag_hours": 24,
+  "river_response_lag_reference": "Assumed. The real lag between basin rainfall and the river at Upper Anicut is unknown here; it depends on where the rain falls and on upstream reservoir operations (e.g. Mettur), which are not ingested.",
+  "max_weather_time_offset_hours": 3.0,
+  "low_requires": ["river_thresholds", "river_trend", "observed_rainfall", "forecast_rainfall"]
+}

@@ -19,6 +19,16 @@ Pipeline (every step deterministic and audited):
    requested capability. Real-world capabilities need verified-live, fresh,
    acceptable, non-simulated, conflict-free evidence and are then only
    PERMITTED_PENDING_HUMAN_APPROVAL. Nothing is ever executed here.
+5. Risk assessment: risk_assessment.assess_flood_risk on the river evidence,
+   the reverification outcome and any weather evidence supplied. It runs
+   AFTER the permission decisions and cannot change them; it never sets the
+   disaster state (the caller still supplies it). Audited as
+   "risk_assessment_completed".
+6. Disaster state: disaster_state_manager.evaluate_state proposes the NEXT
+   state from the caller's state record. It runs last, cannot change this run's
+   decisions (they used the caller's state), and is audited; the caller persists
+   the returned record and supplies it next time, when capability_control's
+   state gate applies it as usual.
 
 Simulated scenarios are DATA files in data/simulated/ (fabricated, labelled
 simulated): they choose which simulated sources are compared, not the result.
@@ -26,6 +36,7 @@ simulated): they choose which simulated sources are compared, not the result.
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import json
 import sys
@@ -42,6 +53,16 @@ from src.capability_control import (
     authorize_with_evidence_and_audit,
     execute_if_authorized,
 )
+from src.disaster_state_manager import (
+    audit_and_finalize,
+    evaluate_state,
+    failed_result,
+    load_state_config,
+    load_state_record,
+    new_state_record,
+    revert_result,
+    save_state_record,
+)
 from src.evidence_reverification import (
     OUTCOME_FAILED,
     OUTCOME_PERSISTS,
@@ -50,7 +71,16 @@ from src.evidence_reverification import (
     record_reverification_request,
     reverify_conflicts,
 )
-from src.river_monitoring_agent import load_observations, parse_timestamp
+from src.risk_assessment import (
+    MODE_UNKNOWN,
+    RISK_LEVELS,
+    assess_flood_risk,
+    assessment_mode_for,
+    failed_assessment,
+    load_risk_config,
+    load_simulated_weather,
+)
+from src.river_monitoring_agent import load_json_file, load_observations, parse_timestamp
 from src.river_service import (
     LABEL_SIMULATED,
     MODE_AUTO,
@@ -60,6 +90,7 @@ from src.river_service import (
     MODES,
     RiverEvidenceService,
 )
+from src.weather_agent import WeatherAgent
 
 SIM_DIR = "data/simulated"
 # Scenario -> which simulated sources are compared and used for re-checking.
@@ -82,10 +113,54 @@ SCENARIO_SOURCES = {
     },
 }
 SCENARIOS = tuple(SCENARIO_SOURCES)
+
+# Risk scenarios: fabricated river series + fabricated weather (data/simulated/).
+# The files decide the outcome; nothing here sets a risk level.
+SIM_WEATHER = f"{SIM_DIR}/weather"
+TEST_THRESHOLDS_PATH = "config/river_thresholds.example.json"  # TEST values, not official
+RISK_SCENARIOS = {
+    "low-rain-valid-river": {"river": f"{SIM_DIR}/river_stable_low.csv",
+                             "weather": f"{SIM_WEATHER}/light_rain.json"},
+    "heavy-forecast-stable-river": {"river": f"{SIM_DIR}/river_stable_low.csv",
+                                    "weather": f"{SIM_WEATHER}/heavy_forecast.json"},
+    "rising-river-increasing-rain": {"river": f"{SIM_DIR}/river_rising_below_warning.csv",
+                                     "weather": f"{SIM_WEATHER}/heavy_rain_intensifying.json"},
+    "stale-river": {"river": f"{SIM_DIR}/river_stable_low.csv",
+                    "weather": f"{SIM_WEATHER}/light_rain.json",
+                    "as_of": "2026-10-10T20:00:00+00:00"},  # 9 h after the last reading
+    "missing-weather": {"river": f"{SIM_DIR}/river_stable_low.csv", "weather": None},
+    "conflicting-evidence": {"river": "data/river_levels_simulated.csv",
+                             "weather": f"{SIM_WEATHER}/heavy_rain_intensifying.json",
+                             **SCENARIO_SOURCES["conflict-persists"]},
+    "simulated-high-risk": {"river": f"{SIM_DIR}/river_above_danger.csv",
+                            "weather": f"{SIM_WEATHER}/extreme_rain.json"},
+    "recovery-after-high-water": {"river": f"{SIM_DIR}/river_recession.csv",
+                                  "weather": f"{SIM_WEATHER}/easing_after_event.json"},
+}
 DEFAULT_CAPABILITIES = ("read_river", "request_evidence_reverification", "prepare_advisory",
                         "propose_evacuation_plan", "request_human_emergency_authorization")
 DEFAULT_AUDIT_PATH = "outputs/audit/river_workflow_audit.jsonl"
+SIMULATED_AS_OF = "2026-10-10T12:00:00+00:00"
 REVERIFY_CAPABILITY = "request_evidence_reverification"
+
+
+def _obj(value: Any) -> dict[str, Any]:
+    """value if it is a JSON object, else {} (malformed sections read as absent)."""
+    return value if isinstance(value, dict) else {}
+
+
+def _checked_risk(risk: Any) -> dict[str, Any]:
+    """Reject engine output that is malformed or claims any authority."""
+    if not isinstance(risk, dict) or risk.get("risk_level") not in RISK_LEVELS:
+        raise ValueError("risk engine returned a malformed assessment")
+    if risk.get("authorizes_actions") is not False or risk.get("assigns_disaster_state") \
+            is not False:
+        raise ValueError("risk engine output claimed to authorize actions or set a state")
+    for key in ("assessment_id", "evidence_quality", "missing_data", "rules_fired",
+                "human_review_reasons", "supporting_evidence"):
+        if key not in risk:
+            raise ValueError(f"risk engine output is missing '{key}'")
+    return risk
 
 
 def read_station_readings(path: Path, station_id: str,
@@ -191,8 +266,21 @@ def run_river_workflow(
     agent_id: str = "river_agent",
     run_id: str | None = None,
     scenario: str | None = None,
+    weather: dict[str, Any] | None = None,
+    risk_config: dict[str, Any] | None = None,
+    state_record: dict[str, Any] | None = None,
+    state_config: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Run the full river workflow once. Never raises for evidence problems."""
+    """Run the full river workflow once. Never raises for evidence problems.
+
+    ``state_record`` is the caller-held disaster-state record (see
+    disaster_state_manager); its state must equal ``disaster_state``. Without one,
+    a fresh record for ``disaster_state`` is used. The returned
+    ``state_evaluation.record`` is what the caller should persist.
+
+    ``weather`` is a WeatherAgent result (or a simulated one from
+    risk_assessment.load_simulated_weather); None means no weather evidence.
+    """
     run_id = run_id or uuid.uuid4().hex
     rev_cfg = service.config.get("reverification") or {}
     if independent_paths is None:
@@ -208,17 +296,28 @@ def run_river_workflow(
     try:
         evidence = service.get_evidence(mode=mode, as_of=as_of,
                                         cross_check_paths=cross_check_paths)
-    except (ValueError, OSError) as exc:
-        evidence_error = str(exc)
+    except Exception as exc:  # any evidence failure leaves evidence unknown, never usable
+        evidence_error = f"{type(exc).__name__}: {exc}"
         audit_log.log(run_id, "river_evidence_failed", error=evidence_error)
+    if evidence is not None and not isinstance(evidence, dict):
+        evidence_error = f"malformed evidence ({type(evidence).__name__})"
+        audit_log.log(run_id, "river_evidence_failed", error=evidence_error)
+        evidence = None
 
     reverification: dict[str, Any] = {"status": "NOT_REQUIRED", "outcome": "NOT_REQUIRED",
                                       "attempts": 0, "authorization_restricted": True}
     conflict_assessment = None
     if evidence is not None:
-        ds = evidence.get("decision_support") or {}
-        cross = evidence.get("cross_source_check") or {}
-        conflict_assessment = assess_conflict(cross, bool(ds.get("current_evidence_usable")))
+        ds = _obj(evidence.get("decision_support"))
+        cross = _obj(evidence.get("cross_source_check"))
+        try:
+            conflict_assessment = assess_conflict(cross, ds.get("current_evidence_usable") is True)
+        except ValueError as exc:  # malformed conflict count: restricted, nothing re-checked
+            conflict_assessment = {"status": "EVIDENCE_MALFORMED", "trigger": None,
+                                   "authorization_restricted": True,
+                                   "current_evidence_usable": False, "reason": str(exc)}
+            audit_log.log(run_id, "conflict_assessment_failed", error=str(exc),
+                          authorization_restricted=True)
         reverification["authorization_restricted"] = conflict_assessment[
             "authorization_restricted"]
         if conflict_assessment["status"] == "REVERIFICATION_REQUIRED":
@@ -244,8 +343,13 @@ def run_river_workflow(
     evidence_assessment = assess_evidence_for_authorization(evidence, reverification)
     if evidence_error:
         evidence_assessment["error"] = evidence_error
+    # The gate recomputes eligibility from the evidence itself; evidence_assessment
+    # is passed only so a disagreement can add a denial.
     decisions = [authorize_with_evidence_and_audit(disaster_state, cap, agent_id,
-                                                   evidence_assessment, audit_log, run_id)
+                                                   evidence_assessment, audit_log, run_id,
+                                                   evidence=evidence,
+                                                   reverification=reverification,
+                                                   now=service.clock())
                  for cap in capabilities]
     real_world_allowed = [d["capability"] for d in decisions
                           if d["allowed"] and d["capability"] in REAL_WORLD_CAPABILITIES]
@@ -254,17 +358,22 @@ def run_river_workflow(
                                 else "RESTRICTED")
 
     is_simulated = bool(evidence) and evidence.get("source_label") == LABEL_SIMULATED
-    freshness = ((evidence or {}).get("freshness") or {}).get("status", "UNKNOWN")
-    recent = (((evidence or {}).get("data_quality") or {}).get("recent_quality") or {}).get(
+    freshness = _obj(_obj(evidence).get("freshness")).get("status", "UNKNOWN")
+    recent = _obj(_obj(_obj(evidence).get("data_quality")).get("recent_quality")).get(
         "status", "UNKNOWN")
-    cross = (evidence or {}).get("cross_source_check") or {}
-    initial_conflicts = cross.get("conflicts_affecting_current_evidence", 0) or 0
-    conflict_cleared = initial_conflicts == 0 or reverification["outcome"] == OUTCOME_RESOLVED
+    cross = _obj(_obj(evidence).get("cross_source_check"))
+    # The gate's validated count; None means malformed, which is never "cleared".
+    initial_conflicts = evidence_assessment.get("conflicts_affecting_current_evidence", 0) \
+        if evidence is not None else 0
+    # Cleared only as the gate verified it (a RESOLVED label alone is not enough).
+    conflict_cleared = initial_conflicts == 0 or (
+        initial_conflicts is not None and reverification["outcome"] == OUTCOME_RESOLVED
+        and not evidence_assessment.get("reverification_problem"))
     simulation_baseline_usable = (bool(evidence) and freshness == "FRESH"
                                   and recent == "ACCEPTABLE"
                                   and evidence.get("status") != "DATA_UNAVAILABLE")
     simulation_evidence_eligible = is_simulated and simulation_baseline_usable and conflict_cleared
-    ds = (evidence or {}).get("decision_support") or {}
+    ds = _obj(_obj(evidence).get("decision_support"))
 
     result: dict[str, Any] = {
         "run_id": run_id,
@@ -282,8 +391,8 @@ def run_river_workflow(
                                     if simulation_evidence_eligible else None),
         "evidence_freshness": freshness,
         "evidence_quality": recent,
-        "source_verified": bool(((evidence or {}).get("data_quality") or {}).get(
-            "is_verified_live")),
+        "source_verified": _obj(_obj(evidence).get("data_quality")).get(
+            "is_verified_live") is True,
         "cross_source_check": {k: cross.get(k) for k in (
             "status", "compared_with", "overlapping_timestamps", "conflicts",
             "conflicts_affecting_current_evidence", "examples")},
@@ -293,6 +402,7 @@ def run_river_workflow(
         "conflicts_remaining": (0 if conflict_cleared
                                 else reverification.get("conflicts_remaining",
                                                         initial_conflicts)),
+        "evidence_input_problems": evidence_assessment.get("input_problems", []),
         "evidence_assessment": evidence_assessment,
         "capability_decisions": decisions,
         "service_current_evidence_usable": bool(ds.get("current_evidence_usable")),
@@ -309,7 +419,7 @@ def run_river_workflow(
         "authorization": real_world_authorization,
         "real_world_capabilities_pending_human_approval": real_world_allowed,
         "service_reasons_not_usable": ds.get("reasons_not_usable", []),
-        "service_audit": (evidence or {}).get("audit", {}),
+        "service_audit": _obj(_obj(evidence).get("audit")),
         "workflow_audit_log_path": str(audit_log.path) if audit_log.path else None,
     }
     result["reason"] = (
@@ -318,8 +428,68 @@ def run_river_workflow(
         "Simulated evidence passed simulation checks; it never authorizes real-world action."
         if simulation_evidence_eligible else
         "Real-world capabilities restricted: " + ", ".join(evidence_assessment["reasons"]) + ".")
+    # Risk assessment: after, and independent of, the permission decisions above. It
+    # works on copies, so it cannot alter the evidence, reverification or decisions.
+    risk_cfg = None
+    try:
+        risk_cfg = risk_config if risk_config is not None else load_risk_config()
+        risk = _checked_risk(assess_flood_risk(
+            copy.deepcopy(evidence), copy.deepcopy(weather), copy.deepcopy(reverification),
+            risk_cfg, clock=service.clock))
+    except Exception as exc:  # the engine failing must never look like low risk
+        risk = failed_assessment(f"{type(exc).__name__}: {exc}",
+                                 assessment_mode_for(evidence) if evidence else MODE_UNKNOWN,
+                                 clock=service.clock)
+        audit_log.log(run_id, "risk_assessment_failed", error=risk["error"],
+                      risk_level=risk["risk_level"], authorizes_actions=False)
+    risk["audit_written"] = audit_log.log(
+        run_id, "risk_assessment_completed", assessment_id=risk["assessment_id"],
+        risk_level=risk["risk_level"], hazard_indicated=risk["hazard_indicated"],
+        assessment_mode=risk["assessment_mode"],
+        confidence=risk["evidence_quality"].get("confidence"),
+        rules_fired=risk["rules_fired"], requires_human_review=risk["requires_human_review"],
+        human_review_reasons=risk["human_review_reasons"],
+        missing_data=[m["item"] for m in risk["missing_data"]],
+        service_evidence_id=result["service_evidence_id"],
+        weather_retrieved_at=(risk["supporting_evidence"].get("weather") or {}).get(
+            "retrieved_at"),
+        authorizes_actions=False)
+    if not risk["audit_written"]:
+        risk["requires_human_review"] = True
+        risk["human_review_reasons"] = risk["human_review_reasons"] + ["AUDIT_WRITE_FAILED"]
+    result["risk_assessment"] = risk
+    result["risk_assessment_id"] = risk["assessment_id"]
+
+    # Disaster state: last, on copies; it proposes the NEXT state and cannot change
+    # the decisions above, which were made with the caller's state.
+    state_now = service.clock()
+    state_value = str(getattr(disaster_state, "value", disaster_state))
+    record_in = state_record
+    try:
+        state_cfg = state_config if state_config is not None else load_state_config()
+        if record_in is None:
+            record_in = new_state_record(state_value, "simulated" if mode == MODE_SIMULATED
+                                         else "historical" if mode == MODE_HISTORICAL
+                                         else "real")
+        if not isinstance(record_in, dict) or record_in.get("state") != state_value:
+            state_result = failed_result(record_in, state_now, "STATE_RECORD_MISMATCH: the "
+                                         "record's state differs from disaster_state")
+        elif risk_cfg is None:
+            state_result = failed_result(record_in, state_now, "RISK_CONFIG_UNAVAILABLE")
+        else:
+            state_result = evaluate_state(
+                copy.deepcopy(record_in), copy.deepcopy(evidence), copy.deepcopy(risk),
+                config=state_cfg, risk_config=risk_cfg, now=state_now,
+                weather=copy.deepcopy(weather), reverification=copy.deepcopy(reverification))
+    except Exception as exc:  # bad config or record: fail closed, state unchanged
+        state_result = failed_result(record_in, state_now, f"{type(exc).__name__}: {exc}")
+    state_result = audit_and_finalize(state_result, record_in, audit_log, run_id)
+    result["state_evaluation"] = state_result
+    result["state_decision_id"] = state_result["state_decision_id"]
+
     stable = {k: v for k, v in result.items()
-              if k not in ("run_id", "service_audit", "workflow_audit_log_path")}
+              if k not in ("run_id", "service_audit", "workflow_audit_log_path",
+                           "risk_assessment", "state_evaluation")}
     stable["capability_decisions"] = [{k: v for k, v in d.items() if k != "audit_written"}
                                       for d in decisions]
     result["decision_id"] = hashlib.sha256(json.dumps(
@@ -327,6 +497,10 @@ def run_river_workflow(
     audit_log.log(run_id, "river_workflow_completed", scenario=scenario, mode=mode,
                   decision_id=result["decision_id"],
                   service_evidence_id=result["service_evidence_id"],
+                  risk_assessment_id=result["risk_assessment_id"],
+                  risk_level=result["risk_assessment"]["risk_level"],
+                  state_outcome=state_result["outcome"],
+                  resulting_state=state_result["resulting_state"],
                   evidence_reasons=evidence_assessment["reasons"],
                   reverification_outcome=reverification["outcome"],
                   real_world_authorization=real_world_authorization,
@@ -335,9 +509,16 @@ def run_river_workflow(
     result["workflow_audit_events_written"] = audit_log.events_written
     result["workflow_audit_write_errors"] = list(audit_log.write_errors)
     if audit_log.write_errors:
-        # An incomplete audit trail never leaves a real-world permission standing.
+        # An incomplete audit trail never leaves a real-world permission standing,
+        # neither in the summary nor in the individual decisions.
         result["real_world_authorization"] = result["authorization"] = "RESTRICTED"
         result["real_world_capabilities_pending_human_approval"] = []
+        for d in decisions:
+            if d["allowed"] and d["capability"] in REAL_WORLD_CAPABILITIES:
+                d.update(allowed=False, reason="AUDIT_TRAIL_INCOMPLETE",
+                         human_approval_required=False)
+        # Nor a state change: the record goes back to what the caller supplied.
+        revert_result(state_result, record_in, "AUDIT_TRAIL_INCOMPLETE")
     return result
 
 
@@ -349,6 +530,9 @@ def run_simulated_scenario(
     as_of: datetime | None = None,
     disaster_state: str = DisasterState.NORMAL.value,
     capabilities: tuple[str, ...] | list[str] = DEFAULT_CAPABILITIES,
+    weather: dict[str, Any] | None = None,
+    risk_config: dict[str, Any] | None = None,
+    state_record: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Simulated workflow whose scenario selects the simulated SOURCE FILES compared."""
     if scenario not in SCENARIO_SOURCES:
@@ -358,7 +542,60 @@ def run_simulated_scenario(
                               disaster_state=disaster_state, capabilities=capabilities,
                               as_of=as_of, cross_check_paths=sources["cross_check_paths"],
                               independent_paths=sources["independent_paths"],
-                              run_id=run_id, scenario=scenario)
+                              run_id=run_id, scenario=scenario, weather=weather,
+                              risk_config=risk_config, state_record=state_record)
+
+
+def run_risk_scenario(
+    scenario: str,
+    service: RiverEvidenceService,
+    audit_log: AuditLog,
+    run_id: str | None = None,
+    disaster_state: str = DisasterState.NORMAL.value,
+    capabilities: tuple[str, ...] | list[str] = DEFAULT_CAPABILITIES,
+    risk_config: dict[str, Any] | None = None,
+    state_record: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Simulated workflow for one risk scenario (fabricated river + weather files).
+
+    The service config is copied with the scenario's simulated river file and
+    the TEST thresholds for the simulated station; the original is unchanged.
+    """
+    if scenario not in RISK_SCENARIOS:
+        raise ValueError(f"risk scenario must be one of {', '.join(RISK_SCENARIOS)}")
+    spec = RISK_SCENARIOS[scenario]
+    config = json.loads(json.dumps(service.config))
+    config["simulated"] = {**(config.get("simulated") or {}), "path": spec["river"],
+                           "cross_check_paths": []}
+    config["thresholds_path"] = TEST_THRESHOLDS_PATH
+    scenario_service = RiverEvidenceService(config, base_dir=service.base_dir,
+                                            session=service.session, sleep=service.sleep,
+                                            clock=service.clock)
+    as_of = parse_timestamp(spec.get("as_of", SIMULATED_AS_OF))
+    weather = (load_simulated_weather(service.resolve_path(spec["weather"]),
+                                      retrieved_at=as_of if "as_of" in spec else None)
+               if spec["weather"] else None)
+    return run_river_workflow(scenario_service, audit_log, mode=MODE_SIMULATED,
+                              disaster_state=disaster_state, capabilities=capabilities,
+                              as_of=as_of, cross_check_paths=spec.get("cross_check_paths"),
+                              independent_paths=spec.get("independent_paths", []),
+                              run_id=run_id, scenario=scenario, weather=weather,
+                              risk_config=risk_config, state_record=state_record)
+
+
+def _load_weather_option(value: str | None,
+                         service: RiverEvidenceService) -> dict[str, Any] | None:
+    """--weather: none (default), live (Weather Agent, past_days=1) or a file path."""
+    if value in (None, "none"):
+        return None
+    if value == "live":
+        return WeatherAgent(past_days=1).run()
+    path = service.resolve_path(value)
+    doc = load_json_file(path, "Weather")
+    if isinstance(doc, dict) and doc.get("simulated") is True:
+        return load_simulated_weather(path)
+    # A saved weather_live_*.json sample wraps the result.
+    return doc.get("result") if isinstance(doc, dict) and "result" in doc else doc
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -367,8 +604,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--scenario", choices=SCENARIOS, default=None,
                         help="Simulated mode only: which simulated sources to compare "
                              "(default conflict-resolves).")
-    parser.add_argument("--state", default=DisasterState.NORMAL.value,
-                        help="Disaster state: NORMAL, ALERT, EMERGENCY or RECOVERY.")
+    parser.add_argument("--state", default=None,
+                        help="Current disaster state: NORMAL (default), ALERT, EMERGENCY or "
+                             "RECOVERY. Taken from --state-file when that file exists.")
+    parser.add_argument("--state-file", default=None,
+                        help="Disaster-state record (JSON). Read if it exists; the updated "
+                             "record is written back after a fully audited run.")
+    parser.add_argument("--risk-scenario", choices=tuple(RISK_SCENARIOS), default=None,
+                        help="Simulated mode only: run a risk scenario (fabricated river "
+                             "and weather files).")
+    parser.add_argument("--weather", default=None,
+                        help="Weather evidence for the risk assessment: none (default), "
+                             "live (calls Open-Meteo), or a weather JSON file.")
     parser.add_argument("--capability", action="append", default=None,
                         help="Capability to request (repeatable). Default: a standard set.")
     parser.add_argument("--config", default=None, help="Optional river_agent.json path")
@@ -380,11 +627,12 @@ def main(argv: list[str] | None = None) -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
 
-    if args.scenario and args.mode != MODE_SIMULATED:
-        parser.error("--scenario is only valid with --mode simulated")
+    if (args.scenario or args.risk_scenario) and args.mode != MODE_SIMULATED:
+        parser.error("--scenario/--risk-scenario are only valid with --mode simulated")
+    if args.scenario and args.risk_scenario:
+        parser.error("use either --scenario or --risk-scenario, not both")
     as_of = None
-    as_of_text = args.as_of or ("2026-10-10T12:00:00+00:00" if args.mode == MODE_SIMULATED
-                                else None)
+    as_of_text = args.as_of or (SIMULATED_AS_OF if args.mode == MODE_SIMULATED else None)
     if as_of_text:
         if args.mode in (MODE_LIVE, MODE_AUTO):
             parser.error("--as-of cannot be used with live/auto modes")
@@ -399,14 +647,39 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Error: {exc}", file=sys.stderr)
         return 2
     audit = AuditLog(service.resolve_path(args.audit), component="river_workflow")
-    if args.mode == MODE_SIMULATED:
+    state_path = service.resolve_path(args.state_file) if args.state_file else None
+    try:
+        risk_config = load_risk_config()
+        weather = _load_weather_option(args.weather, service)
+        record = load_state_record(state_path) if state_path and state_path.is_file() \
+            else None
+    except ValueError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 2
+    if record is not None and args.state and args.state != record["state"]:
+        print(f"Error: --state {args.state} contradicts the state file ({record['state']}).",
+              file=sys.stderr)
+        return 2
+    args.state = record["state"] if record is not None else (args.state
+                                                             or DisasterState.NORMAL.value)
+    if args.risk_scenario:
+        result = run_risk_scenario(args.risk_scenario, service, audit,
+                                   disaster_state=args.state, capabilities=capabilities,
+                                   risk_config=risk_config, state_record=record)
+    elif args.mode == MODE_SIMULATED:
         result = run_simulated_scenario(args.scenario or "conflict-resolves", service, audit,
                                         as_of=as_of, disaster_state=args.state,
-                                        capabilities=capabilities)
+                                        capabilities=capabilities, weather=weather,
+                                        risk_config=risk_config, state_record=record)
     else:
         result = run_river_workflow(service, audit, mode=args.mode,
                                     disaster_state=args.state, capabilities=capabilities,
-                                    as_of=as_of)
+                                    as_of=as_of, weather=weather, risk_config=risk_config,
+                                    state_record=record)
+    state = result["state_evaluation"]
+    if state_path and state.get("record") is not None and state["outcome"] != "EVALUATION_FAILED" \
+            and not result["workflow_audit_write_errors"]:
+        save_state_record(state["record"], state_path)
     print(json.dumps(result, indent=2, ensure_ascii=False, default=str))
     if result["workflow_audit_write_errors"]:
         return 2

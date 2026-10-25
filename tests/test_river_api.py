@@ -81,6 +81,47 @@ def test_post_is_rejected(api):
     assert info.value.code == 405
 
 
+def _raw_post(port, body_parts, pause=0.0, timeout=10):
+    """POST over a raw socket: headers first, then each body part (after ``pause``)."""
+    import socket
+    import time
+    with socket.create_connection(("127.0.0.1", port), timeout=timeout) as sock:
+        sock.sendall(b"POST /river/evidence HTTP/1.1\r\nHost: test\r\nContent-Length: 2\r\n\r\n")
+        for part in body_parts:
+            time.sleep(pause)
+            sock.sendall(part)
+        chunks = []
+        while True:
+            data = sock.recv(65536)
+            if not data:
+                return b"".join(chunks)
+            chunks.append(data)
+
+
+def test_post_body_sent_separately_still_gets_405(api):
+    """Regression: the handler used to reply without reading the body. A body arriving
+    after the headers then sat unread when the socket closed, the OS sent a TCP RST and
+    the client lost the 405 (ConnectionAbortedError on Windows, ~2% of urllib POSTs).
+    The pause makes the client deliver the body in a separate segment, as a slow client
+    or a split TCP segment would; it is the scenario, not a wait for a race."""
+    base, _ = api
+    port = int(base.rsplit(":", 1)[1])
+    response = _raw_post(port, [b"{}"], pause=0.05)
+    assert response.startswith(b"HTTP/1.0 405")
+    assert b"read-only API" in response
+
+
+def test_stalled_post_body_times_out_instead_of_hanging(tmp_path):
+    server = create_server(make_service(tmp_path), "127.0.0.1", 0, request_timeout=0.5)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        response = _raw_post(server.server_address[1], [], timeout=5)  # body never sent
+        assert response.startswith(b"HTTP/1.0 405")
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
 def test_internal_error_never_returns_data(tmp_path):
     class Broken:
         def get_evidence(self, mode, as_of):

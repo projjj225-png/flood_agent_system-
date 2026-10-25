@@ -61,7 +61,12 @@ class EvidenceProvider:
             return evidence, 0.0 if cacheable else None
 
 
-def make_handler(provider: EvidenceProvider):
+DEFAULT_REQUEST_TIMEOUT = 10.0  # seconds
+MAX_DISCARD_BYTES = 64 * 1024
+
+
+def make_handler(provider: EvidenceProvider,
+                 request_timeout: float | None = DEFAULT_REQUEST_TIMEOUT):
     class Handler(BaseHTTPRequestHandler):
         server_version = "RiverEvidenceAPI/" + SCHEMA_VERSION
 
@@ -112,16 +117,40 @@ def make_handler(provider: EvidenceProvider):
                 return self._send(200, body, age)
             return self._send(200, evidence, age)
 
+        def _discard_body(self) -> None:
+            """Read (and drop) the declared request body before replying.
+
+            Closing a socket whose receive buffer still holds unread bytes makes the
+            OS send a TCP RST instead of a normal close; the client then loses the
+            response (ConnectionAbortedError/ConnectionResetError). Bodies over
+            MAX_DISCARD_BYTES or an invalid length are not read and the connection
+            is closed, as before.
+            """
+            try:
+                length = int(self.headers.get("Content-Length", 0))
+            except ValueError:
+                length = -1
+            if 0 < length <= MAX_DISCARD_BYTES:
+                try:
+                    self.rfile.read(length)
+                except OSError:  # includes the socket timeout for a stalled client
+                    pass
+            self.close_connection = True
+
         def do_POST(self) -> None:  # noqa: N802
+            self._discard_body()
             self._send(405, {"error": "read-only API"})
 
+    Handler.timeout = request_timeout  # socket timeout: a stalled client cannot pin a thread
     return Handler
 
 
 def create_server(service: RiverEvidenceService, host: str = "127.0.0.1", port: int = 8765,
-                  cache_seconds: float = 300.0) -> ThreadingHTTPServer:
+                  cache_seconds: float = 300.0,
+                  request_timeout: float = DEFAULT_REQUEST_TIMEOUT) -> ThreadingHTTPServer:
     return ThreadingHTTPServer((host, port),
-                               make_handler(EvidenceProvider(service, cache_seconds)))
+                               make_handler(EvidenceProvider(service, cache_seconds),
+                                            request_timeout))
 
 
 def main(argv: list[str] | None = None) -> int:

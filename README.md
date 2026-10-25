@@ -3,12 +3,20 @@
 Prototype location: **Cauvery River near Upper Anicut, Tamil Nadu, India**
 (latitude 10.888611, longitude 78.580000, timezone Asia/Kolkata).
 
-**Current progress:** Phase 1, components 1 and 2: the **Weather Agent** and the
-**River Monitoring Agent**, with a river evidence service and a local HTTP API. Data sources: the National Water
-Data Portal's CWC telemetry API (verified, but its latest Upper Anicut data is months old), real historical
-CWC telemetry 2021–2025, and simulated test data.
-Nothing else is implemented yet. That includes evidence conflict detection, trust scoring, risk assessment,
-disaster-state logic (the disaster state is currently supplied by the caller) and the dashboard.
+**Current progress.** Implemented and tested:
+- the **Weather Agent**;
+- the **River Monitoring Agent**, with a river evidence service and a local HTTP API;
+- **cross-source conflict detection** and **independent-source reverification**;
+- **state- and evidence-aware capability control**, which requires human approval for real-world actions;
+- the **Risk Assessment Engine**: deterministic, explainable and audited. See [Risk Assessment Engine](#risk-assessment-engine).
+- the **Disaster State Manager**: NORMAL/ALERT/EMERGENCY/RECOVERY with configurable rules, hysteresis and persistence. It proposes the *next* state and never authorizes anything. See [Disaster State Manager](#disaster-state-manager).
+
+Data sources: the National Water Data Portal's CWC telemetry API (verified, but its latest Upper Anicut data
+is months old), real historical CWC telemetry 2021–2025, and simulated test data.
+
+**Not implemented yet:**
+- trust scoring;
+- the dashboard.
 
 ## Project structure
 
@@ -25,7 +33,9 @@ flood_agent_system/
 │   ├── audit_log.py                # Append-only JSONL audit log
 │   ├── capability_control.py       # State allowlists + evidence gate (never executes actions)
 │   ├── evidence_reverification.py  # Conflict policy + actual re-check of conflicting readings
-│   └── river_agent_workflow.py     # Full loop: evidence -> conflicts -> reverification -> permissions
+│   ├── risk_assessment.py          # Risk Assessment Engine (deterministic, never authorizes)
+│   ├── disaster_state_manager.py   # Disaster State Manager (classifies; never authorizes)
+│   └── river_agent_workflow.py     # Full loop: evidence -> conflicts -> reverification -> permissions -> risk
 ├── tests/
 │   ├── test_weather_agent.py            # Offline tests (mocked API, no internet needed)
 │   ├── test_river_monitoring_agent.py   # Offline tests (temporary CSV files)
@@ -37,17 +47,21 @@ flood_agent_system/
 │   ├── test_capability_control.py       # State allowlists, audit-gated execution
 │   ├── test_evidence_reverification.py  # Conflict policy
 │   ├── test_river_workflow.py           # Integrated workflow: real conflicts, reverification, permissions
+│   ├── test_risk_assessment.py          # Risk engine, risk scenarios, workflow/audit integration
+│   ├── test_disaster_state_manager.py   # State transitions, persistence, safety rules, integration
 │   └── nwdp_fixtures.py                 # API-shaped fixtures (provenance in the file)
 ├── data/
 │   ├── raw/                        # Put rwl_tel_hr_cwc_009_2021_2025.csv here (gitignored, 103 MB)
 │   ├── cwc/
 │   │   ├── upper_anicut_hourly_2021_2025.csv  # Real CWC telemetry, Upper Anicut, normalized
 │   │   └── upper_anicut_station.json          # Station attributes, provenance, assumptions
-│   ├── simulated/                  # FABRICATED comparison sources for workflow scenarios
+│   ├── simulated/                  # FABRICATED comparison sources, river series, weather/, flood_cycle/
 │   └── river_levels_simulated.csv  # FABRICATED test levels, not real measurements
 ├── config/
 │   ├── river_agent.json               # Service config: station, live source, paths
 │   ├── river_qc.json                  # Prototype QC settings (data-derived, NOT official)
+│   ├── risk_assessment.json           # Prototype risk categories and breakpoints (NOT official)
+│   ├── disaster_state.json            # Prototype state-transition rules (NOT official)
 │   └── river_thresholds.example.json  # TEST thresholds only, not official levels
 ├── outputs/                  # Weather samples, river_evidence.json; live/ and audit/ (gitignored)
 ├── pytest.ini                # Lets pytest find the src package
@@ -252,6 +266,7 @@ python -m src.river_api --port 8765
 
 - **Binding:** it listens on `127.0.0.1` only, unless you pass `--host`.
 - **Caching:** `live`/`auto` results are cached for `--cache-seconds` (default 300) to protect the provider. The cache age is shown in `cache_age_seconds` and the `X-Evidence-Cache-Age` header.
+- **Rejected writes:** `POST` returns 405 after reading and discarding the request body (up to 64 KiB). Requests use a 10 s socket timeout (`create_server(..., request_timeout=...)`). Reading the body matters: replying while the body sat unread made the OS reset the connection, so clients intermittently lost the 405 (`ConnectionAbortedError`).
 - **Errors:** bad requests return `400`, POST returns `405`. Internal errors return `500` with `"status": "DATA_UNAVAILABLE"`, never data.
 
 ### Evidence envelope (added to the agent's fields; existing fields unchanged)
@@ -313,7 +328,54 @@ Otherwise the orchestrator must treat river conditions as **unknown**, never as 
    - **Evidence gate:** applies to *real-world* capabilities (`prepare_advisory`, `propose_evacuation_plan`, `request_human_emergency_authorization`). They need evidence that is not simulated, `LIVE_VERIFIED` with `is_verified_live`, `FRESH`, `ACCEPTABLE` in recent quality, not a fallback, and free of unresolved conflicts. Anything else is denied with reason codes (`EVIDENCE_SIMULATED`, `EVIDENCE_STALE`, `EVIDENCE_NOT_VERIFIED_LIVE`, `EVIDENCE_UNRESOLVED_CONFLICT`, …).
    - **Even when both gates pass,** the decision is `PERMITTED_PENDING_HUMAN_APPROVAL` and `real_world_authorization` is `HUMAN_AUTHORIZATION_REQUIRED`. The system never self-authorizes or executes an action.
    - **Other capabilities:** read-only ones (`read_*`) and internal ones (`request_evidence_reverification`, `prepare_recovery_assessment`) need only the state gate.
-   - **Audit failure:** if a decision cannot be written to the audit log, that permission is revoked (`AUDIT_WRITE_FAILED`). An incomplete workflow audit forces `RESTRICTED`.
+   - **Audit failure:** if a decision cannot be written to the audit log, that permission is revoked (`AUDIT_WRITE_FAILED`). An incomplete workflow audit forces `RESTRICTED`. A logger that raises, or returns anything other than `True`, counts as a failed write.
+   - **Malformed evidence fails closed.** `assess_evidence_for_authorization` never raises.
+     - **Wrong types:** an envelope section of the wrong type (`data_quality`, `freshness`, `fallback`, `cross_source_check`, `decision_support`, `trend`, `threshold_evaluation`, `live_fetch`), or a wrong-typed status, label or grade, adds `EVIDENCE_MALFORMED`. These problems are listed in `input_problems` as field paths and type names only, never values.
+     - **Conflicts:** a conflict count that can't be read, or a `CONFLICT` status with no count, is an unresolved conflict that even `RESOLVED` cannot clear. A non-boolean `fallback.used` counts as a fallback.
+     - **Simulation markers:** any simulation marker means `EVIDENCE_SIMULATED`, whatever the label says. The markers are the label, `evidence_grade`, `is_simulated`, `source_type` and `source_types_present`.
+     - **Strict eligibility:** a supplied assessment counts only as `eligible is True` with an empty `reasons` list. A truthy `"yes"` or leftover reasons are denied.
+
+### Authorization boundary
+
+**Where trust sits.**
+- The only production path to the evidence gate is `run_river_workflow` → `authorize_with_evidence_and_audit` → `authorize_with_evidence`. The HTTP API exposes no authorization.
+- Both gate functions are public, so the gate does not trust anything a caller asserts about eligibility.
+
+**What the gate computes itself.** For every real-world capability, it computes eligibility from the evidence envelope and the reverification block, through `assess_evidence_for_authorization`:
+- **Assessment:** a caller-supplied `evidence_assessment` (the legacy fourth argument) can only add denials:
+  - `EVIDENCE_ASSESSMENT_REJECTED` when it is not eligible, is malformed, or carries reasons;
+  - `EVIDENCE_ASSESSMENT_MISMATCH` when it names a different `evidence_id`.
+
+  Without `evidence=`, a real-world capability is denied (`EVIDENCE_NOT_ASSESSED`), whatever the assessment says.
+- **Integrity:** the gate recomputes `evidence_id` with the service's `compute_evidence_id`. Evidence edited after the service produced it, or with no ID, is denied (`EVIDENCE_INTEGRITY_FAILED`). For example, a stale envelope relabelled `FRESH`/`VERIFIED_LIVE` is caught here.
+
+  **What the hash covers:** the whole envelope except `evidence_id` itself, `run_id`, `generated_at` and the service `audit` block (`VOLATILE_KEYS`). Neither the gate nor the risk engine reads those four fields to make a decision, so every field that affects eligibility or hazard is covered.
+- **Freshness at decision time:** `freshness.status` describes the moment the evidence was *produced*. The gate also requires the latest reading to still be within `freshness.max_age_hours` when the decision is made (`now`, defaulting to the current UTC time; the workflow passes the service clock). A reading more than 5 minutes in the future, or an age that cannot be determined, also fails. Otherwise the result is `EVIDENCE_STALE_AT_DECISION`. The check uses only hashed fields (`observed_at`, `max_age_hours`), never `generated_at`, so a held or replayed envelope cannot be made to look current.
+
+  One consequence: if the *service's* own audit write fails, its `AUDIT_LOG_INCOMPLETE` warning is appended after hashing, so that evidence also fails integrity. That fails closed.
+- **Reverification:** a `RESOLVED` outcome clears a current conflict only if it checks out against the evidence's own `conflict_details`. Every current conflict needs a `CORROBORATES_PRIMARY` entry with the same readings, a re-read primary within tolerance, and an independent value that backs the primary but not the other source. The run must be `COMPLETED` with no conflicts remaining. A bare `{"outcome": "RESOLVED"}` gives `EVIDENCE_REVERIFICATION_INCONSISTENT`.
+- **Decision record:** each decision records `eligibility_source: "COMPUTED_BY_GATE"` and the computed `evidence_id`. The `capability_authorization` audit event also records `caller_assessment_supplied`.
+- **Never executed:** `execute_if_authorized` runs only read-only and internal capabilities (`EXECUTABLE_CAPABILITIES`). A real-world capability is refused in every state with `EXECUTION_NOT_PERMITTED`, the refusal is audited, and the operation never runs. Before this fix, the function applied only the state gate, so a caller could have run `propose_evacuation_plan` directly.
+- **Late audit failure:** if any workflow audit write fails, the summary becomes `RESTRICTED` and every real-world decision in `capability_decisions` is revoked (`AUDIT_TRAIL_INCOMPLETE`). Before this fix, individual decisions could still read `allowed: true`.
+
+**Interface changes (backward compatible).**
+- `authorize_with_evidence(state, capability, agent_id, evidence_assessment=None, *, evidence=None, reverification=None, now=None)`.
+- `authorize_with_evidence_and_audit(..., audit_log, run_id, *, evidence=None, reverification=None, now=None)`.
+- Existing positional calls still work. The behaviour changes:
+  - an assessment alone no longer grants a real-world capability;
+  - evidence that has aged past `max_age_hours` by decision time is denied;
+  - `execute_if_authorized` refuses real-world capabilities.
+
+  Read-only and internal capabilities are unaffected. The workflow passes `evidence=`, `reverification=` and `now=`.
+- `assess_evidence_for_authorization` adds `integrity_problem` and `reverification_problem` to its result.
+
+**Residual limits.**
+- **Tamper detection, not proof of origin.** The `evidence_id` check detects modification after production. It does not authenticate who produced the evidence: code in the same Python process could build an envelope and compute a matching hash. Closing that needs either:
+  - the gate obtaining evidence from the service itself, given an evidence ID rather than an envelope; or
+  - a signature with a key held outside the caller's reach, e.g. a separate authorization process.
+
+  Both are larger architectural changes. Until then, the trust boundary is the process: only the workflow, which takes evidence directly from `RiverEvidenceService`, should call the gate.
+- **Reverification values are checked, not re-read.** The gate verifies that a `RESOLVED` block agrees with the hashed `conflict_details` and that its recorded values satisfy the resolution rule. It does not re-read the independent source files, and the reverification block itself is not hashed. A same-process forger who knows the conflict details could therefore write a consistent block. Re-reading would need the gate to resolve and read source files itself, which is the same architectural change as above.
 
 Key result fields:
 - **Identity:** `decision_id` (deterministic), `service_evidence_id`.
@@ -347,6 +409,307 @@ python -m src.river_agent_workflow --mode live --state EMERGENCY --capability re
 Exit codes: `0` = done, `1` = evidence unavailable, `2` = config error or audit write failure.
 
 **Real data today:** the verified NWDP live data for Upper Anicut is months old, so `--mode live`/`auto` always ends `RESTRICTED` (`EVIDENCE_STALE`, …). No independent second source for the real station is configured (`reverification.independent_paths` is empty), so a conflict on real data can never be `RESOLVED`. It stays restricted until a genuine independent source is added.
+
+## Risk Assessment Engine
+
+`src/risk_assessment.py` turns the outputs of the existing agents into an explainable flood-risk assessment. The engine is deterministic Python: no LLM, no randomness and no trained model.
+
+**Decision support only.**
+- It never assigns a disaster state; the caller still supplies `--state`.
+- It never authorizes anything (`authorizes_actions: false`).
+- It never produces a flood probability (`calibrated_probability: null`).
+
+### Design
+
+- **Inputs, used as produced:**
+  - **River:** the RiverEvidenceService envelope (grade, freshness, recent quality, threshold evaluation, trend, cross-source check).
+  - **Reverification:** the workflow's reverification block.
+  - **Weather:** a Weather Agent result (rainfall accumulation and hourly series).
+
+  Nothing is re-measured. Whether river evidence is usable is decided by the existing evidence gate, `assess_evidence_for_authorization`, and the existing grades.
+- **Hazard and confidence are separate:**
+  - `risk_level` is the assessed level.
+  - `hazard_indicated` is the highest hazard any usable evidence points to. With INDETERMINATE, only elevated levels are reported, so heavy rain is never hidden.
+  - `evidence_quality.confidence` (`HIGH`/`MEDIUM`/`LOW`/`NONE`) says how well the evidence supports the result.
+- **River evidence must be usable for any river-based level.** It is unusable if it is any of:
+  - unavailable;
+  - stale;
+  - of suspect quality;
+  - a fallback;
+  - in unresolved conflict;
+  - of an unassessable grade (`VERIFIED_SOURCE_STALE`, `UNVERIFIED_LIVE`, `MIXED_UNVERIFIED`).
+
+  Unusable river evidence means `INDETERMINATE`. **Stale data is never treated as low risk.**
+- **LOW must be earned.** LOW is only issued when thresholds, a trend, the observed 24 h rainfall and the forecast are all present (`low_requires`). Otherwise the result is INDETERMINATE (rule R15). Elevated levels can still be issued from partial evidence, because they rest on positive hazard evidence.
+- **Simulated and real evidence are never mixed.** Simulated weather is rejected for real or historical river evidence, and vice versa (`WEATHER_MODE_MISMATCH`). Weather must also be within `max_weather_time_offset_hours` of the river reference time (`WEATHER_NOT_TIME_ALIGNED`). This stops today's forecast being used in a 2025 replay.
+- **Every result is explained:**
+  - `risk_factors`: each with rule, hazard level, description and the evidence values;
+  - `rules_fired`;
+  - `decision_trace`;
+  - `supporting_evidence`;
+  - `uncertainties`;
+  - `missing_data`;
+  - `recommended_monitoring_actions`: monitoring only, never response actions;
+  - `requires_human_review` and `human_review_reasons`.
+
+  `assessment_id` is a deterministic hash: the same evidence gives the same ID.
+
+### Rules
+
+| Rule | Condition (all values from config) | Hazard |
+|---|---|---|
+| R1 | River at or above the configured danger level (`threshold_evaluation`) | CRITICAL |
+| R2 | At or above the configured warning level | HIGH |
+| R3 | Below the configured warning level | LOW |
+| R4 | Rising ≥ `rapid_rise_m_per_hour` (0.30 m/h) | HIGH |
+| R5 | Rising ≥ `rise_m_per_hour` (0.10 m/h) | MODERATE |
+| R6 | Steady, falling or rising slowly | LOW |
+| R7 | Falling, the trend baseline was at or above warning and the level is now below it (recovery-like) | MODERATE |
+| R8 | Observed (model) rainfall, past 24 h: ≥ 64.5 mm MODERATE, ≥ 115.6 mm HIGH | LOW–HIGH |
+| R9 | Forecast rainfall, next 24 h: ≥ 64.5 mm MODERATE, ≥ 204.5 mm HIGH | LOW–HIGH |
+| R10 | Rain intensifying: 6 h rate > 1.5 × 24 h rate (informational) | – |
+| R11 | River rising (R4/R5) and rainfall ≥ MODERATE: raise one level. Capped at HIGH, or at CRITICAL when the river is at or above warning | +1 |
+| R12 | Heavy rain but the river is not rising notably. The river response may lag (assumed ≤ 24 h), so a steady river does **not** lower the level; re-check is recommended | – |
+| R13 | River evidence unusable | INDETERMINATE |
+| R14 | No indicator could be evaluated | INDETERMINATE |
+| R15 | Indicators are LOW but a `low_requires` input is missing | INDETERMINATE |
+
+Rainfall alone can reach at most HIGH. CRITICAL always requires river evidence.
+
+Confidence starts at HIGH and drops one step for each of:
+- no threshold comparison, or thresholds that are not official;
+- no trend;
+- incomplete weather;
+- real-mode evidence that isn't `VERIFIED_LIVE`.
+
+Because no official thresholds exist, MEDIUM is currently the best achievable confidence.
+
+Human review is required for:
+- HIGH, CRITICAL or INDETERMINATE;
+- LOW or NONE confidence;
+- any current-source conflict, even a resolved one;
+- invalid input;
+- an engine error;
+- a failed audit write.
+
+### Configuration (`config/risk_assessment.json`)
+
+All values are **prototype assumptions**. None is an official flood threshold, and none has been calibrated against observed floods at Upper Anicut.
+- The rainfall breakpoints follow the India Meteorological Department's 24-hour rainfall intensity terms: heavy 64.5 mm, very heavy 115.6 mm, extremely heavy 204.5 mm. Those terms describe point rainfall amounts. They are not flood thresholds, and here they are applied to model output.
+- The river-rise rates and the 24 h response lag are placeholders.
+- The category meanings are stored in the file and returned as `risk_level_meaning`.
+
+River warning and danger levels are not part of this file. The engine uses the River Monitoring Agent's existing `threshold_evaluation`, which is `UNKNOWN` for the real station because no official levels are configured. The simulated risk scenarios use the TEST values in `config/river_thresholds.example.json` (3.0/4.0 m, station `UPPER_ANICUT_TEST`), and every factor that uses them says "configured TEST/prototype (not official)".
+
+### Workflow integration
+
+`run_river_workflow()` takes optional `weather` and `risk_config` arguments.
+- **When it runs:** after the capability decisions, which it cannot change. A test checks that a storm-level assessment leaves every decision, the disaster state and `real_world_authorization` identical.
+- **Output:** the result is stored in `risk_assessment` and its ID in `risk_assessment_id`. The ID is part of `decision_id`.
+- **Audit:** the assessment is recorded as the `risk_assessment_completed` event in the existing append-only workflow audit log. If that write fails, `requires_human_review` is forced on (`AUDIT_WRITE_FAILED`). The existing rule that an incomplete audit trail revokes all permissions still applies.
+- **Engine failure:** if the engine raises, the result is INDETERMINATE (`R0_ENGINE_ERROR`), never LOW.
+- **Isolation:** the engine receives deep copies of the evidence, weather and reverification, so it cannot alter them or the decisions already made.
+- **Output checks:** output that is malformed, has an unknown level, or claims to authorize actions or set a state is rejected and replaced by an INDETERMINATE result. Both rejection and engine failure are logged as `risk_assessment_failed`.
+- **Mislabelled simulation:** evidence with simulation markers is always assessed as `simulated`. If the markers disagree with the label or grade, the result is INDETERMINATE (`EVIDENCE_SIMULATION_LABEL_MISMATCH`) and goes to human review.
+
+**Audit redaction (`src/audit_log.py`).** Every event is redacted before it is written:
+- values under secret-like keys (`password`, `token`, `api_key`, `authorization`, `cookie`, …);
+- credentials in URLs;
+- secret query parameters and bearer tokens;
+- strings longer than 2,000 characters are truncated.
+
+No current source uses credentials. Redaction keeps a future one out of the log. A write failure of any kind is recorded in `write_errors` (also redacted) and never raises.
+
+### Risk scenarios (simulated)
+
+These use fabricated files in `data/simulated/` (river series) and `data/simulated/weather/` (Open-Meteo-shaped payloads parsed by the real `WeatherAgent.parse_response`, relabelled `SIMULATED_TEST_DATA`). The values in the files determine the outcome. Results with `--state ALERT`:
+
+| `--risk-scenario` | River (TEST thresholds 3.0/4.0 m) | Weather | Result |
+|---|---|---|---|
+| `low-rain-valid-river` | 2.05 m, steady | 2.4 mm past / 2.4 mm forecast | **LOW**, MEDIUM confidence |
+| `heavy-forecast-stable-river` | 2.05 m, steady | 1 mm past / 130.8 mm forecast | **MODERATE**, R12 lag, re-check advised |
+| `rising-river-increasing-rain` | 2.20 → 2.70 m (+0.17 m/h) | 84 mm past (intensifying) / 90 mm forecast | **HIGH** (R5 + R11) |
+| `stale-river` | last reading 9 h old | light rain | **INDETERMINATE**, confidence NONE |
+| `missing-weather` | 2.05 m, steady | none | **INDETERMINATE** (R15) |
+| `conflicting-evidence` | 3.35 m vs 3.80 m, conflict persists | 84 mm past | **INDETERMINATE**, hazard indicated MODERATE |
+| `simulated-high-risk` | 3.70 → 4.40 m | 156 mm past / 228 mm forecast | **CRITICAL** (R1) |
+| `recovery-after-high-water` | 3.40 → 2.60 m, falling | 12 mm past / 0 mm forecast | **MODERATE** (R7), monitor recession |
+
+In every scenario the assessment is labelled `assessment_mode: simulated`, and the level appears only as `simulated_level_m`. Real-world capabilities stay denied with `EVIDENCE_SIMULATED`.
+
+### Commands
+
+```powershell
+python -m src.river_agent_workflow --mode simulated --risk-scenario simulated-high-risk --state ALERT
+python -m src.river_agent_workflow --mode simulated --scenario no-conflict --weather data/simulated/weather/light_rain.json
+python -m src.river_agent_workflow --mode auto --state ALERT --weather live      # calls Open-Meteo (past_days=1)
+python -m src.river_agent_workflow --mode historical --as-of 2025-12-30T06:00:00+05:30 --state ALERT
+python -m src.risk_assessment outputs/river_evidence.json --weather data/simulated/weather/light_rain.json  # offline, saved files; see note
+python -m pytest tests/test_risk_assessment.py -v
+```
+
+`--weather` accepts `none` (the default), `live`, a simulated weather file or a saved `weather_live_*.json` sample. The CLI does not fetch weather unless asked.
+
+**Note on saved files:** `python -m src.risk_assessment` assesses a saved evidence file, and that file must be a service envelope with a valid `evidence_id`. The committed `outputs/river_evidence.json` is an older, bare River Monitoring Agent result with no `evidence_id`, so the command above returns `INDETERMINATE` (`EVIDENCE_INTEGRITY_FAILED`). That's the integrity check failing closed, as intended. For a full assessment, use the workflow commands above (e.g. `--risk-scenario`).
+
+### Limitations of the current data for risk assessment
+
+- **Real station:**
+  - The NWDP live data are months old. `live` assessments are INDETERMINATE (`EVIDENCE_STALE`), and so are `auto` assessments, which fall back to labelled historical data (`EVIDENCE_HISTORICAL_FALLBACK`).
+  - No official warning/danger levels exist, so even fresh verified data cannot produce LOW, and river-level-based HIGH/CRITICAL are impossible. Only the trend and rainfall rules can fire.
+- **Historical replays** are labelled `historical` and describe the past moment only. Weather is normally not time-aligned with them, so it is excluded.
+- **Weather** is Open-Meteo model output for one grid cell. It is not basin-averaged rainfall and not gauge data.
+- **Missing inputs:** upstream reservoir releases (e.g. Mettur), which often dominate flows at Upper Anicut, are not ingested. Every assessment lists them in `missing_data`.
+- **Unvalidated values:** the river response lag and all breakpoints are unvalidated assumptions. There is no validated model, so no probability is given.
+
+## Disaster State Manager
+
+`src/disaster_state_manager.py` decides whether the disaster state should change: `NORMAL`, `ALERT`, `EMERGENCY` or `RECOVERY`.
+
+**A state is a classification, not a permission.**
+- The manager never authorizes, executes or triggers anything (`authorizes_actions: false`, `executes_actions: false`).
+- Capabilities are still decided only by `capability_control`. Every real-world action still needs a human.
+- Every criterion is prototype configuration, not an official Cauvery warning level, and none is hydrologically validated.
+
+### Responsibilities
+
+- **Inputs:** the current **state record**, the river evidence envelope, the reverification block, the weather evidence and the workflow's risk assessment.
+- **Independent risk check:** the supplied risk assessment is not trusted. The manager recomputes it from the same evidence and requires the same `assessment_id`, and that the supplied content still hashes to that ID. Classification always uses the recomputed assessment. An edited or mismatched one gives `RISK_ASSESSMENT_MISMATCH`.
+- **Evidence validity:** this comes from the existing evidence gate, `assess_evidence_for_authorization`, which covers integrity, conflicts and reverification, freshness, quality, fallback and simulation markers. A **real**-scope record also needs verified-live evidence that is still fresh at decision time (`capability_control.evidence_stale_at`, the gate's own rule).
+- **Classification:** each valid evaluation falls into one *condition*, the first it meets: `EMERGENCY`, `ALERT`, `NORMAL`, `IMPROVED`, or otherwise `ELEVATED`. Invalid evaluations are `INSUFFICIENT`.
+- **Transitions:** these follow the configured rules (below). Persistence is counted in **distinct, adequately sampled observations** (`observed_at`) and hours of observed time, never in repeated evaluations of the same reading. See [Sampling rules](#sampling-rules).
+- **Outcomes:** each evaluation returns one of the following, with the current, proposed and resulting state, the rule, the reasons, the supporting evidence IDs, the persistence status, the risk assessment ID, a deterministic `state_decision_id` and the updated record.
+  - `TRANSITION_ACCEPTED`
+  - `TRANSITION_REJECTED`
+  - `STATE_UNCHANGED`
+  - `INSUFFICIENT_EVIDENCE`
+  - `EVALUATION_FAILED`
+
+  Only `TRANSITION_ACCEPTED` changes the state.
+
+### Transition model
+
+| From | Allowed to | Rule (prototype) |
+|---|---|---|
+| NORMAL | ALERT | escalation: `ALERT` or `EMERGENCY` condition, 1 observation |
+| ALERT | EMERGENCY | escalation: `EMERGENCY` condition on **2 distinct observations** |
+| ALERT | NORMAL | de-escalation: `NORMAL` condition, 3 observations over ≥ 6 h, unbroken |
+| EMERGENCY | RECOVERY | de-escalation: `IMPROVED` or `NORMAL` condition, 2 observations over ≥ 2 h, unbroken |
+| RECOVERY | EMERGENCY | escalation: `EMERGENCY` condition on 2 observations |
+| RECOVERY | ALERT | escalation: `ALERT` or `EMERGENCY` condition, 1 observation |
+| RECOVERY | NORMAL | de-escalation: `NORMAL` condition, 4 observations over ≥ 12 h, unbroken |
+
+**Conditions (prototype).**
+
+| Condition | Requires |
+|---|---|
+| `EMERGENCY` | risk `CRITICAL`, confidence ≥ MEDIUM, **and** a river factor ≥ HIGH |
+| `ALERT` | risk ≥ HIGH, confidence ≥ LOW |
+| `NORMAL` | risk `LOW`, with `R3_RIVER_BELOW_WARNING` and `R6_RIVER_STEADY_OR_FALLING` |
+| `IMPROVED` | risk ≤ MODERATE, with `R3_RIVER_BELOW_WARNING`, and no `R4`/`R5` rise |
+
+Thresholds come from the River Monitoring Agent's configured (TEST) levels.
+
+**Safety rules.** The configuration loader enforces these, so a config file cannot relax them:
+- **Two-step escalation:** NORMAL → EMERGENCY is not permitted. An emergency is never declared on a single observation, so escalation passes through ALERT, and every rule into EMERGENCY needs ≥ 2 observations.
+- **No rainfall-only emergency:** the EMERGENCY condition must require a river factor; rainfall alone never qualifies. Neither does a high risk score without a river factor.
+- **De-escalation path:** EMERGENCY can only de-escalate through RECOVERY.
+- **Prompt escalation:** escalation rules are tried before de-escalation rules and ignore evaluation gaps, so a worsening condition is never held back by a recovery timer. In RECOVERY, the first EMERGENCY-level observation moves the state to ALERT immediately, and the second confirms EMERGENCY.
+- **Sustained de-escalation:** de-escalation rules need an unbroken, adequately sampled run. An `INSUFFICIENT` evaluation restarts it, and so does a silence longer than `max_gap_hours`.
+- **Hysteresis:** entering ALERT needs risk ≥ HIGH, but leaving needs a sustained `NORMAL` condition. `ELEVATED` (e.g. MODERATE) holds the current state.
+- **Requested transitions:** a caller may request a transition (`requested_state`). It is accepted only if it is permitted *and* the rules would make it anyway. Otherwise it is `TRANSITION_REJECTED` (`UNSUPPORTED_TRANSITION` / `REQUESTED_TRANSITION_NOT_SUPPORTED`).
+
+**Scopes.** A record has a scope: `real`, `historical` or `simulated`.
+- Evidence of another scope is rejected. In particular, simulated evidence can never change a real record (`SIMULATED_EVIDENCE_FOR_REAL_STATE`).
+- Simulated results are labelled `is_simulated` and `state_applies_to: SIMULATION_ONLY`.
+
+### Sampling rules
+
+Persistence must not be satisfied by readings that are bunched, duplicated or separated by long silences. For each rule, walking back from the newest reading:
+- **Duplicates count once:** the same `observed_at` never counts twice. Re-evaluating an observation replaces its earlier entry, even when an `INSUFFICIENT` evaluation came in between. Before this was fixed, a single EMERGENCY-level reading evaluated twice around an insufficient evaluation confirmed ALERT → EMERGENCY.
+- **`min_spacing_hours`** (0.5 h on every rule): a reading closer than this to the previously counted one doesn't count separately. Four readings in 20 minutes are one observation.
+- **`max_gap_hours`** (3 h on de-escalation rules): the run ends where two consecutive readings are further apart than this. A delayed or silent feed therefore cannot look like sustained improvement. Hourly readings h74–77, then nothing until h86, give one observation, not five over 12 h. The 3 h value equals the river evidence's freshness limit (`max_age_hours`).
+- **Escalation has no gap limit** (`max_gap_hours: null`), so a worsening is never held back. Its confirmation readings still need the minimum spacing.
+
+The loader requires `min_spacing_hours` > 0 on every rule and `max_gap_hours` ≥ `min_spacing_hours` on every de-escalation rule. Each result's `persistence` block reports `readings_skipped_as_duplicate_or_too_close`, `largest_gap_hours` and `run_broken_by_gap_hours`.
+
+### State record (explicit persistence)
+
+There is no global state. The record is a JSON object the caller holds and passes back each time:
+- **Contents:** `state`, `scope`, `entered_at`, a bounded `history` of evaluations, `last_transition` and a `record_id` content hash.
+- **Tampering:** an edited record (e.g. its `state` changed by hand) fails validation, and the evaluation fails closed. As with `evidence_id`, this is tamper detection, not proof of origin.
+- **Saving:** `save_state_record` writes atomically and refuses an invalid record.
+- **Ordering:** evidence older than the history is rejected (`EVIDENCE_OLDER_THAN_HISTORY`). Re-evaluating the same observation replaces its history entry, so it never counts twice.
+
+### Workflow integration
+
+`run_river_workflow(..., state_record=None, state_config=None)` evaluates the state **last**, after risk assessment, on deep copies.
+- **This run's decisions are not affected.** They were made with the caller's `disaster_state`. A test checks they are identical whether the run's transition is accepted (ALERT → EMERGENCY) or not.
+- **The new state applies next run.** The caller persists `state_evaluation.record` and passes it next time. The new state then reaches `capability_control`'s state gate in the normal way. An accepted EMERGENCY still leaves every real-world capability subject to the evidence gate and human approval.
+- **Record must match:** the record's state must equal `disaster_state` (`STATE_RECORD_MISMATCH` otherwise). Without a record, a fresh one is created from `disaster_state`, with the scope following the mode.
+- **Audit:** every outcome is written to the existing audit log, as one of:
+  - `disaster_state_transition_accepted`
+  - `disaster_state_transition_rejected`
+  - `disaster_state_unchanged`
+  - `disaster_state_insufficient_evidence`
+  - `disaster_state_evaluation_failed`
+- **Fail closed:** if that write fails, or any later workflow audit write fails, an accepted transition becomes `TRANSITION_REJECTED` (`AUDIT_WRITE_FAILED` / `AUDIT_TRAIL_INCOMPLETE`) and the caller's original record is returned. A configuration error or internal exception gives `EVALUATION_FAILED` with the state unchanged.
+
+### Configuration (`config/disaster_state.json`)
+
+| Field | Meaning |
+|---|---|
+| `allowed_transitions` | The permitted edges (table above). The safety rules are checked on load. |
+| `conditions` | Risk level, confidence, river-factor and rule-ID requirements per condition. |
+| `rules` | Per state, ordered: `to`, `when` (conditions), `kind` (escalation / de-escalation), `min_observations`, `min_hours`, `gap_breaks_run`, `min_spacing_hours`, `max_gap_hours` (see [Sampling rules](#sampling-rules)). |
+| `history_limit` | Maximum history entries kept (10–10,000). |
+| `reference` | Who approved the values. It currently says they are prototype assumptions. |
+
+**Replacing the prototype values.** To adopt hydrologist-approved criteria:
+1. Edit `conditions` and the persistence values in `rules`.
+2. Record the authority and date in `reference`.
+3. Re-run `tests/test_disaster_state_manager.py`.
+
+Some tests pin the prototype values and will need updating with them. The safety rules stay enforced whatever the values.
+
+### Commands
+
+```powershell
+# Full fabricated flood cycle (NORMAL -> ALERT -> EMERGENCY -> RECOVERY -> NORMAL), offline:
+python -m src.disaster_state_manager --sequence flood-cycle
+python -m src.disaster_state_manager --sequence short-rise --json
+
+# One step at a time with a persisted record (created if missing, written back after a fully audited run):
+python -m src.river_agent_workflow --mode simulated --risk-scenario rising-river-increasing-rain --state-file outputs/state/sim_state.json
+python -m src.river_agent_workflow --mode simulated --risk-scenario simulated-high-risk --state-file outputs/state/sim_state.json
+python -m src.river_agent_workflow --mode simulated --risk-scenario stale-river --state-file outputs/state/sim_state.json
+
+# Real scope (live/auto): the current NWDP data are stale, so the result is INSUFFICIENT_EVIDENCE:
+python -m src.river_agent_workflow --mode live --state-file outputs/state/real_state.json
+python -m pytest tests/test_disaster_state_manager.py -v
+```
+
+Sample `flood-cycle` output, abridged:
+
+```
+h 34   2.0 m  risk HIGH      ALERT      TRANSITION_ACCEPTED   NORMAL -> ALERT     (24 h rain >= 115.6 mm)
+h 46   3.1 m  risk CRITICAL  EMERGENCY  STATE_UNCHANGED       ALERT               (1 of 2 observations)
+h 48   3.4 m  risk CRITICAL  EMERGENCY  TRANSITION_ACCEPTED   ALERT -> EMERGENCY
+h 62  3.94 m  risk HIGH      ALERT      STATE_UNCHANGED       EMERGENCY           (still above warning)
+h 72  2.81 m  risk MODERATE  IMPROVED   TRANSITION_ACCEPTED   EMERGENCY -> RECOVERY
+h 86  2.25 m  risk LOW       NORMAL     TRANSITION_ACCEPTED   RECOVERY -> NORMAL  (12 h sustained)
+```
+
+`--state` and `--state-file` must agree: when the file exists, its state is used, and a contradicting `--state` is an error (exit 2). Running the same observation twice never confirms an escalation. In the commands above, `simulated-high-risk` after `rising-river-increasing-rain` stays ALERT, because both scenarios end at the same 11:00 reading.
+
+### Limitations and future validation
+
+- **Unvalidated criteria:** the conditions, the two-observation confirmation and the persistence periods are prototype assumptions. None is derived from Upper Anicut hydrology or approved by CWC or the state WRD. They need hydrologist review and back-testing on the 2021–2025 record, against known high-water events and false alarms.
+- **Inherited gaps:** the state inherits every limitation of its inputs. There are no official thresholds, the live data are stale, upstream releases are not ingested, and the weather is model output.
+- **Real-scope state is currently unreachable:** with today's real data, every real-scope evaluation is `INSUFFICIENT_EVIDENCE`.
+- **Sampling limits are prototype values:** `min_spacing_hours` 0.5 and `max_gap_hours` 3 are tied to the hourly telemetry and the 3 h freshness limit, not to the river's response time. A real feed with a different reporting interval needs them re-set. Escalation deliberately has no gap limit, so two EMERGENCY-level readings hours apart still confirm an emergency.
+- **Tamper detection only:** the record hash and the risk-assessment check detect edits. They do not authenticate the record's holder (the same limitation as the evidence gate).
+- **Persistence after an accepted transition:** an accepted transition only becomes the operative state when the caller persists the record and passes its state in next time. The CLI does this only after a fully audited run.
 
 ## Live data: CWC via the National Water Data Portal
 
@@ -579,7 +942,11 @@ print(result["status"], result["river_level_m"], result["data_quality"]["recent_
 ## Running the tests
 
 ```powershell
-python -m pytest -v                                   # everything (267 tests)
+python -m pytest -v                                   # everything (595 tests)
+python -m pytest tests/test_disaster_state_manager.py -v  # state transitions and safety rules
+python -m pytest tests/test_authorization_boundary.py -v  # forged assessments/reverification, integrity
+python -m pytest tests/test_evidence_hardening.py -v  # malformed/mislabelled evidence fails closed
+python -m pytest tests/test_risk_assessment.py -v     # risk engine, risk scenarios, audit integration
 python -m pytest tests/test_river_workflow.py -v      # workflow: conflicts, reverification, permissions
 python -m pytest tests/test_river_sources.py -v       # live connector: verification, retries, failures
 python -m pytest tests/test_river_service.py -v       # service: modes, fallback, conflicts, audit, CLI
@@ -594,11 +961,15 @@ python -m pytest tests/test_river_real_data.py -v     # regression on real CWC d
 | `test_cwc_adapter.py` | 14 | CWC export converter |
 | `test_river_sources.py` | 34 | Unit and failure-mode tests: each verification check, retries (timeout, 429, 5xx), no retry on 4xx, invalid JSON, CKAN failure, config validation, conversion |
 | `test_river_service.py` | 30 | Integration tests: verified fresh/stale live data, verification failure, outage (live vs auto), fallback, tampered snapshot, conflict downgrade, deterministic `evidence_id`, audit trail and audit failure, official thresholds/datum, CLI end to end |
-| `test_river_api.py` | 10 | HTTP end to end: health, evidence, summary, caching, 400/404/405/500 |
+| `test_river_api.py` | 12 | HTTP end to end: health, evidence, summary, caching, 400/404/405/500; POST body sent after the headers still gets its 405; a stalled POST body times out instead of hanging |
 | `test_river_real_data.py` | 6 | Real-data regression tests (counts, replays, why QC is needed) |
 | `test_capability_control.py` | 13 | State allowlists, unknown state, audit-gated execution |
 | `test_evidence_reverification.py` | 9 | Conflict policy, audited reverification request |
 | `test_river_workflow.py` | 28 | No injected conflicts; value-driven conflicts; all four scenarios; `NORMAL` cannot reverify; live verified/stale/outage; live conflict resolved by re-fetch plus independent source; primary changed; outage during re-check; conflicting source can't be its own tie-breaker; audit failure revokes permissions; capability classification; CLI |
+| `test_disaster_state_manager.py` | 106 | Sampling: duplicate timestamps (including a single EMERGENCY reading that used to confirm itself), bunched and irregular readings, the spacing and gap limits at their edges, large gaps and a delayed feed that can no longer complete recovery, escalation never held back by gaps, out-of-order readings, idempotent re-evaluation, restart from a saved record (identical to an uninterrupted run) and after an outage, invalid records and record files, invalid sampling config, simulated improvement cannot de-escalate a real record. Each transition (NORMAL→ALERT, ALERT→EMERGENCY on a second observation, EMERGENCY→RECOVERY, RECOVERY→NORMAL, ALERT→NORMAL); escalation not delayed by recovery timers; evidence gaps restart de-escalation; stale, conflicting, missing, edited and malformed evidence and records; simulated or historical evidence cannot change a real state; real scope needs fresh verified live evidence; unsupported and unbacked requested transitions; forged risk assessments; inputs not shared; decisions unaffected and EMERGENCY grants nothing; audit failures revert transitions; every outcome audited; re-evaluation and mixed conditions do not oscillate; the full cycle has exactly four transitions; invalid configuration; existing scenarios; CLI state file round trip and tamper refusal; atomic save; bounded history |
+| `test_authorization_boundary.py` | 59 | Evidence that aged after production, readings from the future and unverifiable ages are denied at decision time, in both entry points; `execute_if_authorized` never runs a real-world capability; a late audit failure revokes every real-world decision; forged, copied and mismatched assessments; malformed assessments; forged assessments against stale, simulated and conflicting evidence; bare or tampered `RESOLVED` reverification; genuine reverification still clears; edited and ID-less evidence fails integrity; valid evidence is permitted only pending human approval; state gate first; legacy calls; audit records computed eligibility; workflow cannot be talked into eligibility; legitimate workflow paths unchanged |
+| `test_evidence_hardening.py` | 96 | Wrong types, missing fields, nulls and malformed nested evidence fail closed; malformed reverification and conflict counts; every simulation marker; forged or truthy eligibility; raising/truthy loggers; workflow on malformed service output; risk engine cannot mutate inputs or decisions, and output claiming authority is rejected; stale/missing/conflicting/malformed → INDETERMINATE; audit redaction and failure recording |
+| `test_risk_assessment.py` | 65 | Config validation; every category through the eight risk scenarios; rising trends; forecast window (never partly summed); stale, missing and conflicting evidence; thresholds absent; invalid inputs and engine errors fail safe; simulated vs real vs historical labelling; weather mode mismatch and time alignment; audit event and audit failure; risk never changes permissions or the disaster state; deterministic IDs; both CLIs |
 
 All tests are offline. Live API responses are replaced by fixtures shaped like the real ones; their provenance is described in `tests/nwdp_fixtures.py`.
 
@@ -682,3 +1053,10 @@ Thresholds must be on the same datum as the data. These readings appear to be re
 4. **Official warning and danger levels** for the station, with datum and reference. None are configured, because none were found published.
 5. **QC bounds reviewed by a hydrologist**, and a `max_age_hours` justified by the feed's real reporting interval.
 6. **Live connectivity has been demonstrated:** your PC's runs on 2026-10-13 fetched and `VERIFIED` real NWDP data (snapshots in `outputs/live/`).
+7. **Risk engine inputs and validation:**
+   - upstream reservoir release data;
+   - basin rainfall (gauges, or IMD gridded data) instead of a single model grid cell;
+   - a hydrologist's review of the risk breakpoints and the river response lag;
+   - validation against past high-water events in the 2021–2025 record before any value is treated as more than a prototype.
+8. **Not yet implemented:** trust scoring and the dashboard.
+9. **State-manager validation:** the transition conditions and persistence periods need hydrologist review and testing against past high-water events (the 2021–2025 record) before they mean more than prototype behaviour. See [Disaster State Manager](#disaster-state-manager).

@@ -18,6 +18,7 @@ data/raw/
 # Runtime artefacts (live snapshots, raw API responses, audit log)
 outputs/live/
 outputs/audit/
+outputs/state/
 
 # Workflow audit logs written to outputs/
 outputs/*_audit.jsonl

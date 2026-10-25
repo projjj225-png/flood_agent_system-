@@ -1,0 +1,56 @@
+{
+  "_comment": "Disaster State Manager settings. PROTOTYPE values for software development only: none is an official Cauvery/Upper Anicut warning criterion and none has been hydrologically validated. Risk levels and rule IDs refer to the Risk Assessment Engine (config/risk_assessment.json). To adopt hydrologist-approved criteria, replace the 'conditions' and the persistence values in 'rules', record the approving authority and date in 'reference', and re-run tests/test_disaster_state_manager.py.",
+  "reference": "Prototype assumptions (not approved by any authority).",
+  "allowed_transitions": {
+    "NORMAL": ["ALERT"],
+    "ALERT": ["EMERGENCY", "NORMAL"],
+    "EMERGENCY": ["RECOVERY"],
+    "RECOVERY": ["EMERGENCY", "ALERT", "NORMAL"]
+  },
+  "conditions": {
+    "_comment": "Each evaluation is classified into the FIRST condition it meets, in this order: EMERGENCY, ALERT, NORMAL, IMPROVED; otherwise ELEVATED. Invalid, stale, conflicting or indeterminate evidence is INSUFFICIENT and never meets any condition.",
+    "EMERGENCY": {"min_risk_level": "CRITICAL", "min_confidence": "MEDIUM",
+                  "river_factor_min_level": "HIGH"},
+    "ALERT": {"min_risk_level": "HIGH", "min_confidence": "LOW",
+              "river_factor_min_level": null},
+    "NORMAL": {"max_risk_level": "LOW", "min_confidence": "LOW",
+               "required_rules_all": ["R3_RIVER_BELOW_WARNING", "R6_RIVER_STEADY_OR_FALLING"],
+               "forbidden_rules_any": []},
+    "IMPROVED": {"max_risk_level": "MODERATE", "min_confidence": "LOW",
+                 "required_rules_all": ["R3_RIVER_BELOW_WARNING"],
+                 "forbidden_rules_any": ["R4_RIVER_RAPID_RISE", "R5_RIVER_RISING"]}
+  },
+  "rules": {
+    "_comment": "Per current state, rules are tried in order; the first whose condition holds AND whose persistence is met is the transition. Persistence counts DISTINCT observations (observed_at), never repeated evaluations of the same one. Escalation rules come first and ignore evaluation gaps; de-escalation rules require an unbroken run (gap_breaks_run). Sampling: an observation counts only if it is at least min_spacing_hours after the previously counted one (0.5 h, about half the hourly telemetry interval), and a de-escalation run ends where consecutive observations are more than max_gap_hours apart (3 h, the same as the river evidence's freshness limit max_age_hours). Escalation rules use max_gap_hours null so a worsening is never held back.",
+    "NORMAL": [
+      {"to": "ALERT", "when": ["ALERT", "EMERGENCY"], "kind": "escalation",
+       "min_observations": 1, "min_hours": 0, "gap_breaks_run": false,
+       "min_spacing_hours": 0.5, "max_gap_hours": null}
+    ],
+    "ALERT": [
+      {"to": "EMERGENCY", "when": ["EMERGENCY"], "kind": "escalation",
+       "min_observations": 2, "min_hours": 0, "gap_breaks_run": false,
+       "min_spacing_hours": 0.5, "max_gap_hours": null},
+      {"to": "NORMAL", "when": ["NORMAL"], "kind": "de-escalation",
+       "min_observations": 3, "min_hours": 6, "gap_breaks_run": true,
+       "min_spacing_hours": 0.5, "max_gap_hours": 3.0}
+    ],
+    "EMERGENCY": [
+      {"to": "RECOVERY", "when": ["IMPROVED", "NORMAL"], "kind": "de-escalation",
+       "min_observations": 2, "min_hours": 2, "gap_breaks_run": true,
+       "min_spacing_hours": 0.5, "max_gap_hours": 3.0}
+    ],
+    "RECOVERY": [
+      {"to": "EMERGENCY", "when": ["EMERGENCY"], "kind": "escalation",
+       "min_observations": 2, "min_hours": 0, "gap_breaks_run": false,
+       "min_spacing_hours": 0.5, "max_gap_hours": null},
+      {"to": "ALERT", "when": ["ALERT", "EMERGENCY"], "kind": "escalation",
+       "min_observations": 1, "min_hours": 0, "gap_breaks_run": false,
+       "min_spacing_hours": 0.5, "max_gap_hours": null},
+      {"to": "NORMAL", "when": ["NORMAL"], "kind": "de-escalation",
+       "min_observations": 4, "min_hours": 12, "gap_breaks_run": true,
+       "min_spacing_hours": 0.5, "max_gap_hours": 3.0}
+    ]
+  },
+  "history_limit": 200
+}
