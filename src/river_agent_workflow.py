@@ -270,6 +270,7 @@ def run_river_workflow(
     risk_config: dict[str, Any] | None = None,
     state_record: dict[str, Any] | None = None,
     state_config: dict[str, Any] | None = None,
+    include_evidence: bool = False,
 ) -> dict[str, Any]:
     """Run the full river workflow once. Never raises for evidence problems.
 
@@ -280,6 +281,10 @@ def run_river_workflow(
 
     ``weather`` is a WeatherAgent result (or a simulated one from
     risk_assessment.load_simulated_weather); None means no weather evidence.
+
+    ``include_evidence`` adds copies of the river evidence and weather used
+    (``evidence``, ``weather_evidence``) for display, e.g. the dashboard. They
+    are added after every decision and ID is final and change nothing.
     """
     run_id = run_id or uuid.uuid4().hex
     rev_cfg = service.config.get("reverification") or {}
@@ -519,6 +524,9 @@ def run_river_workflow(
                          human_approval_required=False)
         # Nor a state change: the record goes back to what the caller supplied.
         revert_result(state_result, record_in, "AUDIT_TRAIL_INCOMPLETE")
+    if include_evidence:  # display copies only; added after everything is decided
+        result["evidence"] = copy.deepcopy(evidence)
+        result["weather_evidence"] = copy.deepcopy(weather)
     return result
 
 
@@ -555,6 +563,7 @@ def run_risk_scenario(
     capabilities: tuple[str, ...] | list[str] = DEFAULT_CAPABILITIES,
     risk_config: dict[str, Any] | None = None,
     state_record: dict[str, Any] | None = None,
+    include_evidence: bool = False,
 ) -> dict[str, Any]:
     """Simulated workflow for one risk scenario (fabricated river + weather files).
 
@@ -580,7 +589,8 @@ def run_risk_scenario(
                               as_of=as_of, cross_check_paths=spec.get("cross_check_paths"),
                               independent_paths=spec.get("independent_paths", []),
                               run_id=run_id, scenario=scenario, weather=weather,
-                              risk_config=risk_config, state_record=state_record)
+                              risk_config=risk_config, state_record=state_record,
+                              include_evidence=include_evidence)
 
 
 def _load_weather_option(value: str | None,

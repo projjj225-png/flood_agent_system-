@@ -65,8 +65,20 @@ DEFAULT_REQUEST_TIMEOUT = 10.0  # seconds
 MAX_DISCARD_BYTES = 64 * 1024
 
 
+ENDPOINTS = [
+    "GET /health",
+    "GET /river/evidence?mode=auto|live|historical|simulated[&as_of=ISO]",
+    "GET /river/summary?mode=...",
+    "GET /dashboard?mode=real",
+    "GET /dashboard?mode=simulated&scenario=NAME&state=NORMAL|ALERT|EMERGENCY|RECOVERY",
+    "GET /dashboard/scenarios",
+    "GET /dashboard/sequence?name=flood-cycle|short-rise",
+]
+
+
 def make_handler(provider: EvidenceProvider,
-                 request_timeout: float | None = DEFAULT_REQUEST_TIMEOUT):
+                 request_timeout: float | None = DEFAULT_REQUEST_TIMEOUT,
+                 dashboard: Any = None):
     class Handler(BaseHTTPRequestHandler):
         server_version = "RiverEvidenceAPI/" + SCHEMA_VERSION
 
@@ -89,6 +101,13 @@ def make_handler(provider: EvidenceProvider,
             query = {k: v[-1] for k, v in parse_qs(parts.query).items()}
             if parts.path == "/health":
                 return self._send(200, {"status": "ok", "schema_version": SCHEMA_VERSION})
+            if parts.path == "/":
+                return self._send(200, {"service": "River evidence API (read-only)",
+                                        "schema_version": SCHEMA_VERSION,
+                                        "endpoints": ENDPOINTS
+                                        if dashboard is not None else ENDPOINTS[:3]})
+            if parts.path.startswith("/dashboard") and dashboard is not None:
+                return self._dashboard(parts.path, query)
             if parts.path not in ("/river/evidence", "/river/summary"):
                 return self._send(404, {"error": "not found", "path": parts.path})
             mode = query.get("mode", MODE_AUTO)
@@ -116,6 +135,32 @@ def make_handler(provider: EvidenceProvider,
                 body["decision_support"] = evidence["decision_support"]
                 return self._send(200, body, age)
             return self._send(200, evidence, age)
+
+        def _dashboard(self, path: str, query: dict[str, str]) -> None:
+            """Read-only dashboard routes. Only whitelisted query keys are accepted."""
+            allowed = {"/dashboard": {"mode", "scenario", "state"},
+                       "/dashboard/scenarios": set(), "/dashboard/sequence": {"name"}}
+            if path not in allowed:
+                return self._send(404, {"error": "not found", "path": path})
+            unknown = sorted(set(query) - allowed[path])
+            if unknown:
+                return self._send(400, {"error": f"unknown query parameter(s): "
+                                                 f"{', '.join(unknown)}"})
+            try:
+                if path == "/dashboard/scenarios":
+                    return self._send(200, dashboard.scenarios())
+                if path == "/dashboard/sequence":
+                    doc, age = dashboard.sequence(query.get("name", "flood-cycle"))
+                else:
+                    doc, age = dashboard.get(query.get("mode", "real"), query.get("scenario"),
+                                             query.get("state"))
+            except ValueError as exc:
+                return self._send(400, {"error": str(exc)})
+            except Exception as exc:  # never crash the server; never invent data
+                return self._send(500, {"error": f"internal error: {type(exc).__name__}",
+                                        "status": "DATA_UNAVAILABLE"})
+            body = {**doc, "cache_age_seconds": round(age, 1)}
+            return self._send(500 if doc.get("error") else 200, body, age)
 
         def _discard_body(self) -> None:
             """Read (and drop) the declared request body before replying.
@@ -147,10 +192,12 @@ def make_handler(provider: EvidenceProvider,
 
 def create_server(service: RiverEvidenceService, host: str = "127.0.0.1", port: int = 8765,
                   cache_seconds: float = 300.0,
-                  request_timeout: float = DEFAULT_REQUEST_TIMEOUT) -> ThreadingHTTPServer:
+                  request_timeout: float = DEFAULT_REQUEST_TIMEOUT,
+                  dashboard: Any = None) -> ThreadingHTTPServer:
+    """``dashboard``: a DashboardService for the /dashboard routes (None: not served)."""
     return ThreadingHTTPServer((host, port),
                                make_handler(EvidenceProvider(service, cache_seconds),
-                                            request_timeout))
+                                            request_timeout, dashboard))
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -159,13 +206,24 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--cache-seconds", type=float, default=300.0)
+    parser.add_argument("--state-file", default="outputs/state/real_state.json",
+                        help="Real-scope state record shown by /dashboard (read only; never "
+                             "written by the API).")
+    parser.add_argument("--no-dashboard", action="store_true",
+                        help="Serve only the original /health and /river routes.")
     args = parser.parse_args(argv)
     try:
         service = RiverEvidenceService.from_file(args.config)
     except ValueError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 2
-    server = create_server(service, args.host, args.port, args.cache_seconds)
+    dashboard = None
+    if not args.no_dashboard:
+        from src.dashboard_service import DashboardService
+        dashboard = DashboardService(service, state_file=args.state_file,
+                                     cache_seconds=args.cache_seconds)
+    server = create_server(service, args.host, args.port, args.cache_seconds,
+                           dashboard=dashboard)
     print(f"River evidence API on http://{args.host}:{server.server_address[1]} "
           "(Ctrl+C to stop)")
     try:

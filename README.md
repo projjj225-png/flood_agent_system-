@@ -10,13 +10,12 @@ Prototype location: **Cauvery River near Upper Anicut, Tamil Nadu, India**
 - **state- and evidence-aware capability control**, which requires human approval for real-world actions;
 - the **Risk Assessment Engine**: deterministic, explainable and audited. See [Risk Assessment Engine](#risk-assessment-engine).
 - the **Disaster State Manager**: NORMAL/ALERT/EMERGENCY/RECOVERY with configurable rules, hysteresis and persistence. It proposes the *next* state and never authorizes anything. See [Disaster State Manager](#disaster-state-manager).
+- the **dashboard**: a read-only React web interface (`frontend/`) over a read-only `/dashboard` API, with real and clearly labelled simulated modes. See [Dashboard](#dashboard).
 
 Data sources: the National Water Data Portal's CWC telemetry API (verified, but its latest Upper Anicut data
 is months old), real historical CWC telemetry 2021–2025, and simulated test data.
 
-**Not implemented yet:**
-- trust scoring;
-- the dashboard.
+**Not implemented yet:** trust scoring.
 
 ## Project structure
 
@@ -29,7 +28,8 @@ flood_agent_system/
 │   ├── cwc_adapter.py              # Converts the raw CWC telemetry export to the agent's schema
 │   ├── river_sources.py            # Live NWDP/CWC API connector: retries + verification
 │   ├── river_service.py            # Entry point: modes, fallback, conflicts, audit, envelope
-│   ├── river_api.py                # Read-only local HTTP API
+│   ├── river_api.py                # Read-only local HTTP API (incl. /dashboard routes)
+│   ├── dashboard_service.py        # Read-only dashboard adapter over the workflow
 │   ├── audit_log.py                # Append-only JSONL audit log
 │   ├── capability_control.py       # State allowlists + evidence gate (never executes actions)
 │   ├── evidence_reverification.py  # Conflict policy + actual re-check of conflicting readings
@@ -49,6 +49,7 @@ flood_agent_system/
 │   ├── test_river_workflow.py           # Integrated workflow: real conflicts, reverification, permissions
 │   ├── test_risk_assessment.py          # Risk engine, risk scenarios, workflow/audit integration
 │   ├── test_disaster_state_manager.py   # State transitions, persistence, safety rules, integration
+│   ├── test_dashboard_api.py            # Dashboard adapter and /dashboard routes
 │   └── nwdp_fixtures.py                 # API-shaped fixtures (provenance in the file)
 ├── data/
 │   ├── raw/                        # Put rwl_tel_hr_cwc_009_2021_2025.csv here (gitignored, 103 MB)
@@ -63,7 +64,8 @@ flood_agent_system/
 │   ├── risk_assessment.json           # Prototype risk categories and breakpoints (NOT official)
 │   ├── disaster_state.json            # Prototype state-transition rules (NOT official)
 │   └── river_thresholds.example.json  # TEST thresholds only, not official levels
-├── outputs/                  # Weather samples, river_evidence.json; live/ and audit/ (gitignored)
+├── frontend/                 # React + TypeScript + Vite dashboard (see Dashboard)
+├── outputs/                  # Weather samples, river_evidence.json; live/, audit/, state/ (gitignored)
 ├── pytest.ini                # Lets pytest find the src package
 ├── requirements.txt          # requests + pytest (pinned)
 ├── .gitignore
@@ -263,8 +265,14 @@ python -m src.river_api --port 8765
 | `GET /river/evidence?mode=auto` | The full evidence JSON |
 | `GET /river/evidence?mode=historical&as_of=2025-12-30T06:00:00%2B05:30` | A replay (encode `+` as `%2B`) |
 | `GET /river/summary?mode=auto` | IDs plus the `decision_support` block only |
+| `GET /` | A list of the endpoints below |
+| `GET /dashboard?mode=real` | One dashboard document for real data (see [Dashboard](#dashboard)) |
+| `GET /dashboard?mode=simulated&scenario=NAME&state=STATE` | The same for a fabricated scenario, labelled `SIMULATED DATA` |
+| `GET /dashboard/scenarios` | Scenario names, sequence names and start states |
+| `GET /dashboard/sequence?name=flood-cycle` | The simulated flood-cycle state timeline |
 
 - **Binding:** it listens on `127.0.0.1` only, unless you pass `--host`.
+- **Dashboard routes:** on by default; `--no-dashboard` serves only the original routes. `--state-file` names the real-scope state record the dashboard shows. It is read only, and the API never writes it.
 - **Caching:** `live`/`auto` results are cached for `--cache-seconds` (default 300) to protect the provider. The cache age is shown in `cache_age_seconds` and the `X-Evidence-Cache-Age` header.
 - **Rejected writes:** `POST` returns 405 after reading and discarding the request body (up to 64 KiB). Requests use a 10 s socket timeout (`create_server(..., request_timeout=...)`). Reading the body matters: replying while the body sat unread made the OS reset the connection, so clients intermittently lost the 405 (`ConnectionAbortedError`).
 - **Errors:** bad requests return `400`, POST returns `405`. Internal errors return `500` with `"status": "DATA_UNAVAILABLE"`, never data.
@@ -711,6 +719,103 @@ h 86  2.25 m  risk LOW       NORMAL     TRANSITION_ACCEPTED   RECOVERY -> NORMAL
 - **Tamper detection only:** the record hash and the risk-assessment check detect edits. They do not authenticate the record's holder (the same limitation as the evidence gate).
 - **Persistence after an accepted transition:** an accepted transition only becomes the operative state when the caller persists the record and passes its state in next time. The CLI does this only after a fully audited run.
 
+## Dashboard
+
+A read-only web dashboard (`frontend/`, React 18 + TypeScript + Vite + Recharts) over the existing Python backend. It shows river, weather, risk, disaster-state, safety and audit information for one evaluation.
+
+**It displays; it never decides.**
+- Risk, evidence eligibility, state transitions and capability decisions all come from the backend workflow. The frontend computes none of them.
+- There are no controls that could run an evacuation, a dispatch, a public alert or any other real-world action. The only controls are the mode switch, the scenario pickers and a reload button.
+
+### Run it
+
+You need Python 3 with `requirements.txt` installed, and Node.js 18 or later (tested with Node 24.14 and npm 11.9). Use two terminals:
+
+```powershell
+# 1. Backend (from the project root)
+python -m src.river_api --port 8765
+
+# 2. Frontend (first time: npm install)
+cd frontend
+npm install
+npm run dev            # http://127.0.0.1:5173
+```
+
+Open **http://127.0.0.1:5173** in a browser.
+- **Demo links:** `http://127.0.0.1:5173/?mode=simulated&scenario=simulated-high-risk&state=ALERT` opens a simulated view directly.
+- **Production build:** `npm run build` writes `frontend/dist/`, and `npm run preview` serves it on http://127.0.0.1:4173 with the same API proxy.
+- **Tests:**
+  - frontend: `npm test` (Vitest);
+  - type check: `npm run typecheck`;
+  - backend: `python -m pytest`.
+
+**Restart the API after updating the code.** An API process started before this change still answers `/health` and `/river/...` but returns 404 for `/` and `/dashboard`. The page then shows "API connected" with a data error.
+
+On Windows, Python's HTTP server can bind a port that another process already holds, so a second copy on 8765 does not fail but is not reached. To use another port, run the API with `--port 8766` and start the frontend with `API_PROXY_TARGET=http://127.0.0.1:8766`.
+
+### Configuration (`frontend/.env.example`)
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `VITE_API_BASE_URL` | `/api` | Where the page sends requests. `/api` goes through the Vite dev/preview proxy, so the API needs no CORS headers. |
+| `VITE_POLL_SECONDS` | `60` | Refresh interval in real mode (minimum 30). |
+| `API_PROXY_TARGET` | `http://127.0.0.1:8765` | Used only by the Vite server, not exposed to the page: where the Python API listens. |
+
+No credentials are needed or used. Anything prefixed `VITE_` is compiled into the public bundle, so never put a secret there.
+
+### Why a new read-only endpoint, not direct API calls
+
+The existing API had only `/health`, `/river/evidence` and `/river/summary`. Risk, state evaluation, capability decisions and audit events exist only inside `run_river_workflow`. The dashboard needs them together and consistent, from *one* evaluation.
+
+Instead of exposing several endpoints the browser would have to combine, a small adapter, `src/dashboard_service.py`, runs the existing workflow and returns one sanitized JSON document. It adds no new decision logic.
+
+**Safety properties:**
+- **GET only:** POST returns 405, and there is no write route.
+- **Whitelisted inputs:** `mode` must be `real`/`simulated`, `scenario` a known scenario, `state` one of the four states, and `name` a known sequence. Any other parameter is a 400. No client input reaches a file path.
+- **No state writes:** the persisted real-state record (`--state-file`, default `outputs/state/real_state.json`) is read with the existing validation and never written. A missing or invalid record is reported, and NORMAL, the most restrictive allowlist, is assumed for capability checks.
+- **Audit:** workflow runs append to `outputs/audit/dashboard_audit.jsonl`, the existing append-only log, which is gitignored. This run's events are returned after the existing redaction.
+- **No file paths:** absolute file paths are removed from the output (project-relative paths or file names only).
+- **Caching:** results are cached for `--cache-seconds` (300 s by default, like the live-evidence cache), and only one is computed at a time. Frontend polling therefore never reaches NWDP or Open-Meteo more than once per cache period.
+- **Evidence for display:** `run_river_workflow(..., include_evidence=True)` and `run_risk_scenario(..., include_evidence=True)` return the evidence and weather they used, for display only. They are added after every decision and ID is final, and a test checks that `decision_id` is unchanged.
+
+### Real mode and simulated mode
+
+| | Real mode (default) | Simulated demo |
+|---|---|---|
+| **River** | Live NWDP/CWC (`mode=live`). **No historical fallback**, so an outage shows as unavailable. | Fabricated series from `data/simulated/` |
+| **Weather** | Live Open-Meteo (`past_days=1`) | Fabricated Open-Meteo-shaped files |
+| **State** | Persisted real record, read only | Fresh simulated record from the chosen start state; never persisted |
+| **Labelling** | `REAL DATA` | `SIMULATED DATA` banner, badges and a purple page border |
+| **Refresh** | Every 60 s (backend cache 5 min) | Fixed results; no polling |
+
+Real and simulated data are never mixed:
+- The page rejects a real-mode response that contains any simulated part, and a simulated response that isn't labelled simulated.
+- Switching mode clears the old data first.
+- The page never switches to demo mode by itself. If real evidence is unavailable, it says so.
+
+Demo mode also shows the **flood-cycle state timeline**: the fabricated cycle run through the real workflow (`/dashboard/sequence`), with river level and state over time and the four transitions.
+
+### What each field shows today (verified 25 Oct 2026)
+
+| Field | Real mode | Simulated mode |
+|---|---|---|
+| River level | **Stale.** NWDP is reachable and verified, but its latest Upper Anicut reading was months old (71.999 m, 01 Sep 2026, ~55 days). Shown as "Last known reading — NOT current", struck through. | Simulated value, labelled |
+| River trend chart | Last 48 h of the stale snapshot, with QC-rejected 72.0 m fill values marked | Scenario series |
+| Temperature, rainfall 3/6/24 h, hourly chart | **Live** Open-Meteo model values (past hours are model estimates, later hours forecasts; not gauge data) | Fabricated |
+| Risk | `INDETERMINATE` (evidence stale), confidence NONE | Scenario result (e.g. CRITICAL) |
+| Disaster state | No persisted record, so NORMAL is assumed for checks; evaluation `INSUFFICIENT_EVIDENCE` | Scenario evaluation (e.g. ALERT, EMERGENCY proposed) |
+| Capability decisions | All real-world capabilities **denied**; `RESTRICTED` | Denied (`EVIDENCE_SIMULATED`) |
+| Audit | This run's events, redacted | Same |
+
+### Dashboard limitations
+
+- **One evaluation per view:** the dashboard shows one evaluation per cache period. The state-history table comes from the record, which the dashboard never saves, so in real mode it only grows when the workflow CLI persists the record.
+- **Last-known level may be a fill value:** the latest QC-accepted real reading, 71.999 m, sits beside rejected 72.0 m fill values and may itself be a fill artefact. QC only rejects 72.000 exactly (`config/river_qc.json`, a prototype setting).
+- **Dependencies:** Recharts 2.15 is no longer actively developed (npm notes it). It works with React 18; moving to v3 is optional future work. The vendor chunk is about 160 KB gzipped.
+- **Dev server only:** `npm run dev` / `preview` with the proxy is for local demonstration. A deployed setup would need a reverse proxy serving `dist/` and forwarding `/api`.
+- **No push updates:** the backend has no push mechanism, so real mode refreshes by polling (every 60 s).
+- **Prototype values:** all thresholds and criteria shown are prototype configuration, not official Cauvery warning levels, and no flood probability is produced.
+
 ## Live data: CWC via the National Water Data Portal
 
 **Provider:** National Water Data Portal (NWDP), run by the National Water Informatics Centre (NWIC), Ministry of Jal Shakti. The data producer is CWC.
@@ -942,7 +1047,8 @@ print(result["status"], result["river_level_m"], result["data_quality"]["recent_
 ## Running the tests
 
 ```powershell
-python -m pytest -v                                   # everything (595 tests)
+python -m pytest -v                                   # everything (626 tests)
+python -m pytest tests/test_dashboard_api.py -v       # dashboard adapter and routes
 python -m pytest tests/test_disaster_state_manager.py -v  # state transitions and safety rules
 python -m pytest tests/test_authorization_boundary.py -v  # forged assessments/reverification, integrity
 python -m pytest tests/test_evidence_hardening.py -v  # malformed/mislabelled evidence fails closed
@@ -966,6 +1072,7 @@ python -m pytest tests/test_river_real_data.py -v     # regression on real CWC d
 | `test_capability_control.py` | 13 | State allowlists, unknown state, audit-gated execution |
 | `test_evidence_reverification.py` | 9 | Conflict policy, audited reverification request |
 | `test_river_workflow.py` | 28 | No injected conflicts; value-driven conflicts; all four scenarios; `NORMAL` cannot reverify; live verified/stale/outage; live conflict resolved by re-fetch plus independent source; primary changed; outage during re-check; conflicting source can't be its own tie-breaker; audit failure revokes permissions; capability classification; CLI |
+| `test_dashboard_api.py` | 31 | Routes and the endpoint index; whitelisted query values (bad mode/scenario/state, unknown parameters, `path=` attempts) give 400; no write route (POST is 405); real mode verified-fresh, stale and outage (never a historical fallback); weather failure shown and redacted; the adapter matches the workflow exactly (same assessment ID, decision ID and decision reasons); the real state record is read but never written, and an invalid or wrong-scope record falls back to NORMAL visibly; simulated mode is labelled and matches the scenario; weather hours split into estimates and forecasts; the missing-weather scenario invents nothing; the flood-cycle sequence; no absolute paths in output; the sanitizer keeps URLs, routes and units; audit events included; engine failure is a structured 500; caching, one computation under concurrent requests, cache expiry; `include_evidence` changes no decision |
 | `test_disaster_state_manager.py` | 106 | Sampling: duplicate timestamps (including a single EMERGENCY reading that used to confirm itself), bunched and irregular readings, the spacing and gap limits at their edges, large gaps and a delayed feed that can no longer complete recovery, escalation never held back by gaps, out-of-order readings, idempotent re-evaluation, restart from a saved record (identical to an uninterrupted run) and after an outage, invalid records and record files, invalid sampling config, simulated improvement cannot de-escalate a real record. Each transition (NORMAL→ALERT, ALERT→EMERGENCY on a second observation, EMERGENCY→RECOVERY, RECOVERY→NORMAL, ALERT→NORMAL); escalation not delayed by recovery timers; evidence gaps restart de-escalation; stale, conflicting, missing, edited and malformed evidence and records; simulated or historical evidence cannot change a real state; real scope needs fresh verified live evidence; unsupported and unbacked requested transitions; forged risk assessments; inputs not shared; decisions unaffected and EMERGENCY grants nothing; audit failures revert transitions; every outcome audited; re-evaluation and mixed conditions do not oscillate; the full cycle has exactly four transitions; invalid configuration; existing scenarios; CLI state file round trip and tamper refusal; atomic save; bounded history |
 | `test_authorization_boundary.py` | 59 | Evidence that aged after production, readings from the future and unverifiable ages are denied at decision time, in both entry points; `execute_if_authorized` never runs a real-world capability; a late audit failure revokes every real-world decision; forged, copied and mismatched assessments; malformed assessments; forged assessments against stale, simulated and conflicting evidence; bare or tampered `RESOLVED` reverification; genuine reverification still clears; edited and ID-less evidence fails integrity; valid evidence is permitted only pending human approval; state gate first; legacy calls; audit records computed eligibility; workflow cannot be talked into eligibility; legitimate workflow paths unchanged |
 | `test_evidence_hardening.py` | 96 | Wrong types, missing fields, nulls and malformed nested evidence fail closed; malformed reverification and conflict counts; every simulation marker; forged or truthy eligibility; raising/truthy loggers; workflow on malformed service output; risk engine cannot mutate inputs or decisions, and output claiming authority is rejected; stale/missing/conflicting/malformed → INDETERMINATE; audit redaction and failure recording |
@@ -1058,5 +1165,5 @@ Thresholds must be on the same datum as the data. These readings appear to be re
    - basin rainfall (gauges, or IMD gridded data) instead of a single model grid cell;
    - a hydrologist's review of the risk breakpoints and the river response lag;
    - validation against past high-water events in the 2021–2025 record before any value is treated as more than a prototype.
-8. **Not yet implemented:** trust scoring and the dashboard.
+8. **Not yet implemented:** trust scoring.
 9. **State-manager validation:** the transition conditions and persistence periods need hydrologist review and testing against past high-water events (the 2021–2025 record) before they mean more than prototype behaviour. See [Disaster State Manager](#disaster-state-manager).
