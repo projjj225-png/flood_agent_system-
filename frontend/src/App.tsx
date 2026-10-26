@@ -4,7 +4,7 @@ import type { DashboardDoc, Mode, ScenarioList, SequenceDoc } from "./types";
 import { fmtTime } from "./format";
 import { Badge, SimulatedBanner, Unavailable } from "./components/common";
 import {
-  AuditSection, KpiCards, RiskSection, RiverSection, SafetySection, StateSection,
+  AuditSection, EvidenceSection, KpiCards, RiskSection, RiverSection, SafetySection, StateSection,
   TimelineSection, WeatherSection,
 } from "./components/sections";
 
@@ -45,6 +45,7 @@ export function Dashboard({ doc }: { doc: DashboardDoc }) {
         <RiskSection doc={doc} />
         <StateSection doc={doc} />
         <SafetySection doc={doc} />
+        <EvidenceSection doc={doc} />
         <AuditSection doc={doc} />
       </div>
     </>

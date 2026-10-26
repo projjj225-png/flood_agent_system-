@@ -35,6 +35,7 @@ flood_agent_system/
 │   ├── evidence_reverification.py  # Conflict policy + actual re-check of conflicting readings
 │   ├── risk_assessment.py          # Risk Assessment Engine (deterministic, never authorizes)
 │   ├── disaster_state_manager.py   # Disaster State Manager (classifies; never authorizes)
+│   ├── evidence_layer.py           # Evidence records, validation, claim traceability (deny-only)
 │   └── river_agent_workflow.py     # Full loop: evidence -> conflicts -> reverification -> permissions -> risk
 ├── tests/
 │   ├── test_weather_agent.py            # Offline tests (mocked API, no internet needed)
@@ -50,6 +51,7 @@ flood_agent_system/
 │   ├── test_risk_assessment.py          # Risk engine, risk scenarios, workflow/audit integration
 │   ├── test_disaster_state_manager.py   # State transitions, persistence, safety rules, integration
 │   ├── test_dashboard_api.py            # Dashboard adapter and /dashboard routes
+│   ├── test_evidence_layer.py           # Evidence layer: records, validation, claims, reverification, audit
 │   └── nwdp_fixtures.py                 # API-shaped fixtures (provenance in the file)
 ├── data/
 │   ├── raw/                        # Put rwl_tel_hr_cwc_009_2021_2025.csv here (gitignored, 103 MB)
@@ -63,6 +65,7 @@ flood_agent_system/
 │   ├── river_qc.json                  # Prototype QC settings (data-derived, NOT official)
 │   ├── risk_assessment.json           # Prototype risk categories and breakpoints (NOT official)
 │   ├── disaster_state.json            # Prototype state-transition rules (NOT official)
+│   ├── evidence_layer.json            # Prototype validation limits for the evidence layer (NOT official)
 │   └── river_thresholds.example.json  # TEST thresholds only, not official levels
 ├── frontend/                 # React + TypeScript + Vite dashboard (see Dashboard)
 ├── outputs/                  # Weather samples, river_evidence.json; live/, audit/, state/ (gitignored)
@@ -719,6 +722,148 @@ h 86  2.25 m  risk LOW       NORMAL     TRANSITION_ACCEPTED   RECOVERY -> NORMAL
 - **Tamper detection only:** the record hash and the risk-assessment check detect edits. They do not authenticate the record's holder (the same limitation as the evidence gate).
 - **Persistence after an accepted transition:** an accepted transition only becomes the operative state when the caller persists the record and passes its state in next time. The CLI does this only after a fully audited run.
 
+## Evidence Layer
+
+`src/evidence_layer.py` turns everything a run used into structured evidence records, validates each one, and links every safety-critical claim to the records that support or contradict it. It runs inside `run_river_workflow` after the capability gate and the risk engine. **It can only deny.** If the gate allowed a real-world capability but the layer finds the evidence insufficient, or cannot audit its own findings, the permission is withdrawn with reason `EVIDENCE_LAYER_INSUFFICIENT`. It never grants, executes or approves anything, and human approval is still required for every real-world capability.
+
+### Evidence records
+
+Every record has these fields:
+
+- `evidence_id`, `kind` and `evidence_class`
+- `measurement_basis`
+- `source`: label, name, provider, reference, content hash and independence
+- `observed_at` and `retrieved_at`
+- `location`
+- `value`
+- `verification`, `freshness` and `quality`
+- `uncertainty` and `limitations`
+- `validation`: status (`VALID`, `DEGRADED` or `INVALID`) and findings
+
+| Class | Meaning |
+|---|---|
+| `LIVE_VERIFIED` | CWC telemetry fetched from NWDP for this run, verified, and fresh |
+| `LIVE_STALE` | Verified CWC telemetry, but too old to describe current conditions |
+| `LIVE_UNVERIFIED` | Labelled live but failed verification. Never used |
+| `HISTORICAL_NOT_CURRENT` | Historical file or replay (also comparison files). Describes the past |
+| `SIMULATED` | Fabricated test data. Valid only inside the simulation |
+| `MODEL_ESTIMATE` / `MODEL_STALE` | Open-Meteo numerical weather model output, **not a sensor reading** |
+| `UNAVAILABLE` | Source failed or returned nothing. No value is substituted |
+| `RECHECK` | One reverification attempt (re-fetch plus independent sources) |
+
+Record kinds:
+
+- `RIVER_LEVEL`: the primary reading.
+- `LIVE_SOURCE_ATTEMPT`: a failed or disabled live API call, kept as `UNAVAILABLE` evidence.
+- `RIVER_LEVEL_COMPARISON`: one per comparison source. Its independence is `CONFIGURED_NOT_VERIFIED`, because it is asserted by configuration and never assumed.
+- `WEATHER_MODEL`.
+- `REVERIFICATION_ATTEMPT`.
+
+### Validation (deterministic)
+
+Each check produces a finding code:
+
+| Finding | Severity | Detected when |
+|---|---|---|
+| `MISSING_VALUE` | error | A value is missing |
+| `INVALID_VALUE` | error | A value is non-numeric, NaN, or negative rain |
+| `IMPLAUSIBLE_VALUE` | error | A river level is outside the station's QC range, or rain is above physical caps |
+| `FUTURE_TIMESTAMP` | error | A timestamp is in the future |
+| `RETRIEVED_BEFORE_OBSERVED` | error | Retrieval is earlier than observation |
+| `STALE` | error | Data is older than the freshness limit. For river data, "describes past conditions, not current conditions" |
+| `SOURCE_MISMATCH` / `UNVERIFIED_SOURCE` | error | The source does not match, or failed verification |
+| `MODE_MISMATCH` | error | Simulated and real evidence are combined |
+| `LOCATION_MISMATCH` | error | The weather grid cell is too far from the station |
+| `TIME_MISMATCH` | warning | The weather time and the river observation are far apart |
+| `NOT_LIVE`, `QUALITY_*`, `INCOMPLETE_RECENT_DATA` | warning | Data is not live, has quality problems, or recent data is incomplete |
+
+Limits are in `config/evidence_layer.json`:
+
+- `max_weather_age_hours` 3
+- `max_future_skew_minutes` 5
+- `max_river_weather_time_offset_hours` 3
+- `max_weather_grid_distance_km` 10
+- rain caps of 305 mm/h and 1825 mm/24 h
+
+These are **prototype values, not official CWC or IMD thresholds**. The rain caps come from world-record point rainfall and only reject physically impossible model values. The river plausibility range is the station's prototype QC range in `config/river_qc.json`.
+
+### Claims
+
+| Claim | Statement |
+|---|---|
+| `C1_RIVER_CURRENT_LEVEL` | Current river level and when it was observed |
+| `C2_RIVER_TREND` | Trend direction and rate (depends on C1) |
+| `C3_RIVER_THRESHOLD_STATUS` | Position relative to configured thresholds: "prototype/test values, NOT official CWC thresholds", or "none are assumed or invented" |
+| `C4_MODELLED_RAINFALL_24H` | Modelled 24 h rainfall (numerical model, not a sensor) |
+| `C5_FLOOD_RISK_LEVEL` | The risk engine's level, and whether it describes current conditions |
+| `C6_EVIDENCE_SUFFICIENT_FOR_REAL_WORLD_ACTION` | Accepted **only** if the capability gate is eligible **and** C1 is accepted |
+
+Each claim gets a status:
+
+- `ACCEPTED`
+- `REJECTED`
+- `INSUFFICIENT`
+- `UNRESOLVED_CONFLICT`
+- `SIMULATED_ONLY`
+
+Each claim also lists `supporting_evidence_ids`, `contradicting_evidence_ids` and an `explanation` that says why it was accepted, rejected or insufficient.
+
+### Conflict-triggered reverification (bounded)
+
+When sources disagree, the existing reverification module is called up to `reverification.max_attempts` times. The value comes from `config/river_agent.json`: the default is 2, it must be between 1 and 5, and anything outside that falls back to 2.
+
+- **What each attempt does:** it re-fetches the primary source and reads the independent sources. A conflicting source can never be its own tie-breaker.
+- **What is recorded:** each attempt is written to `reverification.attempt_log` and audited as `evidence_reverification_attempt`.
+- **When it retries:** only when an attempt `FAILED`, for example because the source was unavailable on re-check.
+- **When the conflict stays unresolved:** if nothing resolves it, C1 and C6 stay `UNRESOLVED_CONFLICT`. The uncertainty is preserved, never averaged away.
+
+### Audit events
+
+The layer writes these events:
+
+- `evidence_record_acquired`
+- `evidence_validated`
+- `claim_evaluated`
+- `evidence_layer_completed`
+- `capability_denied_by_evidence_layer`
+- `evidence_layer_failed`
+
+Any failed audit write makes the evidence insufficient (`EVIDENCE_AUDIT_INCOMPLETE`). A crash in the layer denies every real-world capability (`EVIDENCE_LAYER_FAILED`).
+
+### Dashboard
+
+The dashboard has a new **Evidence and claims** panel. It shows:
+
+- the record counts by class, colour-coded for live, stale, historical, simulated, model and unavailable evidence;
+- the claims table, with supporting and contradicting records;
+- each record's source, its observed and retrieved times, its freshness and its validation findings;
+- the reverification attempts.
+
+The API client rejects a real-mode response that contains a `SIMULATED` evidence record.
+
+### Commands (Windows PowerShell, from the project root)
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+python -m pytest tests/test_evidence_layer.py -v
+# Conflict that a fresh re-check and an independent source resolve (simulated):
+python -m src.river_agent_workflow --mode simulated --scenario conflict-resolves --state ALERT
+# Conflict that persists / reverification that fails after bounded retries (simulated):
+python -m src.river_agent_workflow --mode simulated --scenario conflict-persists --state EMERGENCY
+python -m src.river_agent_workflow --mode simulated --scenario reverification-fails --state EMERGENCY
+# Real data with live weather (today's CWC data are stale, so C1 is INSUFFICIENT and real-world capabilities are denied):
+python -m src.river_agent_workflow --mode auto --state EMERGENCY --weather live
+```
+
+The JSON output has an `evidence_layer` key. The record and claim fields are described above.
+
+### Limitations
+
+- **No independent current river source.** The comparison files are configured, not verified as independent, so a live conflict can only be resolved against a configured independent file.
+- **The live CWC feed is stale.** The latest NWDP reading for Upper Anicut is from June 2026, so with real data C1 is never `ACCEPTED` today.
+- **Weather is not verifiable.** It is model output and cannot be checked as a measurement. It informs risk, but it never makes C6 sufficient.
+- **The checks only catch inconsistencies.** Integrity and validation detect inconsistent or edited inputs. They do not authenticate the provider.
+
 ## Dashboard
 
 A read-only web dashboard (`frontend/`, React 18 + TypeScript + Vite + Recharts) over the existing Python backend. It shows river, weather, risk, disaster-state, safety and audit information for one evaluation.
@@ -1047,7 +1192,8 @@ print(result["status"], result["river_level_m"], result["data_quality"]["recent_
 ## Running the tests
 
 ```powershell
-python -m pytest -v                                   # everything (626 tests)
+python -m pytest -v                                   # everything (679 tests)
+python -m pytest tests/test_evidence_layer.py -v      # evidence layer
 python -m pytest tests/test_dashboard_api.py -v       # dashboard adapter and routes
 python -m pytest tests/test_disaster_state_manager.py -v  # state transitions and safety rules
 python -m pytest tests/test_authorization_boundary.py -v  # forged assessments/reverification, integrity
@@ -1076,6 +1222,7 @@ python -m pytest tests/test_river_real_data.py -v     # regression on real CWC d
 | `test_disaster_state_manager.py` | 106 | Sampling: duplicate timestamps (including a single EMERGENCY reading that used to confirm itself), bunched and irregular readings, the spacing and gap limits at their edges, large gaps and a delayed feed that can no longer complete recovery, escalation never held back by gaps, out-of-order readings, idempotent re-evaluation, restart from a saved record (identical to an uninterrupted run) and after an outage, invalid records and record files, invalid sampling config, simulated improvement cannot de-escalate a real record. Each transition (NORMAL→ALERT, ALERT→EMERGENCY on a second observation, EMERGENCY→RECOVERY, RECOVERY→NORMAL, ALERT→NORMAL); escalation not delayed by recovery timers; evidence gaps restart de-escalation; stale, conflicting, missing, edited and malformed evidence and records; simulated or historical evidence cannot change a real state; real scope needs fresh verified live evidence; unsupported and unbacked requested transitions; forged risk assessments; inputs not shared; decisions unaffected and EMERGENCY grants nothing; audit failures revert transitions; every outcome audited; re-evaluation and mixed conditions do not oscillate; the full cycle has exactly four transitions; invalid configuration; existing scenarios; CLI state file round trip and tamper refusal; atomic save; bounded history |
 | `test_authorization_boundary.py` | 59 | Evidence that aged after production, readings from the future and unverifiable ages are denied at decision time, in both entry points; `execute_if_authorized` never runs a real-world capability; a late audit failure revokes every real-world decision; forged, copied and mismatched assessments; malformed assessments; forged assessments against stale, simulated and conflicting evidence; bare or tampered `RESOLVED` reverification; genuine reverification still clears; edited and ID-less evidence fails integrity; valid evidence is permitted only pending human approval; state gate first; legacy calls; audit records computed eligibility; workflow cannot be talked into eligibility; legitimate workflow paths unchanged |
 | `test_evidence_hardening.py` | 96 | Wrong types, missing fields, nulls and malformed nested evidence fail closed; malformed reverification and conflict counts; every simulation marker; forged or truthy eligibility; raising/truthy loggers; workflow on malformed service output; risk engine cannot mutate inputs or decisions, and output claiming authority is rejected; stale/missing/conflicting/malformed → INDETERMINATE; audit redaction and failure recording |
+| `test_evidence_layer.py` | 53 | Complete records for fresh verified data; deterministic IDs; stale live CWC data and historical fallback never current; future-dated rows, future/inverted timestamps, missing/invalid/implausible levels rejected; API timeouts and connection errors kept as `UNAVAILABLE` evidence; HTTP retry then success; conflict without an independent source stays unresolved with the contradicting record linked; conflict resolved by re-fetch plus independent source (human approval only); bounded retries (attempt log, audit per attempt, uncertainty preserved); success on the second attempt; `max_attempts` clamped; the three simulated reverification outcomes; simulated evidence never authorizes in any state; state policy still applies; the layer can only deny (a forged "sufficient" layer cannot override the gate); an insufficient or crashing layer withdraws real-world permissions; C6 needs C1 even when the gate is eligible; audit events present and audit failures make evidence insufficient; weather is model output, stale, future, implausible, negative, location/mode/time mismatch, unavailable is not zero; weather claims link contradicting records; thresholds never presented as official; configurable limits; dashboard block |
 | `test_risk_assessment.py` | 65 | Config validation; every category through the eight risk scenarios; rising trends; forecast window (never partly summed); stale, missing and conflicting evidence; thresholds absent; invalid inputs and engine errors fail safe; simulated vs real vs historical labelling; weather mode mismatch and time alignment; audit event and audit failure; risk never changes permissions or the disaster state; deterministic IDs; both CLIs |
 
 All tests are offline. Live API responses are replaced by fixtures shaped like the real ones; their provenance is described in `tests/nwdp_fixtures.py`.

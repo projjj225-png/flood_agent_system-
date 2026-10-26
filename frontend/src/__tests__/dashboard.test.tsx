@@ -185,3 +185,48 @@ describe("formatting", () => {
     expect(humanize("R13_INDETERMINATE_RIVER_UNUSABLE")).toBe("Indeterminate river unusable");
   });
 });
+
+describe("evidence layer", () => {
+  const stale = text(render(realStale));
+  const outage = text(render(realOutage));
+  const sim = text(render(simulated));
+
+  it("shows every safety-critical claim with its status", () => {
+    for (const t of [stale, outage, sim]) {
+      expect(t).toContain("Evidence and claims");
+      expect(t).toContain("C1_RIVER_CURRENT_LEVEL");
+      expect(t).toContain("C6_EVIDENCE_SUFFICIENT_FOR_REAL_WORLD_ACTION");
+      expect(t).toContain("INSUFFICIENT FOR REAL-WORLD ACTION");
+    }
+  });
+
+  it("distinguishes live-stale, unavailable, simulated and model evidence", () => {
+    expect(stale).toContain("Live stale");
+    expect(stale).toContain("describes past conditions, not current conditions");
+    expect(stale).toContain("Model estimate");
+    expect(stale).toContain("not a rain-gauge or sensor reading");
+    expect(outage).toContain("Unavailable");
+    expect(outage).toContain("Live source attempt");
+    expect(sim).toContain("Simulated only");
+    expect(sim).toContain("NOT official CWC thresholds");
+  });
+
+  it("never claims sufficiency for stale, unavailable or simulated evidence", () => {
+    for (const t of [stale, outage, sim]) expect(t).not.toContain("SUFFICIENT FOR HUMAN REVIEW");
+  });
+
+  it("rejects simulated evidence records inside a real-mode response", () => {
+    const doc = clone(realStale) as Record<string, any>;
+    doc.evidence_layer.records[0].evidence_class = "SIMULATED";
+    const r = parseDashboard(doc);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/simulated evidence/);
+    expect(parseDashboard({ ...clone(realStale), evidence_layer: "x" }).ok).toBe(false);
+  });
+
+  it("shows a missing layer as unavailable instead of hiding it", () => {
+    const doc = clone(realStale) as Record<string, any>;
+    delete doc.evidence_layer;
+    expect(text(render(doc))).toContain("No evidence layer in this response.");
+  });
+});

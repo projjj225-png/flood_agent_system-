@@ -22,7 +22,7 @@ export function parseDashboard(json: unknown): Result<DashboardDoc> {
     return { ok: false, error: "Response has no valid mode." };
   if (typeof json.is_simulated !== "boolean" || typeof json.generated_at !== "string")
     return { ok: false, error: "Response is missing is_simulated or generated_at." };
-  for (const key of ["weather", "river", "risk", "state", "safety", "audit"]) {
+  for (const key of ["weather", "river", "risk", "state", "safety", "evidence_layer", "audit"]) {
     if (json[key] !== undefined && json[key] !== null && !isObj(json[key]))
       return { ok: false, error: `Section "${key}" is malformed.` };
   }
@@ -32,6 +32,14 @@ export function parseDashboard(json: unknown): Result<DashboardDoc> {
   );
   if (json.mode === "real" && (json.is_simulated || simulatedParts.length > 0))
     return { ok: false, error: `Real-mode response contains simulated data (${simulatedParts.join(", ") || "flag"}); not shown.` };
+  // Evidence records are labelled too: a SIMULATED record in real mode is rejected.
+  const layer = json.evidence_layer;
+  if (isObj(layer) && layer.records !== undefined && !Array.isArray(layer.records))
+    return { ok: false, error: 'Section "evidence_layer" is malformed.' };
+  const simRecords = isObj(layer) && Array.isArray(layer.records)
+    ? layer.records.filter((r) => isObj(r) && r.evidence_class === "SIMULATED").length : 0;
+  if (json.mode === "real" && simRecords > 0)
+    return { ok: false, error: "Real-mode response contains simulated evidence records; not shown." };
   if (json.mode === "simulated" && !json.is_simulated)
     return { ok: false, error: "Simulated-mode response is not labelled simulated; not shown." };
   return { ok: true, value: json as unknown as DashboardDoc };

@@ -330,6 +330,40 @@ def safety_block(result: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+CLASS_DESCRIPTIONS = {
+    "LIVE_VERIFIED": "Live CWC telemetry, source verified and fresh",
+    "LIVE_STALE": "Verified CWC source, but the reading is old: last known, NOT current",
+    "LIVE_UNVERIFIED": "Live data that failed source verification",
+    "HISTORICAL_NOT_CURRENT": "Historical CWC data: not current conditions",
+    "SIMULATED": "Fabricated test data: never real conditions",
+    "MODEL_ESTIMATE": "Open-Meteo numerical weather model output (not a sensor reading)",
+    "MODEL_STALE": "Open-Meteo model output that is too old",
+    "UNAVAILABLE": "No evidence could be obtained; nothing is substituted",
+    "RECHECK": "A recorded reverification attempt",
+}
+
+
+def evidence_block(result: dict[str, Any]) -> dict[str, Any]:
+    """Read-only view of the workflow's evidence layer (records, validation, claims)."""
+    layer = _obj(result.get("evidence_layer"))
+    if not layer:
+        return {"available": False, "reason": "No evidence layer in this run."}
+    return {
+        "available": True,
+        "error": layer.get("error"),
+        "reference_time": layer.get("reference_time"),
+        "records": layer.get("records") or [],
+        "claims": layer.get("claims") or [],
+        "summary": _obj(layer.get("summary")),
+        "real_world_evidence_sufficient": layer.get("real_world_evidence_sufficient") is True,
+        "deny_reasons": layer.get("deny_reasons") or [],
+        "audit_complete": layer.get("audit_complete") is True,
+        "class_descriptions": CLASS_DESCRIPTIONS,
+        "disclaimer": layer.get("disclaimer"),
+        "reverification_attempts": _obj(result.get("reverification")).get("attempt_log") or [],
+    }
+
+
 # --------------------------------------------------------------------------
 # Service
 # --------------------------------------------------------------------------
@@ -480,6 +514,7 @@ class DashboardService:
             "state": state_block(result, persisted, basis, record_problem,
                                  str(self.state_file) if self.state_file else None),
             "safety": safety_block(result),
+            "evidence_layer": evidence_block(result),
             "audit": {"events": audit.entries[-MAX_AUDIT_EVENTS:],
                       "write_errors": result.get("workflow_audit_write_errors") or [],
                       "log_file": self.audit_path.name if self.audit_path else None},

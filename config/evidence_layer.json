@@ -1,0 +1,10 @@
+{
+  "_comment": "Evidence Layer settings. PROTOTYPE validation limits for software development: none is an official CWC, IMD or hydrological threshold. River plausibility uses the station's QC range from config/river_qc.json (also prototype). Rainfall plausibility caps are physical upper bounds derived from world-record point rainfall (about 305 mm in 1 h; about 1825 mm in 24 h), used only to reject impossible model values, not to judge flood risk.",
+  "max_weather_age_hours": 3.0,
+  "max_future_skew_minutes": 5.0,
+  "max_river_weather_time_offset_hours": 3.0,
+  "max_weather_grid_distance_km": 10.0,
+  "rainfall_plausible_max_mm_per_hour": 305.0,
+  "rainfall_plausible_max_mm_24h": 1825.0,
+  "reference": "Prototype assumptions (not approved by any authority)."
+}

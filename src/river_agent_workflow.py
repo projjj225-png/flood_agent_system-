@@ -63,6 +63,7 @@ from src.disaster_state_manager import (
     revert_result,
     save_state_record,
 )
+from src.evidence_layer import build_evidence_layer
 from src.evidence_reverification import (
     OUTCOME_FAILED,
     OUTCOME_PERSISTS,
@@ -198,9 +199,80 @@ def _reverify(service: RiverEvidenceService, audit_log: AuditLog, run_id: str,
         block.update(status=request["status"], outcome="UNKNOWN",
                      reason="Reverification request could not be audited.")
         return block
-    block["attempts"] = 1
     conflicts = [c for c in (evidence.get("cross_source_check") or {}).get("conflict_details", [])
                  if c.get("affects_current_evidence")]
+    block["attempt_log"] = []
+    max_attempts = _max_attempts(service)
+    for attempt in range(1, max_attempts + 1):
+        block["attempts"] = attempt
+        started = service.clock()
+        outcome = _reverify_once(service, block, conflicts, evidence, mode, as_of,
+                                 cross_check_paths, independent_paths, tolerance_m)
+        entry = {"attempt": attempt, "started_at": started.isoformat(),
+                 "outcome": outcome.get("outcome"),
+                 "fresh_evidence_id": block.get("fresh_evidence_id"),
+                 "independent_sources": outcome.get("independent_sources", []),
+                 "independent_errors": outcome.get("independent_errors", []),
+                 "conflicts_remaining": outcome.get("conflicts_remaining"),
+                 "error": outcome.get("error")}
+        block["attempt_log"].append(entry)
+        audit_log.log(run_id, "evidence_reverification_attempt", max_attempts=max_attempts,
+                      **entry)
+        # Only a failed re-check (source unavailable / unreadable) is retried; a
+        # persisting conflict is a definite result for this cycle.
+        if outcome.get("outcome") != OUTCOME_FAILED:
+            break
+    if "exception" in outcome:
+        exc_text = outcome["error"]
+        block.update(status="FAILED", outcome=OUTCOME_FAILED, error=exc_text,
+                     reason=f"Reverification failed after {block['attempts']} attempt(s): "
+                            f"{exc_text}")
+        audit_log.log(run_id, "evidence_reverification_failed", error=exc_text,
+                      attempts=block["attempts"], authorization_restricted=True)
+        return block
+    result = outcome
+    block.update(status="COMPLETED" if result["outcome"] != OUTCOME_FAILED else "FAILED",
+                 outcome=result["outcome"], reason=result["reason"],
+                 conflicts_checked=result["conflicts_checked"],
+                 conflicts_remaining=result["conflicts_remaining"],
+                 independent_sources=result["independent_sources"],
+                 independent_errors=result["independent_errors"],
+                 per_conflict=result["per_conflict"],
+                 authorization_restricted=result["outcome"] != OUTCOME_RESOLVED)
+    audit_log.log(run_id, "evidence_reverification_completed" if block["status"] == "COMPLETED"
+                  else "evidence_reverification_failed",
+                  outcome=result["outcome"], conflicts_checked=result["conflicts_checked"],
+                  conflicts_remaining=result["conflicts_remaining"],
+                  per_conflict=[{k: e[k] for k in ("observed_at", "status")}
+                                for e in result["per_conflict"]],
+                  independent_sources=result["independent_sources"],
+                  independent_errors=result["independent_errors"],
+                  fresh_evidence_id=block.get("fresh_evidence_id"),
+                  attempts=block["attempts"],
+                  authorization_restricted=block["authorization_restricted"])
+    return block
+
+
+DEFAULT_REVERIFY_ATTEMPTS = 2
+MAX_REVERIFY_ATTEMPTS = 5
+
+
+def _max_attempts(service: RiverEvidenceService) -> int:
+    """Bounded: reverification.max_attempts from the config (1-5, default 2)."""
+    value = (service.config.get("reverification") or {}).get("max_attempts",
+                                                              DEFAULT_REVERIFY_ATTEMPTS)
+    if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= \
+            MAX_REVERIFY_ATTEMPTS:
+        return DEFAULT_REVERIFY_ATTEMPTS
+    return value
+
+
+def _reverify_once(service: RiverEvidenceService, block: dict[str, Any],
+                   conflicts: list[dict[str, Any]], evidence: dict[str, Any], mode: str,
+                   as_of: datetime | None, cross_check_paths: list[str] | None,
+                   independent_paths: list[str], tolerance_m: float) -> dict[str, Any]:
+    """One re-check attempt. Returns reverify_conflicts' result, or a FAILED
+    outcome carrying ``exception`` when the primary source could not be re-read."""
     try:
         fresh = service.get_evidence(mode=mode, as_of=as_of, cross_check_paths=cross_check_paths)
         block["fresh_evidence_id"] = fresh.get("evidence_id")
@@ -226,32 +298,10 @@ def _reverify(service: RiverEvidenceService, audit_log: AuditLog, run_id: str,
                 errors.append(error)
             else:
                 independent[Path(raw).as_posix()] = readings
-        result = reverify_conflicts(conflicts, fresh_primary, independent, tolerance_m, errors)
+        return reverify_conflicts(conflicts, fresh_primary, independent, tolerance_m, errors)
     except Exception as exc:  # any failure keeps the restriction in place
-        block.update(status="FAILED", outcome=OUTCOME_FAILED, error=str(exc),
-                     reason=f"Reverification failed: {exc}")
-        audit_log.log(run_id, "evidence_reverification_failed", error=str(exc),
-                      authorization_restricted=True)
-        return block
-    block.update(status="COMPLETED" if result["outcome"] != OUTCOME_FAILED else "FAILED",
-                 outcome=result["outcome"], reason=result["reason"],
-                 conflicts_checked=result["conflicts_checked"],
-                 conflicts_remaining=result["conflicts_remaining"],
-                 independent_sources=result["independent_sources"],
-                 independent_errors=result["independent_errors"],
-                 per_conflict=result["per_conflict"],
-                 authorization_restricted=result["outcome"] != OUTCOME_RESOLVED)
-    audit_log.log(run_id, "evidence_reverification_completed" if block["status"] == "COMPLETED"
-                  else "evidence_reverification_failed",
-                  outcome=result["outcome"], conflicts_checked=result["conflicts_checked"],
-                  conflicts_remaining=result["conflicts_remaining"],
-                  per_conflict=[{k: e[k] for k in ("observed_at", "status")}
-                                for e in result["per_conflict"]],
-                  independent_sources=result["independent_sources"],
-                  independent_errors=result["independent_errors"],
-                  fresh_evidence_id=block.get("fresh_evidence_id"),
-                  authorization_restricted=block["authorization_restricted"])
-    return block
+        return {"outcome": OUTCOME_FAILED, "error": str(exc), "exception": True,
+                "conflicts_remaining": len(conflicts)}
 
 
 def run_river_workflow(
@@ -465,6 +515,40 @@ def run_river_workflow(
     result["risk_assessment"] = risk
     result["risk_assessment_id"] = risk["assessment_id"]
 
+    # Evidence layer: structured records, validation and claim traceability. It
+    # can only DENY: a real-world permission the gate allowed is withdrawn if
+    # the layer finds the evidence insufficient (or cannot audit its findings).
+    try:
+        layer = build_evidence_layer(
+            copy.deepcopy(evidence), copy.deepcopy(weather), copy.deepcopy(reverification),
+            copy.deepcopy(evidence_assessment), copy.deepcopy(risk),
+            dict(service.config.get("station") or {}),
+            (service.config.get("simulated") or {}).get("station_id"),
+            service.clock(), audit_log, run_id)
+    except Exception as exc:  # a broken layer never leaves a permission standing
+        layer = {"layer": "EvidenceLayer", "error": f"{type(exc).__name__}: {exc}",
+                 "records": [], "claims": [], "real_world_evidence_sufficient": False,
+                 "deny_reasons": ["EVIDENCE_LAYER_FAILED"], "audit_complete": False}
+        audit_log.log(run_id, "evidence_layer_failed", error=layer["error"])
+    result["evidence_layer"] = layer
+    if not layer["real_world_evidence_sufficient"]:
+        for d in decisions:
+            if d["allowed"] and d["capability"] in REAL_WORLD_CAPABILITIES:
+                d.update(allowed=False, reason="EVIDENCE_LAYER_INSUFFICIENT",
+                         human_approval_required=False,
+                         evidence_reasons=list(d.get("evidence_reasons") or [])
+                         + layer["deny_reasons"])
+                audit_log.log(run_id, "capability_denied_by_evidence_layer",
+                              capability=d["capability"], deny_reasons=layer["deny_reasons"],
+                              disaster_state=str(getattr(disaster_state, "value",
+                                                         disaster_state)))
+        real_world_allowed = [d["capability"] for d in decisions
+                              if d["allowed"] and d["capability"] in REAL_WORLD_CAPABILITIES]
+        real_world_authorization = ("HUMAN_AUTHORIZATION_REQUIRED" if real_world_allowed
+                                    else "RESTRICTED")
+        result["real_world_authorization"] = result["authorization"] = real_world_authorization
+        result["real_world_capabilities_pending_human_approval"] = real_world_allowed
+
     # Disaster state: last, on copies; it proposes the NEXT state and cannot change
     # the decisions above, which were made with the caller's state.
     state_now = service.clock()
@@ -494,7 +578,7 @@ def run_river_workflow(
 
     stable = {k: v for k, v in result.items()
               if k not in ("run_id", "service_audit", "workflow_audit_log_path",
-                           "risk_assessment", "state_evaluation")}
+                           "risk_assessment", "state_evaluation", "evidence_layer")}
     stable["capability_decisions"] = [{k: v for k, v in d.items() if k != "audit_written"}
                                       for d in decisions]
     result["decision_id"] = hashlib.sha256(json.dumps(
