@@ -253,6 +253,20 @@ def _reverify(service: RiverEvidenceService, audit_log: AuditLog, run_id: str,
     return block
 
 
+def decision_time(service: RiverEvidenceService, mode: str, as_of: datetime | None) -> datetime:
+    """The moment decisions are judged at.
+
+    A simulated or historical replay is judged at its replay time ``as_of``, the
+    same reference its freshness was computed for; the wall clock would make every
+    replayed reading look days old. Every other case (live, auto, or no ``as_of``)
+    uses the real clock, so current evidence is never judged at a caller-chosen time.
+    The service already refuses ``as_of`` for live and auto.
+    """
+    if as_of is not None and mode in (MODE_SIMULATED, MODE_HISTORICAL):
+        return as_of
+    return service.clock()
+
+
 DEFAULT_REVERIFY_ATTEMPTS = 2
 MAX_REVERIFY_ATTEMPTS = 5
 
@@ -395,6 +409,7 @@ def run_river_workflow(
             reverification["authorization_decision"] = {
                 k: decision[k] for k in ("allowed", "state", "reason", "audit_written")}
 
+    decided_at = decision_time(service, mode, as_of)
     evidence_assessment = assess_evidence_for_authorization(evidence, reverification)
     if evidence_error:
         evidence_assessment["error"] = evidence_error
@@ -404,7 +419,7 @@ def run_river_workflow(
                                                    evidence_assessment, audit_log, run_id,
                                                    evidence=evidence,
                                                    reverification=reverification,
-                                                   now=service.clock())
+                                                   now=decided_at)
                  for cap in capabilities]
     real_world_allowed = [d["capability"] for d in decisions
                           if d["allowed"] and d["capability"] in REAL_WORLD_CAPABILITIES]
@@ -490,11 +505,11 @@ def run_river_workflow(
         risk_cfg = risk_config if risk_config is not None else load_risk_config()
         risk = _checked_risk(assess_flood_risk(
             copy.deepcopy(evidence), copy.deepcopy(weather), copy.deepcopy(reverification),
-            risk_cfg, clock=service.clock))
+            risk_cfg, clock=lambda: decided_at))
     except Exception as exc:  # the engine failing must never look like low risk
         risk = failed_assessment(f"{type(exc).__name__}: {exc}",
                                  assessment_mode_for(evidence) if evidence else MODE_UNKNOWN,
-                                 clock=service.clock)
+                                 clock=lambda: decided_at)
         audit_log.log(run_id, "risk_assessment_failed", error=risk["error"],
                       risk_level=risk["risk_level"], authorizes_actions=False)
     risk["audit_written"] = audit_log.log(
@@ -524,7 +539,7 @@ def run_river_workflow(
             copy.deepcopy(evidence_assessment), copy.deepcopy(risk),
             dict(service.config.get("station") or {}),
             (service.config.get("simulated") or {}).get("station_id"),
-            service.clock(), audit_log, run_id)
+            decided_at, audit_log, run_id)
     except Exception as exc:  # a broken layer never leaves a permission standing
         layer = {"layer": "EvidenceLayer", "error": f"{type(exc).__name__}: {exc}",
                  "records": [], "claims": [], "real_world_evidence_sufficient": False,
@@ -551,7 +566,7 @@ def run_river_workflow(
 
     # Disaster state: last, on copies; it proposes the NEXT state and cannot change
     # the decisions above, which were made with the caller's state.
-    state_now = service.clock()
+    state_now = decided_at
     state_value = str(getattr(disaster_state, "value", disaster_state))
     record_in = state_record
     try:
@@ -626,10 +641,16 @@ def run_simulated_scenario(
     risk_config: dict[str, Any] | None = None,
     state_record: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Simulated workflow whose scenario selects the simulated SOURCE FILES compared."""
+    """Simulated workflow whose scenario selects the simulated SOURCE FILES compared.
+
+    ``as_of`` defaults to SIMULATED_AS_OF, as on the command line: the fabricated
+    files describe 2026-10-10, so the wall clock would grade them all STALE.
+    """
     if scenario not in SCENARIO_SOURCES:
         raise ValueError(f"scenario must be one of {', '.join(SCENARIOS)}")
     sources = SCENARIO_SOURCES[scenario]
+    if as_of is None:
+        as_of = parse_timestamp(SIMULATED_AS_OF)
     return run_river_workflow(service, audit_log, mode=MODE_SIMULATED,
                               disaster_state=disaster_state, capabilities=capabilities,
                               as_of=as_of, cross_check_paths=sources["cross_check_paths"],

@@ -122,6 +122,17 @@ describe("simulated mode", () => {
     expect(t).toContain("CRITICAL");
     expect(t).toContain("simulated-high-risk");
   });
+  it("judges the scenario at its simulated time, never as stale", () => {
+    // Regression: the backend used the wall clock, so every simulated run showed
+    // a spurious "stale at decision" denial. Real-world actions stay denied.
+    const reasons = simulated.safety.decisions.flatMap((d) => d.evidence_reasons ?? []);
+    expect(reasons).toContain("EVIDENCE_SIMULATED");
+    expect(reasons).not.toContain("EVIDENCE_STALE_AT_DECISION");
+    expect(t).not.toMatch(/stale at decision/i);
+    expect(simulated.risk.assessment_timestamp).toBe("2026-10-10T12:00:00+00:00");
+    expect(simulated.safety.decisions.filter((d) => d.allowed).map((d) => d.capability_class))
+      .not.toContain("REAL_WORLD");
+  });
   it("renders the flood-cycle timeline as simulated", () => {
     const parsed = parseSequence(sequence);
     if (!parsed.ok) throw new Error(parsed.error);

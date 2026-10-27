@@ -14,8 +14,8 @@
   "scenario": "simulated-high-risk",
   "scenario_description": "River above the TEST danger level and rising, extreme rain.",
   "start_state": "ALERT",
-  "run_id": "dc8abf114cb549f89ee1db9b29778a34",
-  "decision_id": "f83f9df69b06e7fbfc05a41c6f61ca4c01809ea71bc8a399e1f7fb50f1c442a8",
+  "run_id": "2967682ff1e64268a6b503ccda33afdb",
+  "decision_id": "ebf9c2da24f2409275d88ca1cd3f2bb44d9478fc26ff0b22d1af0e08293a08ae",
   "weather": {
     "status": "OK",
     "source": "SIMULATED weather file (fabricated): data/simulated/weather/extreme_rain.json",
@@ -758,7 +758,7 @@
     "source_label": "SIMULATED_TEST_DATA",
     "source": "CSV file (historical or simulated observations): data/simulated/river_above_danger.csv",
     "is_simulated": true,
-    "evidence_id": "51332ff3d7f52a8ff545f1c8374d8f9140fc4eb92766a89cbc900b69361add34",
+    "evidence_id": "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe",
     "level": {
       "value_m": 4.4,
       "role": "SIMULATED",
@@ -917,7 +917,7 @@
   "risk": {
     "schema_version": "1.0",
     "engine": "RiskAssessmentEngine",
-    "assessment_timestamp": "2026-10-13T08:00:00+00:00",
+    "assessment_timestamp": "2026-10-10T12:00:00+00:00",
     "reference_time": "2026-10-10T12:00:00+00:00",
     "assessment_mode": "simulated",
     "is_simulated": true,
@@ -985,7 +985,7 @@
     ],
     "supporting_evidence": {
       "river": {
-        "evidence_id": "51332ff3d7f52a8ff545f1c8374d8f9140fc4eb92766a89cbc900b69361add34",
+        "evidence_id": "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe",
         "source_label": "SIMULATED_TEST_DATA",
         "evidence_grade": "SIMULATED",
         "status": "OK",
@@ -1081,7 +1081,7 @@
     "authorizes_actions": false,
     "assigns_disaster_state": false,
     "disclaimer": "Decision support only. Categories and breakpoints are configurable prototype values, not official flood warning levels, and no calibrated flood probability is produced. This assessment does not assign a disaster state and does not authorize evacuation, emergency response or any other real-world action.",
-    "assessment_id": "874f601787cf8e710c39fd7f1de5a4582d50c18d764de7950866e98ce2bab9c0",
+    "assessment_id": "cc60ab9605fe03d3db6b7f19a0f39fc75c8e8020422c03dfbfcfb40bbd45a3c9",
     "audit_written": true
   },
   "state": {
@@ -1111,7 +1111,7 @@
         "observations": 1,
         "span_hours": 0.0,
         "evidence_ids": [
-          "51332ff3d7f52a8ff545f1c8374d8f9140fc4eb92766a89cbc900b69361add34"
+          "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe"
         ],
         "since": "2026-10-10T11:00:00+00:00",
         "readings_skipped_as_duplicate_or_too_close": 0,
@@ -1136,17 +1136,17 @@
         "max_gap_hours": null
       },
       "supporting_evidence_ids": [
-        "51332ff3d7f52a8ff545f1c8374d8f9140fc4eb92766a89cbc900b69361add34"
+        "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe"
       ],
-      "evidence_id": "51332ff3d7f52a8ff545f1c8374d8f9140fc4eb92766a89cbc900b69361add34",
+      "evidence_id": "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe",
       "observed_at": "2026-10-10T11:00:00+00:00",
-      "evaluated_at": "2026-10-13T08:00:00+00:00",
+      "evaluated_at": "2026-10-10T12:00:00+00:00",
       "risk_level": "CRITICAL",
       "is_simulated": true,
       "state_applies_to": "SIMULATION_ONLY",
       "audit_written": true,
       "record_changed": true,
-      "state_decision_id": "4005b856d5ab295c582e1dee3d995dfae4a0e4c6f3ee25e4f5c024f3c6a25d10",
+      "state_decision_id": "af22a76837eed05d60d0030ffc85aad4b3e0d83918988db56464da12394edee4",
       "authorizes_actions": false,
       "executes_actions": false
     },
@@ -1155,7 +1155,7 @@
         "observed_at": "2026-10-10T11:00:00+00:00",
         "condition": "EMERGENCY",
         "risk_level": "CRITICAL",
-        "evaluated_at": "2026-10-13T08:00:00+00:00",
+        "evaluated_at": "2026-10-10T12:00:00+00:00",
         "reasons": null
       }
     ],
@@ -1192,7 +1192,6 @@
         "evidence_reasons": [
           "EVIDENCE_SIMULATED",
           "EVIDENCE_NOT_VERIFIED_LIVE",
-          "EVIDENCE_STALE_AT_DECISION",
           "EVIDENCE_ASSESSMENT_REJECTED"
         ],
         "human_approval_required": false,
@@ -1206,7 +1205,6 @@
         "evidence_reasons": [
           "EVIDENCE_SIMULATED",
           "EVIDENCE_NOT_VERIFIED_LIVE",
-          "EVIDENCE_STALE_AT_DECISION",
           "EVIDENCE_ASSESSMENT_REJECTED"
         ],
         "human_approval_required": false,
@@ -1240,7 +1238,7 @@
     "reference_time": "2026-10-10T12:00:00+00:00",
     "records": [
       {
-        "evidence_id": "51332ff3d7f52a8ff545f1c8374d8f9140fc4eb92766a89cbc900b69361add34",
+        "evidence_id": "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe",
         "kind": "RIVER_LEVEL",
         "evidence_class": "SIMULATED",
         "measurement_basis": "FABRICATED_TEST_DATA",
@@ -1309,7 +1307,7 @@
         }
       },
       {
-        "evidence_id": "ev-0a17f3dc6e0711074ccc22b3",
+        "evidence_id": "ev-6eee3c1b60a7c92950972d39",
         "kind": "WEATHER_MODEL",
         "evidence_class": "SIMULATED",
         "measurement_basis": "FABRICATED_TEST_DATA",
@@ -1396,7 +1394,7 @@
         "value": 4.4,
         "safety_critical": true,
         "supporting_evidence_ids": [
-          "51332ff3d7f52a8ff545f1c8374d8f9140fc4eb92766a89cbc900b69361add34"
+          "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe"
         ],
         "contradicting_evidence_ids": [],
         "explanation": [
@@ -1410,7 +1408,7 @@
         "value": "RISING",
         "safety_critical": true,
         "supporting_evidence_ids": [
-          "51332ff3d7f52a8ff545f1c8374d8f9140fc4eb92766a89cbc900b69361add34"
+          "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe"
         ],
         "contradicting_evidence_ids": [],
         "explanation": [
@@ -1424,7 +1422,7 @@
         "value": "AT_OR_ABOVE_DANGER",
         "safety_critical": true,
         "supporting_evidence_ids": [
-          "51332ff3d7f52a8ff545f1c8374d8f9140fc4eb92766a89cbc900b69361add34"
+          "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe"
         ],
         "contradicting_evidence_ids": [],
         "explanation": [
@@ -1440,7 +1438,7 @@
         "value": 156.0,
         "safety_critical": true,
         "supporting_evidence_ids": [
-          "ev-0a17f3dc6e0711074ccc22b3"
+          "ev-6eee3c1b60a7c92950972d39"
         ],
         "contradicting_evidence_ids": [],
         "explanation": [
@@ -1454,7 +1452,7 @@
         "value": "CRITICAL",
         "safety_critical": true,
         "supporting_evidence_ids": [
-          "51332ff3d7f52a8ff545f1c8374d8f9140fc4eb92766a89cbc900b69361add34"
+          "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe"
         ],
         "contradicting_evidence_ids": [],
         "explanation": [
@@ -1576,11 +1574,10 @@
           "evidence_reasons": [
             "EVIDENCE_SIMULATED",
             "EVIDENCE_NOT_VERIFIED_LIVE",
-            "EVIDENCE_STALE_AT_DECISION",
             "EVIDENCE_ASSESSMENT_REJECTED"
           ],
           "human_approval_required": false,
-          "evidence_id": "51332ff3d7f52a8ff545f1c8374d8f9140fc4eb92766a89cbc900b69361add34",
+          "evidence_id": "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe",
           "eligibility_source": "COMPUTED_BY_GATE",
           "caller_assessment_supplied": true
         }
@@ -1599,11 +1596,10 @@
           "evidence_reasons": [
             "EVIDENCE_SIMULATED",
             "EVIDENCE_NOT_VERIFIED_LIVE",
-            "EVIDENCE_STALE_AT_DECISION",
             "EVIDENCE_ASSESSMENT_REJECTED"
           ],
           "human_approval_required": false,
-          "evidence_id": "51332ff3d7f52a8ff545f1c8374d8f9140fc4eb92766a89cbc900b69361add34",
+          "evidence_id": "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe",
           "eligibility_source": "COMPUTED_BY_GATE",
           "caller_assessment_supplied": true
         }
@@ -1631,7 +1627,7 @@
         "event": "risk_assessment_completed",
         "written": true,
         "details": {
-          "assessment_id": "874f601787cf8e710c39fd7f1de5a4582d50c18d764de7950866e98ce2bab9c0",
+          "assessment_id": "cc60ab9605fe03d3db6b7f19a0f39fc75c8e8020422c03dfbfcfb40bbd45a3c9",
           "risk_level": "CRITICAL",
           "hazard_indicated": "CRITICAL",
           "assessment_mode": "simulated",
@@ -1649,7 +1645,7 @@
           "missing_data": [
             "upstream_reservoir_releases"
           ],
-          "service_evidence_id": "51332ff3d7f52a8ff545f1c8374d8f9140fc4eb92766a89cbc900b69361add34",
+          "service_evidence_id": "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe",
           "weather_retrieved_at": "2026-10-10T12:00:00+00:00",
           "authorizes_actions": false
         }
@@ -1659,7 +1655,7 @@
         "event": "evidence_record_acquired",
         "written": true,
         "details": {
-          "evidence_id": "51332ff3d7f52a8ff545f1c8374d8f9140fc4eb92766a89cbc900b69361add34",
+          "evidence_id": "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe",
           "kind": "RIVER_LEVEL",
           "evidence_class": "SIMULATED",
           "source_label": "SIMULATED_TEST_DATA",
@@ -1672,7 +1668,7 @@
         "event": "evidence_validated",
         "written": true,
         "details": {
-          "evidence_id": "51332ff3d7f52a8ff545f1c8374d8f9140fc4eb92766a89cbc900b69361add34",
+          "evidence_id": "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe",
           "status": "VALID",
           "findings": [
             "SIMULATED_DATA"
@@ -1684,7 +1680,7 @@
         "event": "evidence_record_acquired",
         "written": true,
         "details": {
-          "evidence_id": "ev-0a17f3dc6e0711074ccc22b3",
+          "evidence_id": "ev-6eee3c1b60a7c92950972d39",
           "kind": "WEATHER_MODEL",
           "evidence_class": "SIMULATED",
           "source_label": "SIMULATED_TEST_DATA",
@@ -1697,7 +1693,7 @@
         "event": "evidence_validated",
         "written": true,
         "details": {
-          "evidence_id": "ev-0a17f3dc6e0711074ccc22b3",
+          "evidence_id": "ev-6eee3c1b60a7c92950972d39",
           "status": "VALID",
           "findings": []
         }
@@ -1710,7 +1706,7 @@
           "claim_id": "C1_RIVER_CURRENT_LEVEL",
           "status": "SIMULATED_ONLY",
           "supporting": [
-            "51332ff3d7f52a8ff545f1c8374d8f9140fc4eb92766a89cbc900b69361add34"
+            "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe"
           ],
           "contradicting": [],
           "explanation": [
@@ -1726,7 +1722,7 @@
           "claim_id": "C2_RIVER_TREND",
           "status": "SIMULATED_ONLY",
           "supporting": [
-            "51332ff3d7f52a8ff545f1c8374d8f9140fc4eb92766a89cbc900b69361add34"
+            "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe"
           ],
           "contradicting": [],
           "explanation": [
@@ -1742,7 +1738,7 @@
           "claim_id": "C3_RIVER_THRESHOLD_STATUS",
           "status": "SIMULATED_ONLY",
           "supporting": [
-            "51332ff3d7f52a8ff545f1c8374d8f9140fc4eb92766a89cbc900b69361add34"
+            "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe"
           ],
           "contradicting": [],
           "explanation": [
@@ -1760,7 +1756,7 @@
           "claim_id": "C4_MODELLED_RAINFALL_24H",
           "status": "SIMULATED_ONLY",
           "supporting": [
-            "ev-0a17f3dc6e0711074ccc22b3"
+            "ev-6eee3c1b60a7c92950972d39"
           ],
           "contradicting": [],
           "explanation": [
@@ -1776,7 +1772,7 @@
           "claim_id": "C5_FLOOD_RISK_LEVEL",
           "status": "SIMULATED_ONLY",
           "supporting": [
-            "51332ff3d7f52a8ff545f1c8374d8f9140fc4eb92766a89cbc900b69361add34"
+            "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe"
           ],
           "contradicting": [],
           "explanation": [
@@ -1833,17 +1829,17 @@
           "reasons": [
             "risk CRITICAL (confidence MEDIUM) meets the EMERGENCY condition, with a river factor >= HIGH"
           ],
-          "evidence_id": "51332ff3d7f52a8ff545f1c8374d8f9140fc4eb92766a89cbc900b69361add34",
+          "evidence_id": "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe",
           "observed_at": "2026-10-10T11:00:00+00:00",
-          "risk_assessment_id": "874f601787cf8e710c39fd7f1de5a4582d50c18d764de7950866e98ce2bab9c0",
+          "risk_assessment_id": "cc60ab9605fe03d3db6b7f19a0f39fc75c8e8020422c03dfbfcfb40bbd45a3c9",
           "supporting_evidence_ids": [
-            "51332ff3d7f52a8ff545f1c8374d8f9140fc4eb92766a89cbc900b69361add34"
+            "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe"
           ],
           "persistence": {
             "observations": 1,
             "span_hours": 0.0,
             "evidence_ids": [
-              "51332ff3d7f52a8ff545f1c8374d8f9140fc4eb92766a89cbc900b69361add34"
+              "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe"
             ],
             "since": "2026-10-10T11:00:00+00:00",
             "readings_skipped_as_duplicate_or_too_close": 0,
@@ -1855,7 +1851,7 @@
             "required_hours": 0.0,
             "satisfied": false
           },
-          "state_decision_id": "4005b856d5ab295c582e1dee3d995dfae4a0e4c6f3ee25e4f5c024f3c6a25d10",
+          "state_decision_id": "af22a76837eed05d60d0030ffc85aad4b3e0d83918988db56464da12394edee4",
           "authorizes_actions": false
         }
       },
@@ -1866,9 +1862,9 @@
         "details": {
           "scenario": "simulated-high-risk",
           "mode": "simulated",
-          "decision_id": "f83f9df69b06e7fbfc05a41c6f61ca4c01809ea71bc8a399e1f7fb50f1c442a8",
-          "service_evidence_id": "51332ff3d7f52a8ff545f1c8374d8f9140fc4eb92766a89cbc900b69361add34",
-          "risk_assessment_id": "874f601787cf8e710c39fd7f1de5a4582d50c18d764de7950866e98ce2bab9c0",
+          "decision_id": "ebf9c2da24f2409275d88ca1cd3f2bb44d9478fc26ff0b22d1af0e08293a08ae",
+          "service_evidence_id": "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe",
+          "risk_assessment_id": "cc60ab9605fe03d3db6b7f19a0f39fc75c8e8020422c03dfbfcfb40bbd45a3c9",
           "risk_level": "CRITICAL",
           "state_outcome": "STATE_UNCHANGED",
           "resulting_state": "ALERT",

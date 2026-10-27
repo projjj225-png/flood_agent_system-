@@ -79,12 +79,15 @@ _ABS_PATH = re.compile(r"(?:(?<![A-Za-z])[A-Za-z]:[\\/]|(?<![\w:/.~-])/(?=[A-Za-
 def sanitize(value: Any, base_dir: Path) -> Any:
     """Copy of ``value`` with absolute paths made project-relative (or reduced to a
     file name if outside the project) and secrets redacted."""
-    base = Path(base_dir).resolve().as_posix().rstrip("/") + "/"
+    base = Path(base_dir).resolve().as_posix().rstrip("/")
+    # Match the configured project root before the general path matcher so spaces
+    # in the root do not terminate the match.
+    base_pattern = re.escape(base).replace("/", r"[\\/]")
+    rooted_base = re.compile(r"(?<![A-Za-z0-9_])" + base_pattern + r"[\\/]",
+                             re.IGNORECASE)
 
     def fix_path(match: re.Match) -> str:
         text = match.group(0).replace("\\", "/")
-        if text.lower().startswith(base.lower()):
-            return text[len(base):]
         if text.startswith("/") and "/" not in text[1:]:
             return text  # e.g. "/health": a route, not a file path
         return text.rsplit("/", 1)[-1] or "[path]"
@@ -95,7 +98,10 @@ def sanitize(value: Any, base_dir: Path) -> Any:
         if isinstance(v, (list, tuple)):
             return [walk(x) for x in v]
         if isinstance(v, str):
-            return _ABS_PATH.sub(fix_path, v)
+            rooted = rooted_base.sub("", v)
+            if rooted != v:
+                rooted = rooted.replace("\\", "/")
+            return _ABS_PATH.sub(fix_path, rooted)
         return v
     return walk(redact(value))
 
