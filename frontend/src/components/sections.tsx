@@ -409,8 +409,105 @@ export function SafetySection({ doc }: { doc: DashboardDoc }) {
   );
 }
 
+// ---- Evidence layer --------------------------------------------------------------------------
+
+export const EVIDENCE_CLASS_TONE: Record<string, string> = {
+  LIVE_VERIFIED: "ok", LIVE_STALE: "warn", LIVE_UNVERIFIED: "danger",
+  HISTORICAL_NOT_CURRENT: "caution", SIMULATED: "sim", MODEL_ESTIMATE: "info",
+  MODEL_STALE: "warn", UNAVAILABLE: "unknown", RECHECK: "neutral",
+};
+export const CLAIM_TONE: Record<string, string> = {
+  ACCEPTED: "ok", REJECTED: "danger", INSUFFICIENT: "unknown",
+  UNRESOLVED_CONFLICT: "danger", SIMULATED_ONLY: "sim",
+};
+const shortId = (id: string) => id.slice(0, 11);
+
+export function EvidenceSection({ doc }: { doc: DashboardDoc }) {
+  const e = doc.evidence_layer;
+  if (!e || !e.available) {
+    return (
+      <Section id="evidence" title="Evidence and claims" subtitle="Evidence layer">
+        <Unavailable>{e?.reason ?? "No evidence layer in this response."}</Unavailable>
+      </Section>
+    );
+  }
+  const records = e.records ?? [];
+  const byId = new Map(records.map((r) => [r.evidence_id, r]));
+  const ref = (id: string) => {
+    const r = byId.get(id);
+    return <Badge key={id} tone={EVIDENCE_CLASS_TONE[r?.evidence_class ?? ""] ?? "neutral"}
+      title={id}>{shortId(id)}{r ? ` · ${humanize(r.kind)}` : ""}</Badge>;
+  };
+  const counts = e.summary?.records_by_class ?? {};
+  return (
+    <Section id="evidence" title="Evidence and claims"
+      subtitle={`Every safety-critical claim linked to its evidence · reference time ${fmtTime(e.reference_time)}`}
+      badges={<>
+        <Badge tone={e.real_world_evidence_sufficient ? "ok" : "danger"}>
+          {e.real_world_evidence_sufficient ? "SUFFICIENT FOR HUMAN REVIEW" : "INSUFFICIENT FOR REAL-WORLD ACTION"}
+        </Badge>
+        <Badge tone={e.audit_complete ? "ok" : "danger"}>{e.audit_complete ? "AUDITED" : "AUDIT INCOMPLETE"}</Badge>
+      </>}>
+      {e.error && <Unavailable>Evidence layer failed: {e.error}. Real-world capabilities are denied.</Unavailable>}
+      <ul className="chips" aria-label="Evidence by class">
+        {Object.entries(counts).map(([k, n]) => (
+          <li key={k}><Badge tone={EVIDENCE_CLASS_TONE[k] ?? "neutral"}
+            title={e.class_descriptions?.[k]}>{humanize(k)} × {n}</Badge></li>))}
+      </ul>
+      {!!e.deny_reasons?.length && <p>Deny reasons: <CodeList items={e.deny_reasons} tone="danger" /></p>}
+
+      <h3>Claims</h3>
+      <table className="table">
+        <thead><tr><th>Claim</th><th>Status</th><th>Supporting</th><th>Contradicting</th><th>Why</th></tr></thead>
+        <tbody>{(e.claims ?? []).map((c) => (
+          <tr key={c.claim_id}>
+            <td><code>{c.claim_id}</code><div className="small">{c.statement}</div></td>
+            <td><Badge tone={CLAIM_TONE[c.status] ?? "neutral"}>{humanize(c.status)}</Badge></td>
+            <td>{c.supporting_evidence_ids?.length ? c.supporting_evidence_ids.map(ref) : <span className="muted">none</span>}</td>
+            <td>{c.contradicting_evidence_ids?.length ? c.contradicting_evidence_ids.map(ref) : <span className="muted">none</span>}</td>
+            <td className="small">{(c.explanation ?? []).join(" ")}</td>
+          </tr>))}</tbody>
+      </table>
+
+      <h3>Evidence records</h3>
+      <table className="table">
+        <thead><tr><th>Evidence</th><th>Class</th><th>Source</th><th>Observed</th><th>Retrieved</th><th>Freshness</th><th>Validation</th></tr></thead>
+        <tbody>{records.map((r) => (
+          <tr key={r.evidence_id}>
+            <td><code title={r.evidence_id}>{shortId(r.evidence_id)}</code><div className="small">{humanize(r.kind)}</div>
+              {r.measurement_basis && <div className="small muted">{r.measurement_basis}</div>}</td>
+            <td><Badge tone={EVIDENCE_CLASS_TONE[r.evidence_class] ?? "neutral"}
+              title={e.class_descriptions?.[r.evidence_class]}>{humanize(r.evidence_class)}</Badge></td>
+            <td className="small">{r.source?.name ?? r.source?.label ?? "—"}
+              {r.source?.independence && <div className="muted">{humanize(r.source.independence)}</div>}</td>
+            <td>{fmtShort(r.observed_at)}</td>
+            <td>{fmtShort(r.retrieved_at)}</td>
+            <td>{r.freshness?.status ? humanize(r.freshness.status) : "—"}
+              {isNum(r.freshness?.age_hours) && <div className="small muted">{fmtAge(r.freshness?.age_hours)}</div>}</td>
+            <td><Badge tone={r.validation?.status === "VALID" ? "ok" : r.validation?.status === "DEGRADED" ? "caution" : "danger"}>
+              {r.validation?.status ?? "UNKNOWN"}</Badge>
+              {(r.validation?.findings ?? []).filter((f) => f.severity !== "info").map((f, i) => (
+                <div key={i} className="small" title={f.code}><strong>{humanize(f.code)}:</strong> {f.detail}</div>))}
+            </td>
+          </tr>))}</tbody>
+      </table>
+
+      {!!e.reverification_attempts?.length && (<>
+        <h3>Reverification attempts</h3>
+        <ol className="audit">{e.reverification_attempts.map((a, i) => (
+          <li key={i}><time>{fmtShort(a.started_at)}</time> <code>attempt {a.attempt}</code>{" "}
+            <Badge tone={a.outcome === "RESOLVED" ? "ok" : "danger"}>{humanize(a.outcome)}</Badge>
+            <span className="small muted"> conflicts remaining: {a.conflicts_remaining ?? "unknown"}{a.error ? ` · ${a.error}` : ""}</span>
+          </li>))}</ol>
+      </>)}
+      {e.disclaimer && <p className="small note">{e.disclaimer}</p>}
+    </Section>
+  );
+}
+
 const AUDIT_KEYS = ["capability", "allowed", "reason", "outcome", "risk_level", "resulting_state",
-  "real_world_authorization", "mode", "disaster_state", "error"];
+  "real_world_authorization", "mode", "disaster_state", "evidence_class", "status", "claim_id",
+  "attempt", "deny_reasons", "real_world_evidence_sufficient", "error"];
 
 export function AuditSection({ doc }: { doc: DashboardDoc }) {
   const a = doc.audit;

@@ -197,6 +197,60 @@ export interface AuditEvent {
   details?: Record<string, unknown>;
 }
 
+export interface EvidenceFinding { code: string; severity: string; detail: string }
+
+export interface EvidenceRecord {
+  evidence_id: string;
+  kind: string;
+  evidence_class: string;
+  measurement_basis?: string;
+  source?: { label?: string | null; name?: string | null; provider?: string | null;
+    reference?: string | null; independence?: string | null };
+  observed_at?: string | null;
+  retrieved_at?: string | null;
+  freshness?: { status?: string; age_hours?: number | null; max_age_hours?: number | null };
+  verification?: { status?: string };
+  uncertainty?: string[];
+  limitations?: string[];
+  validation?: { status?: string; findings?: EvidenceFinding[]; error_codes?: string[] };
+  contradicts_current_reading?: boolean;
+}
+
+export interface EvidenceClaim {
+  claim_id: string;
+  statement: string;
+  status: string;
+  safety_critical?: boolean;
+  supporting_evidence_ids?: string[];
+  contradicting_evidence_ids?: string[];
+  explanation?: string[];
+}
+
+export interface ReverificationAttempt {
+  attempt?: number;
+  started_at?: string | null;
+  outcome?: string;
+  conflicts_remaining?: number | null;
+  error?: string | null;
+}
+
+export interface EvidenceLayerBlock {
+  available: boolean;
+  reason?: string;
+  error?: string | null;
+  reference_time?: string | null;
+  records?: EvidenceRecord[];
+  claims?: EvidenceClaim[];
+  summary?: { records_by_class?: Record<string, number>; invalid_records?: string[];
+    claims_by_status?: Record<string, number> };
+  real_world_evidence_sufficient?: boolean;
+  deny_reasons?: string[];
+  audit_complete?: boolean;
+  class_descriptions?: Record<string, string>;
+  disclaimer?: string | null;
+  reverification_attempts?: ReverificationAttempt[];
+}
+
 export interface DashboardDoc {
   schema_version: string;
   generated_at: string;
@@ -216,6 +270,7 @@ export interface DashboardDoc {
   risk?: RiskBlock;
   state?: StateBlock;
   safety?: SafetyBlock;
+  evidence_layer?: EvidenceLayerBlock;
   audit?: { events?: AuditEvent[]; write_errors?: string[]; log_file?: string | null };
 }
 

@@ -122,6 +122,17 @@ describe("simulated mode", () => {
     expect(t).toContain("CRITICAL");
     expect(t).toContain("simulated-high-risk");
   });
+  it("judges the scenario at its simulated time, never as stale", () => {
+    // Regression: the backend used the wall clock, so every simulated run showed
+    // a spurious "stale at decision" denial. Real-world actions stay denied.
+    const reasons = simulated.safety.decisions.flatMap((d) => d.evidence_reasons ?? []);
+    expect(reasons).toContain("EVIDENCE_SIMULATED");
+    expect(reasons).not.toContain("EVIDENCE_STALE_AT_DECISION");
+    expect(t).not.toMatch(/stale at decision/i);
+    expect(simulated.risk.assessment_timestamp).toBe("2026-10-10T12:00:00+00:00");
+    expect(simulated.safety.decisions.filter((d) => d.allowed).map((d) => d.capability_class))
+      .not.toContain("REAL_WORLD");
+  });
   it("renders the flood-cycle timeline as simulated", () => {
     const parsed = parseSequence(sequence);
     if (!parsed.ok) throw new Error(parsed.error);
@@ -183,5 +194,50 @@ describe("formatting", () => {
   it("humanizes codes", () => {
     expect(humanize("EVIDENCE_STALE")).toBe("Evidence stale");
     expect(humanize("R13_INDETERMINATE_RIVER_UNUSABLE")).toBe("Indeterminate river unusable");
+  });
+});
+
+describe("evidence layer", () => {
+  const stale = text(render(realStale));
+  const outage = text(render(realOutage));
+  const sim = text(render(simulated));
+
+  it("shows every safety-critical claim with its status", () => {
+    for (const t of [stale, outage, sim]) {
+      expect(t).toContain("Evidence and claims");
+      expect(t).toContain("C1_RIVER_CURRENT_LEVEL");
+      expect(t).toContain("C6_EVIDENCE_SUFFICIENT_FOR_REAL_WORLD_ACTION");
+      expect(t).toContain("INSUFFICIENT FOR REAL-WORLD ACTION");
+    }
+  });
+
+  it("distinguishes live-stale, unavailable, simulated and model evidence", () => {
+    expect(stale).toContain("Live stale");
+    expect(stale).toContain("describes past conditions, not current conditions");
+    expect(stale).toContain("Model estimate");
+    expect(stale).toContain("not a rain-gauge or sensor reading");
+    expect(outage).toContain("Unavailable");
+    expect(outage).toContain("Live source attempt");
+    expect(sim).toContain("Simulated only");
+    expect(sim).toContain("NOT official CWC thresholds");
+  });
+
+  it("never claims sufficiency for stale, unavailable or simulated evidence", () => {
+    for (const t of [stale, outage, sim]) expect(t).not.toContain("SUFFICIENT FOR HUMAN REVIEW");
+  });
+
+  it("rejects simulated evidence records inside a real-mode response", () => {
+    const doc = clone(realStale) as Record<string, any>;
+    doc.evidence_layer.records[0].evidence_class = "SIMULATED";
+    const r = parseDashboard(doc);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/simulated evidence/);
+    expect(parseDashboard({ ...clone(realStale), evidence_layer: "x" }).ok).toBe(false);
+  });
+
+  it("shows a missing layer as unavailable instead of hiding it", () => {
+    const doc = clone(realStale) as Record<string, any>;
+    delete doc.evidence_layer;
+    expect(text(render(doc))).toContain("No evidence layer in this response.");
   });
 });

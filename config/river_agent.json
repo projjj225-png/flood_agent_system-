@@ -71,6 +71,8 @@
     "_comment": "Independent sources used to re-check conflicting readings. None are configured for the real station because no second real source for Upper Anicut is available; conflicts on real data therefore stay unresolved (restricted) until one is added.",
     "independent_paths": [],
     "simulated_independent_paths": [],
-    "tolerance_m": 0.005
+    "tolerance_m": 0.005,
+    "max_attempts": 2,
+    "_comment_attempts": "max_attempts: bounded re-check attempts (1-5). Only a FAILED re-check (source unavailable or unreadable) is retried; a persisting conflict is a definite result and keeps the restriction."
   }
 }
