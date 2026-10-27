@@ -1,0 +1,81 @@
+{
+  "_comment": "PROTOTYPE traffic configuration. Each segment point is a node taken from OpenStreetMap (way id in osm_way, data retrieved 2026-10-27), chosen mid-road and away from junctions so the provider snaps it to the intended road; the agent rejects a returned road farther than max_match_distance_m from the point (ROAD_MISMATCH). The Mukkombu access road was removed: in the live test on 2026-10-27 TomTom had no flow data for it and matched NH 81, 604 m away, instead. Routes are illustrative evacuation corridors from Upper Anicut (Mukkombu) to Tiruchirappalli, NOT routes agreed with the district administration. Congestion breakpoints are prototype values, NOT official standards. OSM data (c) OpenStreetMap contributors, ODbL.",
+  "provider": {
+    "name": "TomTom Traffic Flow Segment Data API",
+    "zoom": 10,
+    "api_key_env": "TOMTOM_API_KEY"
+  },
+  "congestion_thresholds": {
+    "_comment": "speed_ratio = current speed / free-flow speed. A ratio at or above a breakpoint gets that level; below heavy_min_ratio is SEVERE.",
+    "free_flow_min_ratio": 0.8,
+    "moderate_min_ratio": 0.5,
+    "heavy_min_ratio": 0.25
+  },
+  "min_confidence": 0.5,
+  "max_match_distance_m": 100,
+  "segments": [
+    {
+      "id": "NH81_MUKKOMBU_JEEYAPURAM",
+      "name": "NH 81 (Old NH 67) between Mukkombu junction and Jeeyapuram",
+      "osm_way": 97686705,
+      "latitude": 10.87623,
+      "longitude": 78.59964
+    },
+    {
+      "id": "NH81_JEEYAPURAM_EAST",
+      "name": "NH 81 (Old NH 67) riverside stretch east of Jeeyapuram",
+      "osm_way": 97686705,
+      "latitude": 10.8728,
+      "longitude": 78.62586
+    },
+    {
+      "id": "NH81_KUDAMURUTI",
+      "name": "NH 81 (Old NH 67) riverside stretch near Kudamuruti, approaching Woraiyur",
+      "osm_way": 97686705,
+      "latitude": 10.85807,
+      "longitude": 78.66532
+    },
+    {
+      "id": "MDR461_KULUMANI",
+      "name": "Trichy-Kulumani-Jeeyapuram Road (MDR 461) south of Jeeyapuram",
+      "osm_way": 202775400,
+      "latitude": 10.85866,
+      "longitude": 78.60677
+    },
+    {
+      "id": "VAYALUR_RD_SOMARASAMPETTAI",
+      "name": "Vayalur Road (MDR 461) at Somarasampettai",
+      "osm_way": 908875537,
+      "latitude": 10.81835,
+      "longitude": 78.62688
+    },
+    {
+      "id": "WORAIYUR_SALAI_ROAD",
+      "name": "Salai Road, Woraiyur",
+      "osm_way": 4730321,
+      "latitude": 10.82739,
+      "longitude": 78.67948
+    },
+    {
+      "id": "CHATHIRAM_CITY_ENTRY",
+      "name": "Chennai-Trichy-Dindigul Road (Old NH 45) near Chathiram bus stand",
+      "osm_way": 62288368,
+      "latitude": 10.82853,
+      "longitude": 78.69293
+    }
+  ],
+  "routes": [
+    {
+      "id": "EVAC_PRIMARY_NH81",
+      "name": "Mukkombu junction (NH 81) to Trichy city via NH 81 along the Cauvery (riverside)",
+      "role": "primary",
+      "segments": ["NH81_MUKKOMBU_JEEYAPURAM", "NH81_JEEYAPURAM_EAST", "NH81_KUDAMURUTI", "CHATHIRAM_CITY_ENTRY"]
+    },
+    {
+      "id": "EVAC_ALTERNATE_INLAND",
+      "name": "Mukkombu junction (NH 81) to Trichy city via Kulumani and Vayalur Road (inland)",
+      "role": "alternate",
+      "segments": ["NH81_MUKKOMBU_JEEYAPURAM", "MDR461_KULUMANI", "VAYALUR_RD_SOMARASAMPETTAI", "WORAIYUR_SALAI_ROAD", "CHATHIRAM_CITY_ENTRY"]
+    }
+  ]
+}
