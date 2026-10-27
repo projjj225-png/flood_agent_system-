@@ -1,0 +1,175 @@
+{
+ "_comment": "FABRICATED traffic for software testing. TomTom Flow Segment Data-shaped responses, parsed by the real TrafficAgent.parse_segment. Not an observation of any real road.",
+ "simulated": true,
+ "summary": "Data problems: NH 81 near Kudamuruti returns HTTP 503, Vayalur Road has low confidence (0.3), city entry lacks currentSpeed. Expect PARTIAL and ROUTE_STATUS_UNKNOWN.",
+ "retrieved_at": "2026-10-10T12:00:00+00:00",
+ "responses": {
+  "NH81_MUKKOMBU_JEEYAPURAM": {
+   "http_status": 200,
+   "body": {
+    "flowSegmentData": {
+     "frc": "FRC1",
+     "currentSpeed": 60,
+     "freeFlowSpeed": 60,
+     "currentTravelTime": 132,
+     "freeFlowTravelTime": 132,
+     "confidence": 0.95,
+     "roadClosure": false,
+     "coordinates": {
+      "coordinate": [
+       {
+        "latitude": 10.87503,
+        "longitude": 78.59814
+       },
+       {
+        "latitude": 10.87733,
+        "longitude": 78.60104
+       }
+      ]
+     },
+     "@version": "traffic-service-flow 1.0.120"
+    }
+   }
+  },
+  "NH81_JEEYAPURAM_EAST": {
+   "http_status": 200,
+   "body": {
+    "flowSegmentData": {
+     "frc": "FRC1",
+     "currentSpeed": 60,
+     "freeFlowSpeed": 60,
+     "currentTravelTime": 150,
+     "freeFlowTravelTime": 150,
+     "confidence": 0.95,
+     "roadClosure": false,
+     "coordinates": {
+      "coordinate": [
+       {
+        "latitude": 10.8716,
+        "longitude": 78.62436
+       },
+       {
+        "latitude": 10.8739,
+        "longitude": 78.62726
+       }
+      ]
+     },
+     "@version": "traffic-service-flow 1.0.120"
+    }
+   }
+  },
+  "NH81_KUDAMURUTI": {
+   "http_status": 503,
+   "body": {
+    "error": "Service temporarily unavailable"
+   }
+  },
+  "MDR461_KULUMANI": {
+   "http_status": 200,
+   "body": {
+    "flowSegmentData": {
+     "frc": "FRC3",
+     "currentSpeed": 45,
+     "freeFlowSpeed": 45,
+     "currentTravelTime": 192,
+     "freeFlowTravelTime": 192,
+     "confidence": 0.95,
+     "roadClosure": false,
+     "coordinates": {
+      "coordinate": [
+       {
+        "latitude": 10.85746,
+        "longitude": 78.60527
+       },
+       {
+        "latitude": 10.85976,
+        "longitude": 78.60817
+       }
+      ]
+     },
+     "@version": "traffic-service-flow 1.0.120"
+    }
+   }
+  },
+  "VAYALUR_RD_SOMARASAMPETTAI": {
+   "http_status": 200,
+   "body": {
+    "flowSegmentData": {
+     "frc": "FRC3",
+     "currentSpeed": 45,
+     "freeFlowSpeed": 45,
+     "currentTravelTime": 240,
+     "freeFlowTravelTime": 240,
+     "confidence": 0.3,
+     "roadClosure": false,
+     "coordinates": {
+      "coordinate": [
+       {
+        "latitude": 10.81715,
+        "longitude": 78.62538
+       },
+       {
+        "latitude": 10.81945,
+        "longitude": 78.62828
+       }
+      ]
+     },
+     "@version": "traffic-service-flow 1.0.120"
+    }
+   }
+  },
+  "WORAIYUR_SALAI_ROAD": {
+   "http_status": 200,
+   "body": {
+    "flowSegmentData": {
+     "frc": "FRC3",
+     "currentSpeed": 30,
+     "freeFlowSpeed": 30,
+     "currentTravelTime": 180,
+     "freeFlowTravelTime": 180,
+     "confidence": 0.95,
+     "roadClosure": false,
+     "coordinates": {
+      "coordinate": [
+       {
+        "latitude": 10.82619,
+        "longitude": 78.67798
+       },
+       {
+        "latitude": 10.82849,
+        "longitude": 78.68088
+       }
+      ]
+     },
+     "@version": "traffic-service-flow 1.0.120"
+    }
+   }
+  },
+  "CHATHIRAM_CITY_ENTRY": {
+   "http_status": 200,
+   "body": {
+    "flowSegmentData": {
+     "frc": "FRC2",
+     "freeFlowSpeed": 35,
+     "currentTravelTime": 123,
+     "freeFlowTravelTime": 123,
+     "confidence": 0.95,
+     "roadClosure": false,
+     "coordinates": {
+      "coordinate": [
+       {
+        "latitude": 10.82733,
+        "longitude": 78.69143
+       },
+       {
+        "latitude": 10.82963,
+        "longitude": 78.69433
+       }
+      ]
+     },
+     "@version": "traffic-service-flow 1.0.120"
+    }
+   }
+  }
+ }
+}

@@ -24,6 +24,7 @@ flood_agent_system/
 ├── src/
 │   ├── __init__.py
 │   ├── weather_agent.py            # The Weather Agent
+│   ├── traffic_agent.py            # The Traffic Agent (TomTom live or simulated scenarios)
 │   ├── river_monitoring_agent.py   # The River Monitoring Agent (CSV input, QC, thresholds)
 │   ├── cwc_adapter.py              # Converts the raw CWC telemetry export to the agent's schema
 │   ├── river_sources.py            # Live NWDP/CWC API connector: retries + verification
@@ -213,6 +214,74 @@ The code refuses to save results with the status `DATA_UNAVAILABLE`.
 > Other sources:
 > - **Historical:** real CWC hourly telemetry 2021–2025 (`data/cwc/`, see [Real data](#real-data-cwc-telemetry-20212025)).
 > - **Simulated:** `data/river_levels_simulated.csv` holds **fabricated** test values. Never present them as real measurements.
+
+## Traffic Agent
+
+`src/traffic_agent.py` monitors road segments on the evacuation corridors from Upper Anicut
+(Mukkombu) to Tiruchirappalli and reports congestion, road closures and whether each route is usable.
+It is standalone for now; it will be wired into the workflow later (capability `read_traffic`).
+
+| Step | Function | Network? |
+|---|---|---|
+| Fetch one segment | `LiveTrafficSource.fetch()` / `SimulatedTrafficSource.fetch()` | live only |
+| Parse and classify | `parse_segment(segment, payload, config, errors)` | no |
+| Route condition | `assess_route(route, segments)` | no |
+| Advisories / claims | `build_advisories(routes)`, `build_claims(...)` | no |
+| Full workflow | `TrafficAgent(source, config).run()` | live only |
+
+**Data sources.** `live` calls the TomTom Traffic Flow Segment Data API once per segment
+(needs a free API key from developer.tomtom.com in `TOMTOM_API_KEY`). `simulated` reads a
+**fabricated** TomTom-shaped scenario from `data/simulated/traffic/`; it is parsed by the same code
+and labelled `SIMULATED_TEST_DATA` (`is_simulated: true` on the result and every claim).
+
+**Rules.**
+- Segment condition from `speed_ratio = current / free-flow speed`: `FREE_FLOW` ≥ 0.8, `MODERATE` ≥ 0.5,
+  `HEAVY` ≥ 0.25, otherwise `SEVERE`; `CLOSED` when the provider reports `roadClosure`.
+  Breakpoints are prototype values in `config/traffic_agent.json`, not official standards.
+- A segment with missing or invalid data is `UNKNOWN`, never free flow. A route is `BLOCKED` if any
+  segment is closed, `UNKNOWN` if any segment is unknown, otherwise its worst segment's condition.
+- Provider confidence below `min_confidence` (0.5) is flagged `low_confidence`; a low-confidence
+  alternate route is never recommended.
+- Advisories (`CONSIDER_ALTERNATE_ROUTE`, `NO_CLEAR_ROUTE`, `ROUTE_STATUS_UNKNOWN`) are
+  **advisory only** and marked `NOT_AUTHORIZED`. The agent never authorizes or executes an action.
+- `claims` (segment and route conditions, with evidence and confidence) are the output for the
+  Evidence Verification Engine. Unknown items make no claim.
+- **Road matching is verified.** If the road TomTom returns is more than `max_match_distance_m` (100 m)
+  from the configured point, the segment is `UNKNOWN` (`ROAD_MISMATCH`): its speeds describe a different
+  road. (The Mukkombu access road was dropped for this reason: TomTom has no flow data for it and
+  matched NH 81, 605 m away.)
+- **Duplicate readings are flagged.** TomTom returns long segments (e.g. 24.5 km of NH 81), so two points
+  can get the same reading. The later one gets `duplicate_of` and makes no separate claim, so one
+  measurement is never counted as two independent pieces of evidence.
+- The API key never appears in the output; URLs and error messages are redacted. After HTTP
+  401/403/429 the agent stops requesting the remaining segments to save quota.
+
+Segment points are OpenStreetMap road nodes (way ids in the config), chosen mid-road away from junctions. Routes: primary = Mukkombu → NH 81 (Old NH 67) along the Cauvery → Chathiram; alternate = Mukkombu → Jeeyapuram → MDR 461 via Kulumani → Vayalur Road (Somarasampettai) → Woraiyur Salai Road → Chathiram. TomTom snaps each
+point to the nearest road and returns it in `returned_road`.
+
+### Running the Traffic Agent
+
+```powershell
+python -m src.traffic_agent --list-scenarios
+python -m src.traffic_agent --mode simulated --scenario flood_road_closure
+python -m src.traffic_agent --mode simulated --scenario evacuation_congestion --json
+python -m src.traffic_agent --mode simulated --scenario degraded_data --save
+
+$env:TOMTOM_API_KEY = "your-key-here"     # PowerShell, current window only
+python -m src.traffic_agent                # live mode (default)
+python -m src.traffic_agent --save         # saves outputs/traffic_live_<UTC time>.json
+python -m pytest tests/test_traffic_agent.py -v
+```
+
+| Scenario | Expected result |
+|---|---|
+| `normal_flow` | everything `FREE_FLOW`, no advisory |
+| `evacuation_congestion` | primary `SEVERE`, alternate `MODERATE` → `CONSIDER_ALTERNATE_ROUTE` |
+| `flood_road_closure` | riverside NH 81 east of Jeeyapuram closed → primary `BLOCKED` → `CONSIDER_ALTERNATE_ROUTE` |
+| `shared_nh81_closed` | NH 81 stretch shared by both routes closed → both `BLOCKED` → `NO_CLEAR_ROUTE` |
+| `degraded_data` | HTTP 503, missing speed, low confidence → `PARTIAL`, routes `UNKNOWN` |
+
+Exit codes: `0` data available, `1` `DATA_UNAVAILABLE`, `2` bad config or scenario.
 
 ## River evidence service (recommended entry point)
 
