@@ -527,6 +527,30 @@ def test_invalid_config_is_rejected(mutate, message):
         validate_state_config(raw)
 
 
+@pytest.mark.parametrize("mutate", [
+    lambda c: c["allowed_transitions"].update(RECOVERY=["NORMAL"]),
+    lambda c: c["rules"]["EMERGENCY"][0].update(when=["ALERT"]),
+    lambda c: c["rules"]["EMERGENCY"][0].update(kind="escalation"),
+])
+def test_state_config_cannot_relax_legal_transition_safety(mutate):
+    raw = copy.deepcopy(RAW_CFG)
+    mutate(raw)
+    with pytest.raises(ValueError):
+        validate_state_config(raw)
+
+
+def test_state_record_rejects_bad_metadata_and_transition():
+    record = sim_record("NORMAL")
+    record["entered_at"] = "not-a-timestamp"
+    record["record_id"] = _record_digest(record)
+    assert "record.entered_at: not a timestamp" in validate_state_record(record)
+
+    record = sim_record("NORMAL")
+    record["last_transition"] = {"from": "NORMAL", "to": "EMERGENCY"}
+    record["record_id"] = _record_digest(record)
+    assert "record.last_transition: illegal transition" in validate_state_record(record)
+
+
 def test_workflow_with_bad_config_keeps_state_and_decisions(tmp_path, monkeypatch):
     def broken():
         raise ValueError("State config: broken")

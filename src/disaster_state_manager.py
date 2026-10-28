@@ -69,6 +69,12 @@ DEFAULT_STATE_CONFIG_PATH = PROJECT_DIR / "config" / "disaster_state.json"
 STATES = tuple(s.value for s in DisasterState)
 NORMAL, ALERT, EMERGENCY, RECOVERY = STATES
 SCOPES = (MODE_REAL, MODE_HISTORICAL, MODE_SIMULATED)
+LEGAL_TRANSITIONS = {
+    NORMAL: (ALERT,),
+    ALERT: (EMERGENCY, NORMAL),
+    EMERGENCY: (RECOVERY,),
+    RECOVERY: (EMERGENCY, ALERT, NORMAL),
+}
 
 ACCEPTED = "TRANSITION_ACCEPTED"
 REJECTED = "TRANSITION_REJECTED"
@@ -146,6 +152,9 @@ def validate_state_config(config: Any) -> dict[str, Any]:
         raise ValueError("State config: NORMAL -> EMERGENCY is not permitted; escalation "
                          "passes through ALERT so an emergency is never declared on a "
                          "single observation.")
+    if any(tuple(clean_allowed[state]) != LEGAL_TRANSITIONS[state] for state in STATES):
+        raise ValueError("State config: allowed_transitions does not match the legal "
+                         "NORMAL -> ALERT -> EMERGENCY -> RECOVERY -> NORMAL cycle.")
 
     conditions = config.get("conditions")
     if not isinstance(conditions, dict) or not set(CONDITION_ORDER) <= set(conditions):
@@ -206,6 +215,12 @@ def validate_state_config(config: Any) -> dict[str, Any]:
                 raise ValueError(f"State config: {where}.when must list conditions from "
                                  f"{', '.join(CONDITION_ORDER)}.")
             kind = _level(rule.get("kind"), f"{where}.kind", RULE_KINDS)
+            expected_kind = ("escalation" if (source, to) in (
+                (NORMAL, ALERT), (ALERT, EMERGENCY), (RECOVERY, EMERGENCY),
+                (RECOVERY, ALERT)) else "de-escalation")
+            if kind != expected_kind:
+                raise ValueError(f"State config: {where}.kind must be {expected_kind} "
+                                 f"for {source} -> {to}.")
             obs = rule.get("min_observations")
             hours = rule.get("min_hours")
             gap = rule.get("gap_breaks_run")
@@ -235,6 +250,17 @@ def validate_state_config(config: Any) -> dict[str, Any]:
             if to == EMERGENCY and obs < 2:
                 raise ValueError(f"State config: {where}: an EMERGENCY transition needs at "
                                  "least 2 observations.")
+            allowed_conditions = {
+                (NORMAL, ALERT): {COND_ALERT, COND_EMERGENCY},
+                (ALERT, EMERGENCY): {COND_EMERGENCY},
+                (ALERT, NORMAL): {COND_NORMAL},
+                (EMERGENCY, RECOVERY): {COND_IMPROVED, COND_NORMAL},
+                (RECOVERY, EMERGENCY): {COND_EMERGENCY},
+                (RECOVERY, ALERT): {COND_ALERT, COND_EMERGENCY},
+                (RECOVERY, NORMAL): {COND_NORMAL},
+            }[(source, to)]
+            if not set(when) <= allowed_conditions:
+                raise ValueError(f"State config: {where}.when is unsafe for {source} -> {to}.")
             if kind == "de-escalation" and not gap:
                 raise ValueError(f"State config: {where}: de-escalation needs an unbroken "
                                  "run (gap_breaks_run true).")
@@ -292,6 +318,18 @@ def validate_state_record(record: Any) -> list[str]:
         problems.append("record.state: not a known disaster state")
     if record.get("scope") not in SCOPES:
         problems.append("record.scope: not one of " + ", ".join(SCOPES))
+    if record.get("schema_version") != SCHEMA_VERSION:
+        problems.append("record.schema_version: unsupported")
+    if record.get("entered_at") is not None \
+            and parse_timestamp(record.get("entered_at")) is None:
+        problems.append("record.entered_at: not a timestamp")
+    transition = record.get("last_transition")
+    if transition is not None:
+        legal = (isinstance(transition, dict)
+                 and transition.get("from") in STATES
+                 and transition.get("to") in LEGAL_TRANSITIONS.get(transition.get("from"), ()))
+        if not legal:
+            problems.append("record.last_transition: illegal transition")
     history = record.get("history")
     if not isinstance(history, list):
         problems.append("record.history: expected list")
