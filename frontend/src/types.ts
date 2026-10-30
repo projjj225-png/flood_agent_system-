@@ -402,6 +402,7 @@ export interface ModelMetrics {
 export interface HorizonEvaluation {
   horizon_hours: number;
   published: boolean;
+  validation_status?: "PUBLISHED" | "INSUFFICIENT_DATA" | "FAILED_VALIDATION";
   reason?: string;
   selected_model?: string | null;
   split?: { samples?: { train: number; validation: number; test: number }; periods?: { test?: string[] | null }; embargo_hours?: number };
@@ -452,6 +453,7 @@ export interface AnalysisDoc {
     evaluation?: { models_compared?: string[]; publishing_rule?: string; data?: { accepted_readings?: number; first?: string; last?: string }; horizons?: HorizonEvaluation[] };
     live?: LiveForecast[];
     input?: { latest_observed_at?: string | null; age_hours?: number | null; max_age_hours?: number; status?: string };
+    recent_measurements?: { label?: string; window_hours?: number; basis?: string; points?: { time: string; level_m: number }[] };
     affects_risk_assessment?: boolean;
     authorizes_actions?: boolean;
     note?: string;

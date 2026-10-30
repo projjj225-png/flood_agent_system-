@@ -1001,6 +1001,7 @@
      },
      "selected_model": "ridge_ar_6h",
      "published": false,
+     "validation_status": "FAILED_VALIDATION",
      "reason": "Not published: on validation, ridge_ar_6h (MAE 0.0104 m) does not beat persistence (MAE 0.0106 m) by at least 2%; its 90 % interval covers only 66% of test values (need 80%)."
     },
     {
@@ -1167,6 +1168,7 @@
      },
      "selected_model": "ridge_ar_6h",
      "published": false,
+     "validation_status": "FAILED_VALIDATION",
      "reason": "Not published: on validation, ridge_ar_6h (MAE 0.0198 m) does not beat persistence (MAE 0.0198 m) by at least 2%; on the test period, ridge_ar_6h (MAE 0.0383 m) does not beat persistence (MAE 0.0383 m) by at least 2%; its 90 % interval covers only 69% of test values (need 80%)."
     },
     {
@@ -1333,6 +1335,7 @@
      },
      "selected_model": "moving_average_6h",
      "published": false,
+     "validation_status": "FAILED_VALIDATION",
      "reason": "Not published: on validation, moving_average_6h (MAE 0.0419 m) does not beat persistence (MAE 0.0397 m) by at least 2%; on the test period, moving_average_6h (MAE 0.1023 m) does not beat persistence (MAE 0.1043 m) by at least 2%."
     },
     {
@@ -1499,6 +1502,7 @@
      },
      "selected_model": "moving_average_6h",
      "published": false,
+     "validation_status": "FAILED_VALIDATION",
      "reason": "Not published: on validation, moving_average_6h (MAE 0.063 m) does not beat persistence (MAE 0.0627 m) by at least 2%."
     },
     {
@@ -1665,6 +1669,7 @@
      },
      "selected_model": "moving_average_6h",
      "published": false,
+     "validation_status": "FAILED_VALIDATION",
      "reason": "Not published: on validation, moving_average_6h (MAE 0.092 m) does not beat persistence (MAE 0.091 m) by at least 2%; on the test period, moving_average_6h (MAE 0.2284 m) does not beat persistence (MAE 0.232 m) by at least 2%."
     }
    ],
@@ -1739,6 +1744,245 @@
     "reason": "Not published: on validation, moving_average_6h (MAE 0.092 m) does not beat persistence (MAE 0.091 m) by at least 2%; on the test period, moving_average_6h (MAE 0.2284 m) does not beat persistence (MAE 0.232 m) by at least 2%."
    }
   ],
+  "recent_measurements": {
+   "label": "MEASURED",
+   "window_hours": 72,
+   "basis": "QC-accepted CWC readings; gaps are left as gaps",
+   "points": [
+    {
+     "time": "2025-12-27T08:00:00+05:30",
+     "level_m": 74.796
+    },
+    {
+     "time": "2025-12-27T10:00:00+05:30",
+     "level_m": 74.876
+    },
+    {
+     "time": "2025-12-27T11:00:00+05:30",
+     "level_m": 74.904
+    },
+    {
+     "time": "2025-12-27T12:00:00+05:30",
+     "level_m": 74.923
+    },
+    {
+     "time": "2025-12-27T14:00:00+05:30",
+     "level_m": 74.95
+    },
+    {
+     "time": "2025-12-27T15:00:00+05:30",
+     "level_m": 74.943
+    },
+    {
+     "time": "2025-12-27T16:00:00+05:30",
+     "level_m": 74.904
+    },
+    {
+     "time": "2025-12-27T18:00:00+05:30",
+     "level_m": 74.841
+    },
+    {
+     "time": "2025-12-27T19:00:00+05:30",
+     "level_m": 74.876
+    },
+    {
+     "time": "2025-12-27T20:00:00+05:30",
+     "level_m": 74.912
+    },
+    {
+     "time": "2025-12-27T21:00:00+05:30",
+     "level_m": 74.928
+    },
+    {
+     "time": "2025-12-27T23:00:00+05:30",
+     "level_m": 74.935
+    },
+    {
+     "time": "2025-12-28T00:00:00+05:30",
+     "level_m": 74.929
+    },
+    {
+     "time": "2025-12-28T01:00:00+05:30",
+     "level_m": 74.908
+    },
+    {
+     "time": "2025-12-28T02:00:00+05:30",
+     "level_m": 74.913
+    },
+    {
+     "time": "2025-12-28T03:00:00+05:30",
+     "level_m": 74.908
+    },
+    {
+     "time": "2025-12-28T04:00:00+05:30",
+     "level_m": 74.897
+    },
+    {
+     "time": "2025-12-28T05:00:00+05:30",
+     "level_m": 74.889
+    },
+    {
+     "time": "2025-12-28T06:00:00+05:30",
+     "level_m": 74.881
+    },
+    {
+     "time": "2025-12-28T07:00:00+05:30",
+     "level_m": 74.879
+    },
+    {
+     "time": "2025-12-28T08:00:00+05:30",
+     "level_m": 74.884
+    },
+    {
+     "time": "2025-12-28T09:00:00+05:30",
+     "level_m": 74.899
+    },
+    {
+     "time": "2025-12-28T10:00:00+05:30",
+     "level_m": 74.908
+    },
+    {
+     "time": "2025-12-28T12:00:00+05:30",
+     "level_m": 74.902
+    },
+    {
+     "time": "2025-12-28T13:00:00+05:30",
+     "level_m": 74.9
+    },
+    {
+     "time": "2025-12-28T14:00:00+05:30",
+     "level_m": 74.889
+    },
+    {
+     "time": "2025-12-28T15:00:00+05:30",
+     "level_m": 74.889
+    },
+    {
+     "time": "2025-12-28T16:00:00+05:30",
+     "level_m": 74.89
+    },
+    {
+     "time": "2025-12-28T18:00:00+05:30",
+     "level_m": 74.885
+    },
+    {
+     "time": "2025-12-28T19:00:00+05:30",
+     "level_m": 74.874
+    },
+    {
+     "time": "2025-12-28T20:00:00+05:30",
+     "level_m": 74.868
+    },
+    {
+     "time": "2025-12-28T21:00:00+05:30",
+     "level_m": 74.864
+    },
+    {
+     "time": "2025-12-28T22:00:00+05:30",
+     "level_m": 74.857
+    },
+    {
+     "time": "2025-12-28T23:00:00+05:30",
+     "level_m": 74.852
+    },
+    {
+     "time": "2025-12-29T00:00:00+05:30",
+     "level_m": 74.847
+    },
+    {
+     "time": "2025-12-29T01:00:00+05:30",
+     "level_m": 74.843
+    },
+    {
+     "time": "2025-12-29T02:00:00+05:30",
+     "level_m": 74.839
+    },
+    {
+     "time": "2025-12-29T03:00:00+05:30",
+     "level_m": 74.837
+    },
+    {
+     "time": "2025-12-29T04:00:00+05:30",
+     "level_m": 74.862
+    },
+    {
+     "time": "2025-12-29T05:00:00+05:30",
+     "level_m": 74.877
+    },
+    {
+     "time": "2025-12-29T06:00:00+05:30",
+     "level_m": 74.899
+    },
+    {
+     "time": "2025-12-29T07:00:00+05:30",
+     "level_m": 74.976
+    },
+    {
+     "time": "2025-12-29T08:00:00+05:30",
+     "level_m": 74.928
+    },
+    {
+     "time": "2025-12-29T09:00:00+05:30",
+     "level_m": 74.953
+    },
+    {
+     "time": "2025-12-29T10:00:00+05:30",
+     "level_m": 74.977
+    },
+    {
+     "time": "2025-12-29T14:00:00+05:30",
+     "level_m": 74.952
+    },
+    {
+     "time": "2025-12-29T17:00:00+05:30",
+     "level_m": 74.887
+    },
+    {
+     "time": "2025-12-29T19:00:00+05:30",
+     "level_m": 74.88
+    },
+    {
+     "time": "2025-12-29T20:00:00+05:30",
+     "level_m": 74.879
+    },
+    {
+     "time": "2025-12-29T21:00:00+05:30",
+     "level_m": 74.892
+    },
+    {
+     "time": "2025-12-29T22:00:00+05:30",
+     "level_m": 74.891
+    },
+    {
+     "time": "2025-12-29T23:00:00+05:30",
+     "level_m": 74.897
+    },
+    {
+     "time": "2025-12-30T00:00:00+05:30",
+     "level_m": 74.9
+    },
+    {
+     "time": "2025-12-30T01:00:00+05:30",
+     "level_m": 74.904
+    },
+    {
+     "time": "2025-12-30T02:00:00+05:30",
+     "level_m": 74.904
+    },
+    {
+     "time": "2025-12-30T03:00:00+05:30",
+     "level_m": 74.9
+    },
+    {
+     "time": "2025-12-30T04:00:00+05:30",
+     "level_m": 74.9
+    },
+    {
+     "time": "2025-12-30T05:00:00+05:30",
+     "level_m": 74.9
+    }
+   ]
+  },
   "input": {
    "latest_observed_at": "2025-12-30T05:00:00+05:30",
    "age_hours": 7302.5,

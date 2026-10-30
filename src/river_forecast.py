@@ -243,7 +243,8 @@ def evaluate_horizon(readings: dict[datetime, float], horizon: int) -> dict[str,
     samples = build_samples(readings, horizon)
     train, validation, test, split = chronological_split(samples, horizon)
     result: dict[str, Any] = {"horizon_hours": horizon, "split": split, "models": {},
-                              "selected_model": None, "published": False}
+                              "selected_model": None, "published": False,
+                              "validation_status": "INSUFFICIENT_DATA"}
     if len(train) < MIN_TRAIN_SAMPLES or len(validation) < MIN_TEST_SAMPLES \
             or len(test) < MIN_TEST_SAMPLES:
         result["reason"] = (f"Insufficient data: {len(train)} train / {len(validation)} "
@@ -291,6 +292,7 @@ def evaluate_horizon(readings: dict[datetime, float], horizon: int) -> dict[str,
         problems.append(f"its 90 % interval covers only {entry['interval']['test_coverage']:.0%} "
                         f"of test values (need {MIN_INTERVAL_COVERAGE:.0%})")
     result["published"] = not problems
+    result["validation_status"] = "PUBLISHED" if not problems else "FAILED_VALIDATION"
     result["reason"] = ("Published: beats persistence on validation and test, interval "
                         "coverage acceptable." if not problems else
                         "Not published: " + "; ".join(problems) + ".")

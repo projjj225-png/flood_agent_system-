@@ -1,10 +1,11 @@
 // Historical CWC analysis, forecast validation and station comparison
 // (/dashboard/analysis). Every value comes from the backend; nothing is computed
 // here, and a predicted number is shown only when the backend returned one.
-import type { AnalysisDoc, AnalysisStation, DashboardDoc, HorizonEvaluation, LiveForecast } from "../types";
+import type { AnalysisDoc, AnalysisStation, DashboardDoc } from "../types";
 import { fmtAge, fmtNum, fmtShort, fmtTime, humanize, isNum } from "../format";
 import { Badge, Field, Section, Unavailable } from "./common";
 import { riverDataClass } from "./sections";
+import { ForecastSection } from "./forecast";
 
 const WINDOWS = ["1h", "3h", "6h", "24h"];
 const pct = (x?: number | null) => (isNum(x) ? `${(x * 100).toFixed(1)}%` : "—");
@@ -123,72 +124,6 @@ export function HistoricalAnalysisSection({ doc }: { doc: AnalysisDoc }) {
       </div>
       {stations.length ? <div className="grid-2">{stations.map((st) => <StationSummary key={st.station_id} st={st} />)}</div>
         : <Unavailable>No station analysis in this response.</Unavailable>}
-    </Section>
-  );
-}
-
-function liveCell(f?: LiveForecast) {
-  if (!f) return <span className="muted">—</span>;
-  if (f.status === "FORECAST" && isNum(f.predicted_level_m))
-    return <><Badge tone="info">MODEL PREDICTION</Badge> {fmtNum(f.predicted_level_m, "m", 3)} ({fmtNum(f.interval_m?.[0], "", 3)}–{fmtNum(f.interval_m?.[1], "m", 3)}) for {fmtTime(f.valid_for)}</>;
-  return <><Badge tone={f.status === "NOT_PUBLISHED" ? "neutral" : "warn"}>{humanize(f.status)}</Badge> <span className="muted">no number shown</span></>;
-}
-
-function HorizonRow({ h, live }: { h: HorizonEvaluation; live?: LiveForecast }) {
-  const models = Object.entries(h.models ?? {});
-  return (
-    <tr>
-      <td><strong>+{h.horizon_hours} h</strong></td>
-      <td>{h.published ? <Badge tone="ok">PUBLISHED</Badge> : <Badge tone="neutral">NOT PUBLISHED</Badge>}<br /><span className="small">{h.reason}</span></td>
-      <td>
-        {models.length ? (
-          <table className="table compact">
-            <thead><tr><th>Model</th><th>Test MAE</th><th>RMSE</th><th>Bias</th><th>R²</th><th>Skill vs persistence</th><th>90% interval coverage</th></tr></thead>
-            <tbody>
-              {models.map(([name, m]) => (
-                <tr key={name}>
-                  <td>{name}{name === h.selected_model ? " (chosen on validation)" : ""}</td>
-                  <td>{fmtNum(m.test?.mae_m, "m", 4)}</td>
-                  <td>{fmtNum(m.test?.rmse_m, "m", 4)}</td>
-                  <td>{fmtNum(m.test?.bias_m, "m", 4)}</td>
-                  <td>{fmtNum(m.test?.r2 ?? null, "", 3)}</td>
-                  <td>{name === "persistence" ? "reference" : pct(m.test?.skill_vs_persistence)}</td>
-                  <td>{pct(m.interval?.test_coverage)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : <span className="muted">No models evaluated.</span>}
-        <span className="small muted">Samples train/validation/test: {h.split?.samples ? `${h.split.samples.train}/${h.split.samples.validation}/${h.split.samples.test}` : "—"} · test period {fmtShort(h.split?.periods?.test?.[0])} – {fmtShort(h.split?.periods?.test?.[1])}</span>
-      </td>
-      <td>{liveCell(live)}</td>
-    </tr>
-  );
-}
-
-export function ForecastSection({ doc }: { doc: AnalysisDoc }) {
-  const f = doc.forecast;
-  const horizons = f?.evaluation?.horizons ?? [];
-  const published = horizons.filter((h) => h.published).length;
-  const input = f?.input;
-  return (
-    <Section id="forecast" title="Model predictions (validated forecasts)"
-      subtitle={`${f?.station_id ?? "—"} · ${f?.evaluation?.models_compared?.join(", ") ?? "—"} · chronological validation`}
-      badges={<><Badge tone="info">MODEL PREDICTION</Badge><Badge tone={published ? "ok" : "neutral"}>{published} of {horizons.length} horizons published</Badge></>}>
-      <p className="note"><strong>Model predictions are not CWC measurements.</strong> {f?.note} They never change the risk level, the disaster state or any permission.</p>
-      <p className="small">Validated on <strong>{f?.evaluation?.data?.accepted_readings ?? "—"} valid measured readings</strong> from the local CWC export ({period(f?.evaluation?.data?.first, f?.evaluation?.data?.last)}); fill values, NaN and out-of-range readings excluded.</p>
-      <p className="small">Publishing rule: {f?.evaluation?.publishing_rule ?? "—"}</p>
-      {input?.status !== "FRESH" && (
-        <div className="alert" role="alert">
-          <strong>No live forecast: input data are {input?.status ?? "UNAVAILABLE"}.</strong> The latest measured reading was made {fmtTime(input?.latest_observed_at)} and is {fmtAge(input?.age_hours)} (limit {fmtNum(input?.max_age_hours, "h", 0)}). No prediction is made from it, whatever the validation result.
-        </div>
-      )}
-      {horizons.length ? (
-        <table className="table">
-          <thead><tr><th>Horizon</th><th>Status</th><th>Validation on the held-out test period</th><th>Forecast now</th></tr></thead>
-          <tbody>{horizons.map((h) => <HorizonRow key={h.horizon_hours} h={h} live={f?.live?.find((x) => x.horizon_hours === h.horizon_hours)} />)}</tbody>
-        </table>
-      ) : <Unavailable>No forecast evaluation in this response.</Unavailable>}
     </Section>
   );
 }

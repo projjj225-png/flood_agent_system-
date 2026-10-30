@@ -59,6 +59,21 @@ SIMULATED_LABEL = "SIMULATED DATA"
 REAL_LABEL = "REAL DATA"
 SIMULATED_LIVE_LABEL = LIVE_LABEL  # "SIMULATED LIVE"
 HISTORICAL_LABEL = "HISTORICAL CWC DATA"
+RECENT_MEASUREMENT_HOURS = 72
+
+
+def recent_measurements(accepted: list[dict[str, Any]],
+                        hours: int = RECENT_MEASUREMENT_HOURS) -> dict[str, Any]:
+    """QC-accepted MEASURED readings in the ``hours`` before the latest one (for display)."""
+    if not accepted:
+        return {"label": "MEASURED", "window_hours": hours, "points": []}
+    latest = max(o["observed_at"] for o in accepted)
+    start = latest - timedelta(hours=hours)
+    return {"label": "MEASURED", "window_hours": hours,
+            "basis": "QC-accepted CWC readings; gaps are left as gaps",
+            "points": [{"time": o["observed_at"].isoformat(), "level_m": o["river_level_m"]}
+                       for o in sorted(accepted, key=lambda o: o["observed_at"])
+                       if o["observed_at"] >= start]}
 
 SCENARIO_DESCRIPTIONS = {
     "low-rain-valid-river": "Steady river below the TEST warning level, light rain.",
@@ -477,12 +492,15 @@ class DashboardService:
             inputs, evaluation = self._analysis_inputs, self._analysis_eval
             now = self.service.clock()
             doc["analysis"] = analysis_document(inputs, now)
-            live = forecast_now(evaluation, inputs["qc"][inputs["primary"]][0], now)
+            accepted = inputs["qc"][inputs["primary"]][0]
+            live = forecast_now(evaluation, accepted, now)
             age = live[0]["input_age_hours"] if live else None
             doc["forecast"] = {
                 "label": MODEL_LABEL, "station_id": inputs["primary"],
                 "evaluation": public(evaluation),
                 "live": live,
+                # For the forecast chart: the measured readings the inputs come from.
+                "recent_measurements": recent_measurements(accepted),
                 # Whatever the validation says, no forecast is made from inputs older than this.
                 "input": {"latest_observed_at": live[0]["input_latest_observed_at"] if live else None,
                           "age_hours": age, "max_age_hours": MAX_INPUT_AGE_HOURS,

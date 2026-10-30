@@ -76,7 +76,10 @@ export function parseAnalysis(json: unknown): Result<AnalysisDoc> {
   if (forecast.affects_risk_assessment !== false || forecast.authorizes_actions !== false)
     return { ok: false, error: "Forecast claims to affect risk or authorize actions; not shown." };
   const live = Array.isArray(forecast.live) ? forecast.live : [];
+  const inputFresh = isObj(forecast.input) && forecast.input.status === "FRESH";
   for (const f of live) {
+    if (isObj(f) && f.predicted_level_m !== null && f.predicted_level_m !== undefined && !inputFresh)
+      return { ok: false, error: "A prediction was returned although the input data are not fresh; not shown." };
     if (!isObj(f)) return { ok: false, error: "Forecast entry is malformed." };
     if (f.predicted_level_m !== null && f.predicted_level_m !== undefined
         && (f.status !== "FORECAST" || f.published !== true || f.label !== MODEL_LABEL))

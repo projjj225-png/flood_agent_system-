@@ -6,6 +6,13 @@ import { parseAnalysis, parseDashboard, parseSequence } from "../api";
 import { AnalysisSections, DataSourcesStrip } from "../components/analysis";
 import type { AnalysisDoc } from "../types";
 import analysisReal from "./fixtures/analysis_real.json";
+// Real backend pipeline run on a synthetic tidal series (tests only): the published case.
+import analysisPublished from "./fixtures/analysis_synthetic_published.json";
+import {
+  drawablePredictions, forecastChartData, ForecastSection, HorizonCard, horizonCounts, horizonState,
+  HorizonSummary, MODEL_NAMES, modelComparisonData, validationChecks,
+} from "../components/forecast";
+import stylesCss from "../styles.css?raw";
 import { fmtNum, fmtTime, humanize } from "../format";
 import App, { Dashboard } from "../App";
 import { KpiCards, RiverSection, riverDataClass, TimelineSection } from "../components/sections";
@@ -442,12 +449,13 @@ describe("historical analysis and model predictions", () => {
     expect(t).toContain("Placeholder value");
   });
 
-  it("shows every model against persistence and publishes nothing that does not beat it", () => {
+  it("shows the models against persistence and publishes nothing that does not beat it", () => {
     expect(t).toContain("MODEL PREDICTION");
-    expect(t).toContain("0 of 5 horizons published");
-    for (const name of ["persistence", "moving_average_6h", "linear_trend_6h", "ridge_ar_6h"]) expect(t).toContain(name);
+    expect(t).toContain("0 of 5 horizons pass validation");
+    for (const name of ["Ridge autoregression (6 h)", "Moving average (6 h)"]) expect(t).toContain(name);
     expect(t).toContain("NOT PUBLISHED");
-    expect(t).toContain("No live forecast");
+    expect(t).toContain("Failed");
+    expect(t).toContain("NO LIVE FORECAST");
     for (const f of real.forecast.live) expect(f.predicted_level_m).toBeNull();
     expect(t).not.toMatch(/MODEL PREDICTION \d+\.\d{3} m/);   // no predicted level anywhere
   });
@@ -459,13 +467,11 @@ describe("historical analysis and model predictions", () => {
   });
 
   it("shows a published horizon's prediction with its interval, labelled", () => {
-    const doc = clone(analysisReal) as Record<string, any>;
-    doc.forecast.evaluation.horizons[0].published = true;
-    Object.assign(doc.forecast.live[0], { status: "FORECAST", published: true, predicted_level_m: 74.512,
-      interval_m: [74.49, 74.53], valid_for: "2026-10-30T07:00:00+00:00" });
-    const shown = show(parse(doc));
-    expect(shown).toContain("MODEL PREDICTION 74.512 m");
-    expect(shown).toContain("74.490");
+    const pub = analysisPublished as Record<string, any>;
+    const shown = show(parse(analysisPublished));
+    const first = pub.forecast.live[0];
+    expect(shown).toContain(`${fmtNum(first.predicted_level_m, "m", 3)} MODEL PREDICTION`);
+    expect(shown).toContain(fmtNum(first.interval_m[0], "", 3));
   });
 
   it("rejects predictions for unpublished horizons, mislabelled or authority-claiming documents", () => {
@@ -481,6 +487,13 @@ describe("historical analysis and model predictions", () => {
     unlabelled.forecast.label = "CWC OBSERVATION";
     expect(parseAnalysis(unlabelled).ok).toBe(false);
     expect(parseAnalysis({ error: "Historical analysis could not be built (OSError)." }).ok).toBe(false);
+    // A "published" number while the inputs are stale is refused as well.
+    const staleNumber = clone(analysisReal) as Record<string, any>;
+    staleNumber.forecast.evaluation.horizons[0].published = true;
+    Object.assign(staleNumber.forecast.live[0], { status: "FORECAST", published: true, predicted_level_m: 74.5 });
+    const r = parseAnalysis(staleNumber);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toMatch(/not fresh/);
   });
 });
 
@@ -528,6 +541,229 @@ describe("data sources strip and placement", () => {
     expect(t).toContain(`Rows in file ${st.UPPER_ANICUT.load.rows_read}`);
     expect(t).toContain(`Valid readings ${st.UPPER_ANICUT.analysis.accepted_readings}`);
     expect(t).toContain(fmtTime(st.MUSIRI.analysis.latest.observed_at));  // Musiri's own latest date
-    expect(t).toContain("Validated on 13086 valid measured readings");
+    expect(t).toContain("The models learn from 13086 valid measured readings");
+  });
+});
+
+describe("model predictions dashboard", () => {
+  const real = analysisReal as Record<string, any>;
+  const pub = analysisPublished as Record<string, any>;
+  const section = (doc: unknown) => text(renderToStaticMarkup(<ForecastSection doc={doc as AnalysisDoc} />));
+
+  describe("stale inputs (the real export)", () => {
+    const t = section(analysisReal);
+
+    it("shows the red no-live-forecast warning and labels results historical validation only", () => {
+      expect(t).toContain("NO LIVE FORECAST — INPUT DATA ARE STALE.");
+      expect(t).toContain(fmtTime(real.forecast.input.latest_observed_at));
+      expect(t).toContain("HISTORICAL VALIDATION ONLY");
+      expect(t).toContain("historical validation only");
+    });
+
+    it("draws the measured readings only, never a prediction", () => {
+      const { measured, predicted } = forecastChartData(real.forecast);
+      expect(predicted).toEqual([]);
+      expect(measured.map((d) => d.measured)).toEqual(real.forecast.recent_measurements.points.map((p: any) => p.level_m));
+      expect(t).toContain("No prediction is drawn");
+      expect(t).not.toContain("MODEL PREDICTION (not a measurement)");
+    });
+
+    it("never draws a number while inputs are stale, even if one slipped into the response", () => {
+      const doc = clone(real.forecast);
+      Object.assign(doc.live[0], { status: "FORECAST", published: true, predicted_level_m: 74.5, valid_for: "2026-10-30T07:00:00Z" });
+      expect(drawablePredictions(doc)).toEqual([]);
+      expect(forecastChartData(doc).predicted).toEqual([]);
+    });
+
+    it("gives every horizon a red card that keeps the backend's full validation reason", () => {
+      for (const h of real.forecast.evaluation.horizons) {
+        const s = horizonState(h, real.forecast.live.find((x: any) => x.horizon_hours === h.horizon_hours), real.forecast);
+        expect(s.tone).toBe("danger");
+        expect(s.status).toBe("NOT PUBLISHED");
+        expect(s.details).toContain(h.reason);
+      }
+      expect((t.match(/Not available/g) ?? []).length).toBe(5);
+      for (const h of ["+1 Hour", "+3 Hours", "+6 Hours", "+12 Hours", "+24 Hours"]) expect(t).toContain(h);
+    });
+
+    it("compares the four models with the backend's test MAE values", () => {
+      const rows = modelComparisonData(real.forecast);
+      expect(rows.map((r) => r.horizon)).toEqual(["+1 h", "+3 h", "+6 h", "+12 h", "+24 h"]);
+      real.forecast.evaluation.horizons.forEach((h: any, i: number) => {
+        for (const m of ["persistence", "moving_average_6h", "linear_trend_6h", "ridge_ar_6h"])
+          expect(rows[i][m]).toBe(h.models[m].test.mae_m);
+      });
+      for (const r of modelComparisonData(real.forecast, true)) expect(r.persistence).toBeCloseTo(100);
+      expect(t).toContain("Lower bars are better");
+    });
+
+    it("explains every accuracy metric in plain words", () => {
+      for (const name of ["MAE", "RMSE", "Bias", "R²", "Skill vs persistence"]) expect(t).toContain(name);
+      expect(t).toContain("Average size of the prediction error");
+      expect(t).toContain("tends to over-predict, negative under-predict");
+      expect(t).toContain("How this forecast works");
+      expect(t).toContain(`${real.forecast.evaluation.data.accepted_readings} valid measured readings`);
+    });
+
+    it("never claims to change risk, state or permissions", () => {
+      expect(t).toContain("never change the risk level, the disaster state, permissions or emergency authorization");
+    });
+  });
+
+  describe("fresh inputs and published horizons (synthetic series through the real pipeline)", () => {
+    const t = section(analysisPublished);
+
+    it("draws predictions as a separate series at their own times, never as measurements", () => {
+      const { measured, predicted } = forecastChartData(pub.forecast);
+      expect(predicted.map((d) => d.predicted)).toEqual(pub.forecast.live.map((x: any) => x.predicted_level_m));
+      expect(predicted.map((d) => d.t)).toEqual(pub.forecast.live.map((x: any) => new Date(x.valid_for).getTime()));
+      expect(measured.every((d) => !("predicted" in d))).toBe(true);
+      expect(predicted.every((d) => !("measured" in d))).toBe(true);
+      const lastMeasured = Math.max(...measured.map((d) => d.t));
+      expect(predicted.every((d) => d.t > lastMeasured)).toBe(true);
+    });
+
+    it("shows green published cards with the predicted level and no stale warning", () => {
+      for (const h of pub.forecast.evaluation.horizons)
+        expect(horizonState(h, pub.forecast.live.find((x: any) => x.horizon_hours === h.horizon_hours), pub.forecast).tone).toBe("ok");
+      expect(t).not.toContain("NO LIVE FORECAST");
+      expect(t).not.toContain("HISTORICAL VALIDATION ONLY");
+      expect(t).toContain("5 of 5 horizons pass validation");
+      expect(horizonCounts(pub.forecast)).toMatchObject({ total: 5, published: 5, notPublished: 0 });
+      expect((t.match(/Not available/g) ?? []).length).toBe(0);
+      expect(t).not.toContain("Why not published?");
+    });
+  });
+
+  it("marks a horizon with too little data yellow", () => {
+    const h = { ...clone(real.forecast.evaluation.horizons[0]), validation_status: "INSUFFICIENT_DATA", published: false,
+      reason: "Insufficient data: 10 train / 0 validation / 0 test samples." };
+    const s = horizonState(h, undefined, real.forecast);
+    expect(s.tone).toBe("caution");
+    expect(s.label).toBe("Awaiting validation");
+    expect(s.details).toContain(h.reason);
+  });
+});
+
+describe("forecast horizon cards", () => {
+  const real = analysisReal as Record<string, any>;
+  const pub = analysisPublished as Record<string, any>;
+  const f = real.forecast;
+  const liveFor = (fc: any, h: any) => fc.live.find((x: any) => x.horizon_hours === h.horizon_hours);
+  const card = (fc: any, h: any, defaultOpen = false) =>
+    renderToStaticMarkup(<HorizonCard h={h} live={liveFor(fc, h)} f={fc} defaultOpen={defaultOpen} />);
+
+  it("renders all five horizons with heading, badge, status, value, model, test MAE and validation", () => {
+    const labels = ["+1 Hour", "+3 Hours", "+6 Hours", "+12 Hours", "+24 Hours"];
+    f.evaluation.horizons.forEach((h: any, i: number) => {
+      const c = text(card(f, h));
+      expect(c).toContain(labels[i]);
+      expect(c).toContain("Not published");          // badge
+      expect(c).toContain("NOT PUBLISHED");          // large status
+      expect(c).toContain("Forecast value");
+      expect(c).toContain("Not available");
+      expect(c).toContain(MODEL_NAMES[h.selected_model]);
+      expect(c).toContain(`${(h.models[h.selected_model].test.mae_m * 100).toFixed(1)} cm`);
+      expect(c).toContain("Validation");
+      expect(c).toContain("Failed");
+      expect(c).not.toMatch(/(^|[^\d])[5-9]\d\.\d{3} m/);   // no river level on a stale card (MAE in reasons is < 1 m)
+      expect(card(f, h)).toContain("badge-danger");
+    });
+  });
+
+  it("uses soft tints for green, amber and red, never a thick error border", () => {
+    const pubH = pub.forecast.evaluation.horizons[0];
+    expect(card(pub.forecast, pubH)).toContain("hz-card tone-ok");
+    expect(card(pub.forecast, pubH)).toContain("badge-ok");
+    expect(text(card(pub.forecast, pubH))).toContain("PUBLISHED");
+    expect(text(card(pub.forecast, pubH))).toContain(fmtNum(liveFor(pub.forecast, pubH).predicted_level_m, "m", 3));
+    const amber = { ...clone(f.evaluation.horizons[0]), validation_status: "INSUFFICIENT_DATA", published: false,
+      reason: "Insufficient data: 10 train / 0 validation / 0 test samples." };
+    const a = card(f, amber);
+    expect(a).toContain("hz-card tone-caution");
+    expect(a).toContain("badge-caution");
+    expect(text(a)).toContain("AWAITING VALIDATION");
+    expect(card(f, f.evaluation.horizons[0])).toContain("hz-card tone-danger");
+    const cardRules = stylesCss.split("\n").filter((l) => l.startsWith(".hz-card")).join("\n");
+    expect(cardRules).not.toMatch(/border-left|border:\s*[2-9]px/);
+  });
+
+  it("shows a short reason on the card that agrees with the backend's full reason", () => {
+    for (const h of f.evaluation.horizons) {
+      const checks = validationChecks(h);
+      const failed = checks.filter((c) => !c.pass).map((c) => c.label);
+      expect(failed.length).toBeGreaterThan(0);
+      expect(failed.includes("Validation skill")).toBe(h.reason.includes("on validation"));
+      expect(failed.includes("Test skill")).toBe(h.reason.includes("on the test period"));
+      expect(failed.includes("Interval coverage")).toBe(h.reason.includes("interval covers only"));
+      const s = horizonState(h, liveFor(f, h), f);
+      expect(s.short.join(" ").length).toBeLessThan(h.reason.length);
+    }
+  });
+
+  it("hides the full backend reasons behind an expandable 'Why not published?' control", () => {
+    const h = f.evaluation.horizons[2];
+    const closed = card(f, h);
+    expect(closed).toContain("Why not published?");
+    expect(closed).toContain('aria-expanded="false"');
+    expect(closed).toContain('aria-hidden="true"');
+    expect(closed).not.toContain("hz-why open");
+    expect(text(closed)).toContain(h.reason);       // kept in full, nothing dropped
+    const opened = card(f, h, true);
+    expect(opened).toContain('aria-expanded="true"');
+    expect(opened).toContain("hz-why open");
+    expect(opened).toContain('aria-hidden="false"');
+  });
+
+  it("states the stale-input warning once above the cards, not inside every card", () => {
+    const summary = text(renderToStaticMarkup(<HorizonSummary f={f} />));
+    expect(summary).toContain("NO LIVE FORECAST — INPUT DATA ARE STALE");
+    expect(summary).toContain("older than the configured freshness limit");
+    expect(summary).toContain(fmtTime(f.input.latest_observed_at));
+    for (const h of f.evaluation.horizons) {
+      const c = text(card(f, h));
+      expect(c).not.toContain("NO LIVE FORECAST");
+      expect(c).not.toContain("days old");
+      expect(c).not.toContain("older than");
+    }
+    const section = text(renderToStaticMarkup(<ForecastSection doc={analysisReal as AnalysisDoc} />));
+    expect((section.match(/older than the configured freshness limit/g) ?? []).length).toBe(1);
+  });
+
+  it("summarises the counts from the API, never hardcoded", () => {
+    const counts = horizonCounts(f);
+    expect(counts).toEqual({ total: f.evaluation.horizons.length, published: 0,
+      notPublished: f.evaluation.horizons.length, passedValidation: 0 });
+    const summary = text(renderToStaticMarkup(<HorizonSummary f={f} />));
+    expect(summary).toMatch(/Forecast horizons\s*5/);
+    expect(summary).toMatch(/Published\s*0/);
+    expect(summary).toMatch(/Not published\s*5/);
+    expect(summary).toMatch(/Input freshness\s*STALE/);
+    // One horizon removed from the response: the counts follow it.
+    const fewer = clone(f);
+    fewer.evaluation.horizons.pop();
+    expect(horizonCounts(fewer)).toMatchObject({ total: 4, notPublished: 4 });
+    const fresh = text(renderToStaticMarkup(<HorizonSummary f={pub.forecast} />));
+    expect(fresh).toMatch(/Published\s*5/);
+    expect(fresh).toMatch(/Input freshness\s*FRESH/);
+    expect(fresh).not.toContain("NO LIVE FORECAST");
+  });
+
+  it("does not treat a validation-passed horizon as live when inputs are stale", () => {
+    const h = { ...clone(pub.forecast.evaluation.horizons[0]) };
+    const staleForecast = { ...clone(pub.forecast), input: { ...pub.forecast.input, status: "STALE" } };
+    const s = horizonState(h, liveFor(pub.forecast, h), staleForecast);
+    expect(s.tone).toBe("danger");
+    expect(s.status).toBe("NOT PUBLISHED");
+    expect(s.short.join(" ")).toContain("input data stale");
+    expect(text(card(staleForecast, h))).toContain("Not available");
+    expect(horizonCounts(staleForecast)).toMatchObject({ published: 0, passedValidation: 5 });
+  });
+
+  it("explains that the model was chosen on historical validation", () => {
+    const c = card(f, f.evaluation.horizons[0]);
+    expect(c).toContain("model-chip");
+    expect(c).toContain("Selected as the model with the lowest error on the historical validation period");
+    expect(c).toContain("not a live prediction");
   });
 });

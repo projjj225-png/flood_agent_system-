@@ -1,0 +1,2018 @@
+{
+ "schema_version": "1.0",
+ "generated_at": "2025-04-14T22:00:00+00:00",
+ "mode": "analysis",
+ "is_simulated": false,
+ "data_label": "HISTORICAL CWC DATA",
+ "timezone": "Asia/Kolkata",
+ "location": {
+  "description": "Cauvery River near Upper Anicut, Tamil Nadu, India",
+  "latitude": 10.888611,
+  "longitude": 78.58
+ },
+ "cache_seconds": 300.0,
+ "analysis": {
+  "generated_for": "2025-04-15T03:30:00+05:30",
+  "data_class": "HISTORICAL_CWC_DATA",
+  "source": {
+   "raw_file": "raw.csv",
+   "note": "A historical CWC export (2021-2025). Not a live source: nothing here describes current conditions."
+  },
+  "primary_station": "UPPER_ANICUT",
+  "upstream_candidate": "MUSIRI",
+  "stations": {
+   "UPPER_ANICUT": {
+    "station_id": "UPPER_ANICUT",
+    "source_name": "UPPER ANICUT",
+    "role": "primary",
+    "kind": "river_gauge",
+    "location": {
+     "latitude": 10.88861111,
+     "longitude": 78.58
+    },
+    "rl_zero_gauge_m": 72.6,
+    "load": {
+     "found": true,
+     "rows_read": 2500,
+     "counts": {
+      "usable_rows": 2500,
+      "unparseable_timestamps": 0,
+      "non_numeric_levels": 0,
+      "duplicate_rows_removed": 0,
+      "conflicting_timestamps_dropped": 0
+     },
+     "identity": {
+      "verified": true,
+      "mismatch_rows": 0,
+      "mismatches": []
+     },
+     "first_observed_at": "2025-01-01T00:00:00+05:30",
+     "last_observed_at": "2025-04-15T03:00:00+05:30",
+     "provenance": {
+      "raw_file": "raw.csv",
+      "sha256": "6a47652887f580455a0457bc8948232d2e0b6ca7a1ab9e9a55fe3328c8546b79",
+      "time_column": "Data Acquisition Time",
+      "level_column": "River Water Level Telemetry Hourly (meter)",
+      "time_basis": "OBSERVATION (Data Acquisition Time; the file has no separate acquisition or download time)",
+      "assumed_utc_offset": "+05:30",
+      "timestamp_status": "ASSUMED",
+      "datum": "reduced_level",
+      "datum_status": "ASSUMED",
+      "units": "m"
+     }
+    },
+    "qc": {
+     "configured": true,
+     "valid_min_m": 70.0,
+     "valid_max_m": 80.0,
+     "max_jump_m": 1.0,
+     "invalid_values_m": [
+      72.0
+     ],
+     "reference": "Prototype QC derived from rwl_tel_hr_cwc_009_2021_2025.csv (not official). Smooth, physically plausible runs stay within 71.0-75.2 m; values outside 70-80 m (e.g. 1-3 m in early 2021, 100-1070 m spikes) are telemetry errors. 72.0 m repeats exactly 4059 times, in runs up to 1084 h and between 73.0x m readings, so it is treated as a fill value. Corrupted readings typically jump by whole metres, hence max_jump_m 1.0.",
+     "checked": 2500,
+     "accepted": 2500,
+     "rejected_negative": 0,
+     "rejected_placeholder": 0,
+     "rejected_out_of_range": 0,
+     "rejected_spike": 0,
+     "spike_check_skipped": 3,
+     "max_constant_run_hours": 6,
+     "rejected_stuck": 0
+    },
+    "analysis": {
+     "data_class": "HISTORICAL_CWC_DATA",
+     "value_basis": "MEASURED",
+     "reference_time": "2025-04-15T03:30:00+05:30",
+     "accepted_readings": 2500,
+     "rejected_readings": 0,
+     "rejected_by_reason": {},
+     "status": "AVAILABLE",
+     "latest": {
+      "level_m": 74.111,
+      "observed_at": "2025-04-15T03:00:00+05:30",
+      "basis": "MEASURED",
+      "data_class": "HISTORICAL_CWC_DATA"
+     },
+     "freshness": {
+      "status": "FRESH",
+      "reference_time": "2025-04-14T22:00:00+00:00",
+      "max_age_hours": 3.0,
+      "age_minutes": 30.0,
+      "age_hours": 0.5,
+      "retrieval_time_available": false,
+      "retrieval_lag_minutes": null,
+      "reason": null
+     },
+     "is_current": false,
+     "trends": {
+      "1h": {
+       "status": "AVAILABLE",
+       "direction": "RISING",
+       "level_change_m": 0.027,
+       "rate_of_change_m_per_hour": 0.027,
+       "baseline_observed_at": "2025-04-14T20:30:00+00:00",
+       "duration_hours": 1.0,
+       "observations_in_window": 2,
+       "reason": null,
+       "basis": "DERIVED_FROM_MEASURED"
+      },
+      "3h": {
+       "status": "AVAILABLE",
+       "direction": "RISING",
+       "level_change_m": 0.109,
+       "rate_of_change_m_per_hour": 0.0363,
+       "baseline_observed_at": "2025-04-14T18:30:00+00:00",
+       "duration_hours": 3.0,
+       "observations_in_window": 4,
+       "reason": null,
+       "basis": "DERIVED_FROM_MEASURED"
+      },
+      "6h": {
+       "status": "AVAILABLE",
+       "direction": "RISING",
+       "level_change_m": 0.225,
+       "rate_of_change_m_per_hour": 0.0375,
+       "baseline_observed_at": "2025-04-14T15:30:00+00:00",
+       "duration_hours": 6.0,
+       "observations_in_window": 7,
+       "reason": null,
+       "basis": "DERIVED_FROM_MEASURED"
+      },
+      "24h": {
+       "status": "AVAILABLE",
+       "direction": "RISING",
+       "level_change_m": 0.228,
+       "rate_of_change_m_per_hour": 0.0095,
+       "baseline_observed_at": "2025-04-13T21:30:00+00:00",
+       "duration_hours": 24.0,
+       "observations_in_window": 25,
+       "reason": null,
+       "basis": "DERIVED_FROM_MEASURED"
+      }
+     },
+     "rolling_24h": {
+      "readings": 24,
+      "mean_m": 73.829,
+      "std_m": 0.1248,
+      "min_m": 73.698,
+      "max_m": 74.111,
+      "window_end": "2025-04-15T03:00:00+05:30",
+      "basis": "DERIVED_FROM_MEASURED"
+     },
+     "record": {
+      "max_m": 74.307,
+      "max_at": "2025-03-24T12:00:00+05:30",
+      "min_m": 73.693,
+      "min_at": "2025-03-25T12:00:00+05:30",
+      "period": [
+       "2025-01-01T00:00:00+05:30",
+       "2025-04-15T03:00:00+05:30"
+      ],
+      "basis": "MEASURED",
+      "note": "Extremes of QC-accepted readings in this file only; not official record levels."
+     },
+     "completeness": {
+      "overall": 1.0,
+      "by_year": {
+       "2025": {
+        "accepted": 2500,
+        "completeness": 1.0
+       }
+      },
+      "expected_interval_hours": 1.0,
+      "basis": "DERIVED_FROM_MEASURED"
+     },
+     "gaps": {
+      "threshold_hours": 3.0,
+      "count": 0,
+      "missing_hours": 0,
+      "longest": []
+     }
+    }
+   },
+   "MUSIRI": {
+    "station_id": "MUSIRI",
+    "source_name": "MUSIRI",
+    "role": "upstream_candidate",
+    "kind": "river_gauge",
+    "location": {
+     "latitude": 10.93805556,
+     "longitude": 78.44027778
+    },
+    "rl_zero_gauge_m": 78.0,
+    "load": {
+     "found": true,
+     "rows_read": 2500,
+     "counts": {
+      "usable_rows": 2500,
+      "unparseable_timestamps": 0,
+      "non_numeric_levels": 0,
+      "duplicate_rows_removed": 0,
+      "conflicting_timestamps_dropped": 0
+     },
+     "identity": {
+      "verified": true,
+      "mismatch_rows": 0,
+      "mismatches": []
+     },
+     "first_observed_at": "2025-01-01T00:00:00+05:30",
+     "last_observed_at": "2025-04-15T03:00:00+05:30",
+     "provenance": {
+      "raw_file": "raw.csv",
+      "sha256": "6a47652887f580455a0457bc8948232d2e0b6ca7a1ab9e9a55fe3328c8546b79",
+      "time_column": "Data Acquisition Time",
+      "level_column": "River Water Level Telemetry Hourly (meter)",
+      "time_basis": "OBSERVATION (Data Acquisition Time; the file has no separate acquisition or download time)",
+      "assumed_utc_offset": "+05:30",
+      "timestamp_status": "ASSUMED",
+      "datum": "reduced_level",
+      "datum_status": "ASSUMED",
+      "units": "m"
+     }
+    },
+    "qc": {
+     "configured": true,
+     "valid_min_m": 78.0,
+     "valid_max_m": 92.0,
+     "max_jump_m": 1.0,
+     "invalid_values_m": [
+      81.17
+     ],
+     "reference": "Prototype QC derived from rwl_tel_hr_cwc_009_2021_2025.csv (not official). Zero-gauge RL 78.0 m; plausible readings lie within 80.2-88.1 m, while 0-1 m and 100-800 m values are telemetry errors. 81.17 m makes up about half of all in-range readings and repeats unchanged in runs up to 3277 h, so it is treated as a fill value. Telemetry is reported to the millimetre, so an identical value held for more than 6 h is treated as a stuck sensor.",
+     "checked": 2500,
+     "accepted": 2500,
+     "rejected_negative": 0,
+     "rejected_placeholder": 0,
+     "rejected_out_of_range": 0,
+     "rejected_spike": 0,
+     "spike_check_skipped": 3,
+     "max_constant_run_hours": 6.0,
+     "rejected_stuck": 0
+    },
+    "analysis": {
+     "data_class": "HISTORICAL_CWC_DATA",
+     "value_basis": "MEASURED",
+     "reference_time": "2025-04-15T03:30:00+05:30",
+     "accepted_readings": 2500,
+     "rejected_readings": 0,
+     "rejected_by_reason": {},
+     "status": "AVAILABLE",
+     "latest": {
+      "level_m": 84.011,
+      "observed_at": "2025-04-15T03:00:00+05:30",
+      "basis": "MEASURED",
+      "data_class": "HISTORICAL_CWC_DATA"
+     },
+     "freshness": {
+      "status": "FRESH",
+      "reference_time": "2025-04-14T22:00:00+00:00",
+      "max_age_hours": 3.0,
+      "age_minutes": 30.0,
+      "age_hours": 0.5,
+      "retrieval_time_available": false,
+      "retrieval_lag_minutes": null,
+      "reason": null
+     },
+     "is_current": false,
+     "trends": {
+      "1h": {
+       "status": "AVAILABLE",
+       "direction": "RISING",
+       "level_change_m": 0.003,
+       "rate_of_change_m_per_hour": 0.003,
+       "baseline_observed_at": "2025-04-14T20:30:00+00:00",
+       "duration_hours": 1.0,
+       "observations_in_window": 2,
+       "reason": null,
+       "basis": "DERIVED_FROM_MEASURED"
+      },
+      "3h": {
+       "status": "AVAILABLE",
+       "direction": "RISING",
+       "level_change_m": 0.011,
+       "rate_of_change_m_per_hour": 0.0037,
+       "baseline_observed_at": "2025-04-14T18:30:00+00:00",
+       "duration_hours": 3.0,
+       "observations_in_window": 4,
+       "reason": null,
+       "basis": "DERIVED_FROM_MEASURED"
+      },
+      "6h": {
+       "status": "AVAILABLE",
+       "direction": "RISING",
+       "level_change_m": 0.022,
+       "rate_of_change_m_per_hour": 0.0037,
+       "baseline_observed_at": "2025-04-14T15:30:00+00:00",
+       "duration_hours": 6.0,
+       "observations_in_window": 7,
+       "reason": null,
+       "basis": "DERIVED_FROM_MEASURED"
+      },
+      "24h": {
+       "status": "AVAILABLE",
+       "direction": "RISING",
+       "level_change_m": 0.023,
+       "rate_of_change_m_per_hour": 0.001,
+       "baseline_observed_at": "2025-04-13T21:30:00+00:00",
+       "duration_hours": 24.0,
+       "observations_in_window": 25,
+       "reason": null,
+       "basis": "DERIVED_FROM_MEASURED"
+      }
+     },
+     "rolling_24h": {
+      "readings": 24,
+      "mean_m": 83.983,
+      "std_m": 0.0125,
+      "min_m": 83.97,
+      "max_m": 84.011,
+      "window_end": "2025-04-15T03:00:00+05:30",
+      "basis": "DERIVED_FROM_MEASURED"
+     },
+     "record": {
+      "max_m": 84.031,
+      "max_at": "2025-01-15T12:00:00+05:30",
+      "min_m": 83.969,
+      "min_at": "2025-02-05T12:00:00+05:30",
+      "period": [
+       "2025-01-01T00:00:00+05:30",
+       "2025-04-15T03:00:00+05:30"
+      ],
+      "basis": "MEASURED",
+      "note": "Extremes of QC-accepted readings in this file only; not official record levels."
+     },
+     "completeness": {
+      "overall": 1.0,
+      "by_year": {
+       "2025": {
+        "accepted": 2500,
+        "completeness": 1.0
+       }
+      },
+      "expected_interval_hours": 1.0,
+      "basis": "DERIVED_FROM_MEASURED"
+     },
+     "gaps": {
+      "threshold_hours": 3.0,
+      "count": 0,
+      "missing_hours": 0,
+      "longest": []
+     }
+    }
+   }
+  },
+  "excluded_stations": [
+   {
+    "station_id": "METTUR",
+    "source_name": "Mettur Reservoir",
+    "kind": "reservoir",
+    "last_observed_at": "2025-01-01T00:00:00+05:30",
+    "reason": "Reservoir level: not a river gauge and not a release; never compared with or used as a river level."
+   }
+  ],
+  "upstream_relationship": {
+   "verdict": "VERIFIED",
+   "reason": "Level changes correlate (r=1.0) at a 0 h lag over 2494 pairs.",
+   "used_in_forecast": true,
+   "used_in_risk_assessment": false,
+   "estimated_lag_hours": 0,
+   "best": {
+    "change_hours": 6,
+    "lag_hours": 0,
+    "pairs": 2494,
+    "correlation": 1.0
+   },
+   "by_lag": [
+    {
+     "change_hours": 1,
+     "lag_hours": 0,
+     "pairs": 2499,
+     "correlation": 0.99
+    },
+    {
+     "change_hours": 1,
+     "lag_hours": 1,
+     "pairs": 2498,
+     "correlation": 0.948
+    },
+    {
+     "change_hours": 1,
+     "lag_hours": 2,
+     "pairs": 2497,
+     "correlation": 0.936
+    },
+    {
+     "change_hours": 1,
+     "lag_hours": 3,
+     "pairs": 2496,
+     "correlation": 0.894
+    },
+    {
+     "change_hours": 1,
+     "lag_hours": 4,
+     "pairs": 2495,
+     "correlation": 0.838
+    },
+    {
+     "change_hours": 1,
+     "lag_hours": 5,
+     "pairs": 2494,
+     "correlation": 0.768
+    },
+    {
+     "change_hours": 1,
+     "lag_hours": 6,
+     "pairs": 2493,
+     "correlation": 0.684
+    },
+    {
+     "change_hours": 1,
+     "lag_hours": 7,
+     "pairs": 2492,
+     "correlation": 0.589
+    },
+    {
+     "change_hours": 1,
+     "lag_hours": 8,
+     "pairs": 2491,
+     "correlation": 0.481
+    },
+    {
+     "change_hours": 1,
+     "lag_hours": 9,
+     "pairs": 2490,
+     "correlation": 0.37
+    },
+    {
+     "change_hours": 1,
+     "lag_hours": 10,
+     "pairs": 2489,
+     "correlation": 0.247
+    },
+    {
+     "change_hours": 1,
+     "lag_hours": 11,
+     "pairs": 2488,
+     "correlation": 0.125
+    },
+    {
+     "change_hours": 1,
+     "lag_hours": 12,
+     "pairs": 2487,
+     "correlation": -0.003
+    },
+    {
+     "change_hours": 1,
+     "lag_hours": 13,
+     "pairs": 2486,
+     "correlation": -0.129
+    },
+    {
+     "change_hours": 1,
+     "lag_hours": 14,
+     "pairs": 2485,
+     "correlation": -0.252
+    },
+    {
+     "change_hours": 1,
+     "lag_hours": 15,
+     "pairs": 2484,
+     "correlation": -0.374
+    },
+    {
+     "change_hours": 1,
+     "lag_hours": 16,
+     "pairs": 2483,
+     "correlation": -0.485
+    },
+    {
+     "change_hours": 1,
+     "lag_hours": 17,
+     "pairs": 2482,
+     "correlation": -0.591
+    },
+    {
+     "change_hours": 1,
+     "lag_hours": 18,
+     "pairs": 2481,
+     "correlation": -0.686
+    },
+    {
+     "change_hours": 1,
+     "lag_hours": 19,
+     "pairs": 2480,
+     "correlation": -0.77
+    },
+    {
+     "change_hours": 1,
+     "lag_hours": 20,
+     "pairs": 2479,
+     "correlation": -0.838
+    },
+    {
+     "change_hours": 1,
+     "lag_hours": 21,
+     "pairs": 2478,
+     "correlation": -0.894
+    },
+    {
+     "change_hours": 1,
+     "lag_hours": 22,
+     "pairs": 2477,
+     "correlation": -0.937
+    },
+    {
+     "change_hours": 1,
+     "lag_hours": 23,
+     "pairs": 2476,
+     "correlation": -0.959
+    },
+    {
+     "change_hours": 1,
+     "lag_hours": 24,
+     "pairs": 2475,
+     "correlation": -0.967
+    },
+    {
+     "change_hours": 6,
+     "lag_hours": 0,
+     "pairs": 2494,
+     "correlation": 1.0
+    },
+    {
+     "change_hours": 6,
+     "lag_hours": 1,
+     "pairs": 2493,
+     "correlation": 0.99
+    },
+    {
+     "change_hours": 6,
+     "lag_hours": 2,
+     "pairs": 2492,
+     "correlation": 0.965
+    },
+    {
+     "change_hours": 6,
+     "lag_hours": 3,
+     "pairs": 2491,
+     "correlation": 0.923
+    },
+    {
+     "change_hours": 6,
+     "lag_hours": 4,
+     "pairs": 2490,
+     "correlation": 0.865
+    },
+    {
+     "change_hours": 6,
+     "lag_hours": 5,
+     "pairs": 2489,
+     "correlation": 0.792
+    },
+    {
+     "change_hours": 6,
+     "lag_hours": 6,
+     "pairs": 2488,
+     "correlation": 0.705
+    },
+    {
+     "change_hours": 6,
+     "lag_hours": 7,
+     "pairs": 2487,
+     "correlation": 0.607
+    },
+    {
+     "change_hours": 6,
+     "lag_hours": 8,
+     "pairs": 2486,
+     "correlation": 0.497
+    },
+    {
+     "change_hours": 6,
+     "lag_hours": 9,
+     "pairs": 2485,
+     "correlation": 0.38
+    },
+    {
+     "change_hours": 6,
+     "lag_hours": 10,
+     "pairs": 2484,
+     "correlation": 0.256
+    },
+    {
+     "change_hours": 6,
+     "lag_hours": 11,
+     "pairs": 2483,
+     "correlation": 0.128
+    },
+    {
+     "change_hours": 6,
+     "lag_hours": 12,
+     "pairs": 2482,
+     "correlation": -0.003
+    },
+    {
+     "change_hours": 6,
+     "lag_hours": 13,
+     "pairs": 2481,
+     "correlation": -0.133
+    },
+    {
+     "change_hours": 6,
+     "lag_hours": 14,
+     "pairs": 2480,
+     "correlation": -0.261
+    },
+    {
+     "change_hours": 6,
+     "lag_hours": 15,
+     "pairs": 2479,
+     "correlation": -0.384
+    },
+    {
+     "change_hours": 6,
+     "lag_hours": 16,
+     "pairs": 2478,
+     "correlation": -0.501
+    },
+    {
+     "change_hours": 6,
+     "lag_hours": 17,
+     "pairs": 2477,
+     "correlation": -0.609
+    },
+    {
+     "change_hours": 6,
+     "lag_hours": 18,
+     "pairs": 2476,
+     "correlation": -0.707
+    },
+    {
+     "change_hours": 6,
+     "lag_hours": 19,
+     "pairs": 2475,
+     "correlation": -0.793
+    },
+    {
+     "change_hours": 6,
+     "lag_hours": 20,
+     "pairs": 2474,
+     "correlation": -0.865
+    },
+    {
+     "change_hours": 6,
+     "lag_hours": 21,
+     "pairs": 2473,
+     "correlation": -0.923
+    },
+    {
+     "change_hours": 6,
+     "lag_hours": 22,
+     "pairs": 2472,
+     "correlation": -0.965
+    },
+    {
+     "change_hours": 6,
+     "lag_hours": 23,
+     "pairs": 2471,
+     "correlation": -0.99
+    },
+    {
+     "change_hours": 6,
+     "lag_hours": 24,
+     "pairs": 2470,
+     "correlation": -0.999
+    }
+   ],
+   "acceptance_rule": {
+    "max_lag_hours": 24,
+    "min_pairs": 500,
+    "min_abs_correlation": 0.3
+   },
+   "metadata": {
+    "same_river": true,
+    "both_main_stem": true,
+    "straight_line_km": 16.2,
+    "zero_gauge_rl_m": {
+     "upstream": 78.0,
+     "primary": 72.6
+    },
+    "zero_gauge_falls_downstream": true,
+    "datums": {
+     "upstream": [
+      "reduced_level",
+      "ASSUMED"
+     ],
+     "primary": [
+      "reduced_level",
+      "ASSUMED"
+     ]
+    }
+   },
+   "note": "Station order and geography alone do not prove a measurable hydraulic link. Upper Anicut is a regulated weir pool, which can mask upstream changes."
+  },
+  "main_stem_order": {
+   "downstream_order": [
+    "METTUR",
+    "MUSIRI",
+    "UPPER_ANICUT"
+   ],
+   "source": "Course of the Cauvery main stem (Mettur dam -> Erode -> Kodumudi -> Musiri -> Upper Anicut/Mukkombu). Consistent with the file: all three are on the Cauvery main stem (Tributary '-'), and zero-gauge levels fall downstream (Musiri 78.0 m, Upper Anicut 72.6 m). Station order is not proof of a measurable hydraulic relationship: that is tested from the data (upstream_validation)."
+  },
+  "affects_risk_assessment": false,
+  "authorizes_actions": false
+ },
+ "forecast": {
+  "label": "MODEL PREDICTION",
+  "station_id": "UPPER_ANICUT",
+  "evaluation": {
+   "station_id": "UPPER_ANICUT",
+   "label": "MODEL PREDICTION",
+   "data": {
+    "accepted_readings": 2500,
+    "first": "2025-01-01T00:00:00+05:30",
+    "last": "2025-04-15T03:00:00+05:30",
+    "basis": "QC-accepted MEASURED CWC readings (historical export); nothing interpolated"
+   },
+   "models_compared": [
+    "persistence",
+    "moving_average_6h",
+    "linear_trend_6h",
+    "ridge_ar_6h"
+   ],
+   "publishing_rule": "Chosen on validation; published only if it beats persistence by >= 2% MAE on validation and test, interval coverage >= 80%, >= 100 test samples.",
+   "horizons": [
+    {
+     "horizon_hours": 1,
+     "split": {
+      "method": "chronological by forecast origin, never shuffled",
+      "fractions": [
+       0.7,
+       0.15,
+       0.15
+      ],
+      "embargo_hours": 31,
+      "samples": {
+       "train": 1745,
+       "validation": 343,
+       "test": 344
+      },
+      "periods": {
+       "train": [
+        "2025-01-01T05:00:00+05:30",
+        "2025-03-14T21:00:00+05:30"
+       ],
+       "validation": [
+        "2025-03-16T05:00:00+05:30",
+        "2025-03-30T11:00:00+05:30"
+       ],
+       "test": [
+        "2025-03-31T19:00:00+05:30",
+        "2025-04-15T02:00:00+05:30"
+       ]
+      }
+     },
+     "models": {
+      "persistence": {
+       "details": {},
+       "validation": {
+        "samples": 343,
+        "mae_m": 0.025,
+        "rmse_m": 0.0279,
+        "bias_m": -0.0003,
+        "r2": 0.9829
+       },
+       "test": {
+        "samples": 344,
+        "mae_m": 0.0254,
+        "rmse_m": 0.0283,
+        "bias_m": -0.0008,
+        "r2": 0.9819
+       },
+       "interval": {
+        "quantiles": [
+         0.05,
+         0.95
+        ],
+        "low_offset_m": -0.04,
+        "high_offset_m": 0.039,
+        "test_coverage": 0.884
+       }
+      },
+      "moving_average_6h": {
+       "details": {},
+       "validation": {
+        "samples": 343,
+        "mae_m": 0.0857,
+        "rmse_m": 0.0951,
+        "bias_m": -0.0017,
+        "r2": 0.8012,
+        "skill_vs_persistence": -2.428
+       },
+       "test": {
+        "samples": 344,
+        "mae_m": 0.0866,
+        "rmse_m": 0.0961,
+        "bias_m": -0.0028,
+        "r2": 0.7911,
+        "skill_vs_persistence": -2.4094
+       },
+       "interval": {
+        "quantiles": [
+         0.05,
+         0.95
+        ],
+        "low_offset_m": -0.1321,
+        "high_offset_m": 0.1317,
+        "test_coverage": 0.863
+       }
+      },
+      "linear_trend_6h": {
+       "details": {},
+       "validation": {
+        "samples": 343,
+        "mae_m": 0.0153,
+        "rmse_m": 0.0172,
+        "bias_m": 0.0003,
+        "r2": 0.9935,
+        "skill_vs_persistence": 0.388
+       },
+       "test": {
+        "samples": 344,
+        "mae_m": 0.0152,
+        "rmse_m": 0.0171,
+        "bias_m": -0.0002,
+        "r2": 0.9934,
+        "skill_vs_persistence": 0.4016
+       },
+       "interval": {
+        "quantiles": [
+         0.05,
+         0.95
+        ],
+        "low_offset_m": -0.0254,
+        "high_offset_m": 0.0249,
+        "test_coverage": 0.913
+       }
+      },
+      "ridge_ar_6h": {
+       "details": {
+        "penalty": 0.01,
+        "trained_on": 1745,
+        "features": [
+         "level(t) - level(t-1h)",
+         "level(t) - level(t-2h)",
+         "level(t) - level(t-3h)",
+         "level(t) - level(t-4h)",
+         "level(t) - level(t-5h)",
+         "mean(6h) - level(t)"
+        ],
+        "weights_standardised": [
+         0.00808,
+         0.01878,
+         0.01358,
+         0.00046,
+         -0.01524,
+         -0.00089
+        ],
+        "intercept_m": -6e-05
+       },
+       "validation": {
+        "samples": 343,
+        "mae_m": 0.0052,
+        "rmse_m": 0.0065,
+        "bias_m": 0.0,
+        "r2": 0.9991,
+        "skill_vs_persistence": 0.792
+       },
+       "test": {
+        "samples": 344,
+        "mae_m": 0.0054,
+        "rmse_m": 0.0067,
+        "bias_m": -0.0001,
+        "r2": 0.999,
+        "skill_vs_persistence": 0.7874
+       },
+       "interval": {
+        "quantiles": [
+         0.05,
+         0.95
+        ],
+        "low_offset_m": -0.0111,
+        "high_offset_m": 0.0113,
+        "test_coverage": 0.895
+       }
+      }
+     },
+     "selected_model": "ridge_ar_6h",
+     "published": true,
+     "validation_status": "PUBLISHED",
+     "reason": "Published: beats persistence on validation and test, interval coverage acceptable."
+    },
+    {
+     "horizon_hours": 3,
+     "split": {
+      "method": "chronological by forecast origin, never shuffled",
+      "fractions": [
+       0.7,
+       0.15,
+       0.15
+      ],
+      "embargo_hours": 33,
+      "samples": {
+       "train": 1744,
+       "validation": 341,
+       "test": 341
+      },
+      "periods": {
+       "train": [
+        "2025-01-01T05:00:00+05:30",
+        "2025-03-14T20:00:00+05:30"
+       ],
+       "validation": [
+        "2025-03-16T06:00:00+05:30",
+        "2025-03-30T10:00:00+05:30"
+       ],
+       "test": [
+        "2025-03-31T20:00:00+05:30",
+        "2025-04-15T00:00:00+05:30"
+       ]
+      }
+     },
+     "models": {
+      "persistence": {
+       "details": {},
+       "validation": {
+        "samples": 341,
+        "mae_m": 0.074,
+        "rmse_m": 0.0824,
+        "bias_m": -0.0006,
+        "r2": 0.8509
+       },
+       "test": {
+        "samples": 341,
+        "mae_m": 0.0753,
+        "rmse_m": 0.0835,
+        "bias_m": -0.0017,
+        "r2": 0.8433
+       },
+       "interval": {
+        "quantiles": [
+         0.05,
+         0.95
+        ],
+        "low_offset_m": -0.115,
+        "high_offset_m": 0.115,
+        "test_coverage": 0.874
+       }
+      },
+      "moving_average_6h": {
+       "details": {},
+       "validation": {
+        "samples": 341,
+        "mae_m": 0.1325,
+        "rmse_m": 0.1472,
+        "bias_m": -0.0015,
+        "r2": 0.5244,
+        "skill_vs_persistence": -0.7905
+       },
+       "test": {
+        "samples": 341,
+        "mae_m": 0.1339,
+        "rmse_m": 0.1487,
+        "bias_m": -0.0029,
+        "r2": 0.5031,
+        "skill_vs_persistence": -0.7782
+       },
+       "interval": {
+        "quantiles": [
+         0.05,
+         0.95
+        ],
+        "low_offset_m": -0.2043,
+        "high_offset_m": 0.2063,
+        "test_coverage": 0.883
+       }
+      },
+      "linear_trend_6h": {
+       "details": {},
+       "validation": {
+        "samples": 341,
+        "mae_m": 0.0439,
+        "rmse_m": 0.0489,
+        "bias_m": 0.0008,
+        "r2": 0.9476,
+        "skill_vs_persistence": 0.4068
+       },
+       "test": {
+        "samples": 341,
+        "mae_m": 0.0437,
+        "rmse_m": 0.0486,
+        "bias_m": -0.0003,
+        "r2": 0.9469,
+        "skill_vs_persistence": 0.4197
+       },
+       "interval": {
+        "quantiles": [
+         0.05,
+         0.95
+        ],
+        "low_offset_m": -0.0691,
+        "high_offset_m": 0.0692,
+        "test_coverage": 0.918
+       }
+      },
+      "ridge_ar_6h": {
+       "details": {
+        "penalty": 0.01,
+        "trained_on": 1744,
+        "features": [
+         "level(t) - level(t-1h)",
+         "level(t) - level(t-2h)",
+         "level(t) - level(t-3h)",
+         "level(t) - level(t-4h)",
+         "level(t) - level(t-5h)",
+         "mean(6h) - level(t)"
+        ],
+        "weights_standardised": [
+         0.04664,
+         0.07232,
+         0.04315,
+         -0.00983,
+         -0.0715,
+         0.00471
+        ],
+        "intercept_m": -0.00023
+       },
+       "validation": {
+        "samples": 341,
+        "mae_m": 0.0136,
+        "rmse_m": 0.0167,
+        "bias_m": 0.0001,
+        "r2": 0.9938,
+        "skill_vs_persistence": 0.8162
+       },
+       "test": {
+        "samples": 341,
+        "mae_m": 0.0142,
+        "rmse_m": 0.0173,
+        "bias_m": -0.0002,
+        "r2": 0.9933,
+        "skill_vs_persistence": 0.8114
+       },
+       "interval": {
+        "quantiles": [
+         0.05,
+         0.95
+        ],
+        "low_offset_m": -0.0257,
+        "high_offset_m": 0.027,
+        "test_coverage": 0.903
+       }
+      }
+     },
+     "selected_model": "ridge_ar_6h",
+     "published": true,
+     "validation_status": "PUBLISHED",
+     "reason": "Published: beats persistence on validation and test, interval coverage acceptable."
+    },
+    {
+     "horizon_hours": 6,
+     "split": {
+      "method": "chronological by forecast origin, never shuffled",
+      "fractions": [
+       0.7,
+       0.15,
+       0.15
+      ],
+      "embargo_hours": 36,
+      "samples": {
+       "train": 1742,
+       "validation": 337,
+       "test": 338
+      },
+      "periods": {
+       "train": [
+        "2025-01-01T05:00:00+05:30",
+        "2025-03-14T18:00:00+05:30"
+       ],
+       "validation": [
+        "2025-03-16T07:00:00+05:30",
+        "2025-03-30T07:00:00+05:30"
+       ],
+       "test": [
+        "2025-03-31T20:00:00+05:30",
+        "2025-04-14T21:00:00+05:30"
+       ]
+      }
+     },
+     "models": {
+      "persistence": {
+       "details": {},
+       "validation": {
+        "samples": 337,
+        "mae_m": 0.1459,
+        "rmse_m": 0.1622,
+        "bias_m": -0.0002,
+        "r2": 0.4171
+       },
+       "test": {
+        "samples": 338,
+        "mae_m": 0.1466,
+        "rmse_m": 0.163,
+        "bias_m": -0.0013,
+        "r2": 0.4081
+       },
+       "interval": {
+        "quantiles": [
+         0.05,
+         0.95
+        ],
+        "low_offset_m": -0.226,
+        "high_offset_m": 0.226,
+        "test_coverage": 0.891
+       }
+      },
+      "moving_average_6h": {
+       "details": {},
+       "validation": {
+        "samples": 337,
+        "mae_m": 0.1992,
+        "rmse_m": 0.2211,
+        "bias_m": -0.0004,
+        "r2": -0.0833,
+        "skill_vs_persistence": -0.3653
+       },
+       "test": {
+        "samples": 338,
+        "mae_m": 0.2001,
+        "rmse_m": 0.2221,
+        "bias_m": -0.0018,
+        "r2": -0.0988,
+        "skill_vs_persistence": -0.3649
+       },
+       "interval": {
+        "quantiles": [
+         0.05,
+         0.95
+        ],
+        "low_offset_m": -0.3078,
+        "high_offset_m": 0.3076,
+        "test_coverage": 0.882
+       }
+      },
+      "linear_trend_6h": {
+       "details": {},
+       "validation": {
+        "samples": 337,
+        "mae_m": 0.1088,
+        "rmse_m": 0.121,
+        "bias_m": 0.0004,
+        "r2": 0.6758,
+        "skill_vs_persistence": 0.2543
+       },
+       "test": {
+        "samples": 338,
+        "mae_m": 0.1088,
+        "rmse_m": 0.1208,
+        "bias_m": -0.0004,
+        "r2": 0.6752,
+        "skill_vs_persistence": 0.2578
+       },
+       "interval": {
+        "quantiles": [
+         0.05,
+         0.95
+        ],
+        "low_offset_m": -0.1695,
+        "high_offset_m": 0.1693,
+        "test_coverage": 0.914
+       }
+      },
+      "ridge_ar_6h": {
+       "details": {
+        "penalty": 0.01,
+        "trained_on": 1742,
+        "features": [
+         "level(t) - level(t-1h)",
+         "level(t) - level(t-2h)",
+         "level(t) - level(t-3h)",
+         "level(t) - level(t-4h)",
+         "level(t) - level(t-5h)",
+         "mean(6h) - level(t)"
+        ],
+        "weights_standardised": [
+         0.13563,
+         0.18835,
+         0.09865,
+         -0.04679,
+         -0.21293,
+         0.0286
+        ],
+        "intercept_m": -0.00052
+       },
+       "validation": {
+        "samples": 337,
+        "mae_m": 0.0333,
+        "rmse_m": 0.0405,
+        "bias_m": -0.0001,
+        "r2": 0.9637,
+        "skill_vs_persistence": 0.7718
+       },
+       "test": {
+        "samples": 338,
+        "mae_m": 0.0335,
+        "rmse_m": 0.041,
+        "bias_m": -0.0005,
+        "r2": 0.9625,
+        "skill_vs_persistence": 0.7715
+       },
+       "interval": {
+        "quantiles": [
+         0.05,
+         0.95
+        ],
+        "low_offset_m": -0.0645,
+        "high_offset_m": 0.0669,
+        "test_coverage": 0.902
+       }
+      }
+     },
+     "selected_model": "ridge_ar_6h",
+     "published": true,
+     "validation_status": "PUBLISHED",
+     "reason": "Published: beats persistence on validation and test, interval coverage acceptable."
+    },
+    {
+     "horizon_hours": 12,
+     "split": {
+      "method": "chronological by forecast origin, never shuffled",
+      "fractions": [
+       0.7,
+       0.15,
+       0.15
+      ],
+      "embargo_hours": 42,
+      "samples": {
+       "train": 1738,
+       "validation": 330,
+       "test": 331
+      },
+      "periods": {
+       "train": [
+        "2025-01-01T05:00:00+05:30",
+        "2025-03-14T14:00:00+05:30"
+       ],
+       "validation": [
+        "2025-03-16T09:00:00+05:30",
+        "2025-03-30T02:00:00+05:30"
+       ],
+       "test": [
+        "2025-03-31T21:00:00+05:30",
+        "2025-04-14T15:00:00+05:30"
+       ]
+      }
+     },
+     "models": {
+      "persistence": {
+       "details": {},
+       "validation": {
+        "samples": 330,
+        "mae_m": 0.2732,
+        "rmse_m": 0.3025,
+        "bias_m": 0.0005,
+        "r2": -1.037
+       },
+       "test": {
+        "samples": 331,
+        "mae_m": 0.2679,
+        "rmse_m": 0.2983,
+        "bias_m": 0.0063,
+        "r2": -0.9723
+       },
+       "interval": {
+        "quantiles": [
+         0.05,
+         0.95
+        ],
+        "low_offset_m": -0.4186,
+        "high_offset_m": 0.4195,
+        "test_coverage": 0.906
+       }
+      },
+      "moving_average_6h": {
+       "details": {},
+       "validation": {
+        "samples": 330,
+        "mae_m": 0.3102,
+        "rmse_m": 0.3431,
+        "bias_m": 0.002,
+        "r2": -1.621,
+        "skill_vs_persistence": -0.1354
+       },
+       "test": {
+        "samples": 331,
+        "mae_m": 0.3046,
+        "rmse_m": 0.3388,
+        "bias_m": 0.0071,
+        "r2": -1.5436,
+        "skill_vs_persistence": -0.137
+       },
+       "interval": {
+        "quantiles": [
+         0.05,
+         0.95
+        ],
+        "low_offset_m": -0.4743,
+        "high_offset_m": 0.4741,
+        "test_coverage": 0.906
+       }
+      },
+      "linear_trend_6h": {
+       "details": {},
+       "validation": {
+        "samples": 330,
+        "mae_m": 0.3026,
+        "rmse_m": 0.3369,
+        "bias_m": -0.007,
+        "r2": -1.5267,
+        "skill_vs_persistence": -0.1076
+       },
+       "test": {
+        "samples": 331,
+        "mae_m": 0.3056,
+        "rmse_m": 0.3396,
+        "bias_m": 0.0033,
+        "r2": -1.5563,
+        "skill_vs_persistence": -0.1407
+       },
+       "interval": {
+        "quantiles": [
+         0.05,
+         0.95
+        ],
+        "low_offset_m": -0.4706,
+        "high_offset_m": 0.4756,
+        "test_coverage": 0.927
+       }
+      },
+      "ridge_ar_6h": {
+       "details": {
+        "penalty": 0.01,
+        "trained_on": 1738,
+        "features": [
+         "level(t) - level(t-1h)",
+         "level(t) - level(t-2h)",
+         "level(t) - level(t-3h)",
+         "level(t) - level(t-4h)",
+         "level(t) - level(t-5h)",
+         "mean(6h) - level(t)"
+        ],
+        "weights_standardised": [
+         0.37071,
+         0.47478,
+         0.22173,
+         -0.17265,
+         -0.61367,
+         0.11578
+        ],
+        "intercept_m": -0.00102
+       },
+       "validation": {
+        "samples": 330,
+        "mae_m": 0.0838,
+        "rmse_m": 0.1013,
+        "bias_m": -0.0015,
+        "r2": 0.7713,
+        "skill_vs_persistence": 0.6933
+       },
+       "test": {
+        "samples": 331,
+        "mae_m": 0.084,
+        "rmse_m": 0.1028,
+        "bias_m": 0.0003,
+        "r2": 0.7658,
+        "skill_vs_persistence": 0.6865
+       },
+       "interval": {
+        "quantiles": [
+         0.05,
+         0.95
+        ],
+        "low_offset_m": -0.1601,
+        "high_offset_m": 0.1666,
+        "test_coverage": 0.897
+       }
+      }
+     },
+     "selected_model": "ridge_ar_6h",
+     "published": true,
+     "validation_status": "PUBLISHED",
+     "reason": "Published: beats persistence on validation and test, interval coverage acceptable."
+    },
+    {
+     "horizon_hours": 24,
+     "split": {
+      "method": "chronological by forecast origin, never shuffled",
+      "fractions": [
+       0.7,
+       0.15,
+       0.15
+      ],
+      "embargo_hours": 54,
+      "samples": {
+       "train": 1729,
+       "validation": 317,
+       "test": 317
+      },
+      "periods": {
+       "train": [
+        "2025-01-01T05:00:00+05:30",
+        "2025-03-14T05:00:00+05:30"
+       ],
+       "validation": [
+        "2025-03-16T12:00:00+05:30",
+        "2025-03-29T16:00:00+05:30"
+       ],
+       "test": [
+        "2025-03-31T23:00:00+05:30",
+        "2025-04-14T03:00:00+05:30"
+       ]
+      }
+     },
+     "models": {
+      "persistence": {
+       "details": {},
+       "validation": {
+        "samples": 317,
+        "mae_m": 0.3845,
+        "rmse_m": 0.427,
+        "bias_m": -0.007,
+        "r2": -2.9999
+       },
+       "test": {
+        "samples": 317,
+        "mae_m": 0.3779,
+        "rmse_m": 0.4219,
+        "bias_m": 0.0271,
+        "r2": -3.0158
+       },
+       "interval": {
+        "quantiles": [
+         0.05,
+         0.95
+        ],
+        "low_offset_m": -0.5894,
+        "high_offset_m": 0.5922,
+        "test_coverage": 0.883
+       }
+      },
+      "moving_average_6h": {
+       "details": {},
+       "validation": {
+        "samples": 317,
+        "mae_m": 0.3753,
+        "rmse_m": 0.4164,
+        "bias_m": -0.0026,
+        "r2": -2.8034,
+        "skill_vs_persistence": 0.0239
+       },
+       "test": {
+        "samples": 317,
+        "mae_m": 0.3686,
+        "rmse_m": 0.411,
+        "bias_m": 0.0267,
+        "r2": -2.811,
+        "skill_vs_persistence": 0.0246
+       },
+       "interval": {
+        "quantiles": [
+         0.05,
+         0.95
+        ],
+        "low_offset_m": -0.5768,
+        "high_offset_m": 0.5785,
+        "test_coverage": 0.896
+       }
+      },
+      "linear_trend_6h": {
+       "details": {},
+       "validation": {
+        "samples": 317,
+        "mae_m": 0.8006,
+        "rmse_m": 0.8893,
+        "bias_m": -0.0492,
+        "r2": -16.3505,
+        "skill_vs_persistence": -1.0822
+       },
+       "test": {
+        "samples": 317,
+        "mae_m": 0.8051,
+        "rmse_m": 0.8947,
+        "bias_m": 0.0358,
+        "r2": -17.0626,
+        "skill_vs_persistence": -1.1305
+       },
+       "interval": {
+        "quantiles": [
+         0.05,
+         0.95
+        ],
+        "low_offset_m": -1.2339,
+        "high_offset_m": 1.2382,
+        "test_coverage": 0.868
+       }
+      },
+      "ridge_ar_6h": {
+       "details": {
+        "penalty": 0.01,
+        "trained_on": 1729,
+        "features": [
+         "level(t) - level(t-1h)",
+         "level(t) - level(t-2h)",
+         "level(t) - level(t-3h)",
+         "level(t) - level(t-4h)",
+         "level(t) - level(t-5h)",
+         "mean(6h) - level(t)"
+        ],
+        "weights_standardised": [
+         0.60029,
+         0.71492,
+         0.28358,
+         -0.35849,
+         -1.06836,
+         0.25568
+        ],
+        "intercept_m": -0.00021
+       },
+       "validation": {
+        "samples": 317,
+        "mae_m": 0.1294,
+        "rmse_m": 0.1557,
+        "bias_m": 0.0005,
+        "r2": 0.4681,
+        "skill_vs_persistence": 0.6635
+       },
+       "test": {
+        "samples": 317,
+        "mae_m": 0.1281,
+        "rmse_m": 0.1558,
+        "bias_m": 0.0074,
+        "r2": 0.4526,
+        "skill_vs_persistence": 0.661
+       },
+       "interval": {
+        "quantiles": [
+         0.05,
+         0.95
+        ],
+        "low_offset_m": -0.2457,
+        "high_offset_m": 0.2565,
+        "test_coverage": 0.912
+       }
+      }
+     },
+     "selected_model": "ridge_ar_6h",
+     "published": true,
+     "validation_status": "PUBLISHED",
+     "reason": "Published: beats persistence on validation and test, interval coverage acceptable."
+    }
+   ],
+   "affects_risk_assessment": false,
+   "affects_disaster_state": false,
+   "authorizes_actions": false
+  },
+  "live": [
+   {
+    "horizon_hours": 1,
+    "label": "MODEL PREDICTION",
+    "model": "ridge_ar_6h",
+    "published": true,
+    "predicted_level_m": 74.143,
+    "interval_m": [
+     74.132,
+     74.154
+    ],
+    "valid_for": "2025-04-15T04:00:00+05:30",
+    "input_latest_observed_at": "2025-04-15T03:00:00+05:30",
+    "input_age_hours": 0.5,
+    "status": "FORECAST",
+    "reason": null,
+    "test_metrics": {
+     "samples": 344,
+     "mae_m": 0.0054,
+     "rmse_m": 0.0067,
+     "bias_m": -0.0001,
+     "r2": 0.999,
+     "skill_vs_persistence": 0.7874
+    }
+   },
+   {
+    "horizon_hours": 3,
+    "label": "MODEL PREDICTION",
+    "model": "ridge_ar_6h",
+    "published": true,
+    "predicted_level_m": 74.191,
+    "interval_m": [
+     74.165,
+     74.218
+    ],
+    "valid_for": "2025-04-15T06:00:00+05:30",
+    "input_latest_observed_at": "2025-04-15T03:00:00+05:30",
+    "input_age_hours": 0.5,
+    "status": "FORECAST",
+    "reason": null,
+    "test_metrics": {
+     "samples": 341,
+     "mae_m": 0.0142,
+     "rmse_m": 0.0173,
+     "bias_m": -0.0002,
+     "r2": 0.9933,
+     "skill_vs_persistence": 0.8114
+    }
+   },
+   {
+    "horizon_hours": 6,
+    "label": "MODEL PREDICTION",
+    "model": "ridge_ar_6h",
+    "published": true,
+    "predicted_level_m": 74.226,
+    "interval_m": [
+     74.161,
+     74.293
+    ],
+    "valid_for": "2025-04-15T09:00:00+05:30",
+    "input_latest_observed_at": "2025-04-15T03:00:00+05:30",
+    "input_age_hours": 0.5,
+    "status": "FORECAST",
+    "reason": null,
+    "test_metrics": {
+     "samples": 338,
+     "mae_m": 0.0335,
+     "rmse_m": 0.041,
+     "bias_m": -0.0005,
+     "r2": 0.9625,
+     "skill_vs_persistence": 0.7715
+    }
+   },
+   {
+    "horizon_hours": 12,
+    "label": "MODEL PREDICTION",
+    "model": "ridge_ar_6h",
+    "published": true,
+    "predicted_level_m": 74.15,
+    "interval_m": [
+     73.99,
+     74.316
+    ],
+    "valid_for": "2025-04-15T15:00:00+05:30",
+    "input_latest_observed_at": "2025-04-15T03:00:00+05:30",
+    "input_age_hours": 0.5,
+    "status": "FORECAST",
+    "reason": null,
+    "test_metrics": {
+     "samples": 331,
+     "mae_m": 0.084,
+     "rmse_m": 0.1028,
+     "bias_m": 0.0003,
+     "r2": 0.7658,
+     "skill_vs_persistence": 0.6865
+    }
+   },
+   {
+    "horizon_hours": 24,
+    "label": "MODEL PREDICTION",
+    "model": "ridge_ar_6h",
+    "published": true,
+    "predicted_level_m": 73.694,
+    "interval_m": [
+     73.448,
+     73.951
+    ],
+    "valid_for": "2025-04-16T03:00:00+05:30",
+    "input_latest_observed_at": "2025-04-15T03:00:00+05:30",
+    "input_age_hours": 0.5,
+    "status": "FORECAST",
+    "reason": null,
+    "test_metrics": {
+     "samples": 317,
+     "mae_m": 0.1281,
+     "rmse_m": 0.1558,
+     "bias_m": 0.0074,
+     "r2": 0.4526,
+     "skill_vs_persistence": 0.661
+    }
+   }
+  ],
+  "recent_measurements": {
+   "label": "MEASURED",
+   "window_hours": 72,
+   "basis": "QC-accepted CWC readings; gaps are left as gaps",
+   "points": [
+    {
+     "time": "2025-04-12T03:00:00+05:30",
+     "level_m": 73.89
+    },
+    {
+     "time": "2025-04-12T04:00:00+05:30",
+     "level_m": 73.845
+    },
+    {
+     "time": "2025-04-12T05:00:00+05:30",
+     "level_m": 73.816
+    },
+    {
+     "time": "2025-04-12T06:00:00+05:30",
+     "level_m": 73.79
+    },
+    {
+     "time": "2025-04-12T07:00:00+05:30",
+     "level_m": 73.766
+    },
+    {
+     "time": "2025-04-12T08:00:00+05:30",
+     "level_m": 73.737
+    },
+    {
+     "time": "2025-04-12T09:00:00+05:30",
+     "level_m": 73.721
+    },
+    {
+     "time": "2025-04-12T10:00:00+05:30",
+     "level_m": 73.711
+    },
+    {
+     "time": "2025-04-12T11:00:00+05:30",
+     "level_m": 73.697
+    },
+    {
+     "time": "2025-04-12T12:00:00+05:30",
+     "level_m": 73.702
+    },
+    {
+     "time": "2025-04-12T13:00:00+05:30",
+     "level_m": 73.704
+    },
+    {
+     "time": "2025-04-12T14:00:00+05:30",
+     "level_m": 73.709
+    },
+    {
+     "time": "2025-04-12T15:00:00+05:30",
+     "level_m": 73.724
+    },
+    {
+     "time": "2025-04-12T16:00:00+05:30",
+     "level_m": 73.742
+    },
+    {
+     "time": "2025-04-12T17:00:00+05:30",
+     "level_m": 73.763
+    },
+    {
+     "time": "2025-04-12T18:00:00+05:30",
+     "level_m": 73.789
+    },
+    {
+     "time": "2025-04-12T19:00:00+05:30",
+     "level_m": 73.822
+    },
+    {
+     "time": "2025-04-12T20:00:00+05:30",
+     "level_m": 73.849
+    },
+    {
+     "time": "2025-04-12T21:00:00+05:30",
+     "level_m": 73.886
+    },
+    {
+     "time": "2025-04-12T22:00:00+05:30",
+     "level_m": 73.921
+    },
+    {
+     "time": "2025-04-12T23:00:00+05:30",
+     "level_m": 73.964
+    },
+    {
+     "time": "2025-04-13T00:00:00+05:30",
+     "level_m": 73.999
+    },
+    {
+     "time": "2025-04-13T01:00:00+05:30",
+     "level_m": 74.041
+    },
+    {
+     "time": "2025-04-13T02:00:00+05:30",
+     "level_m": 74.078
+    },
+    {
+     "time": "2025-04-13T03:00:00+05:30",
+     "level_m": 74.115
+    },
+    {
+     "time": "2025-04-13T04:00:00+05:30",
+     "level_m": 74.155
+    },
+    {
+     "time": "2025-04-13T05:00:00+05:30",
+     "level_m": 74.182
+    },
+    {
+     "time": "2025-04-13T06:00:00+05:30",
+     "level_m": 74.216
+    },
+    {
+     "time": "2025-04-13T07:00:00+05:30",
+     "level_m": 74.24
+    },
+    {
+     "time": "2025-04-13T08:00:00+05:30",
+     "level_m": 74.264
+    },
+    {
+     "time": "2025-04-13T09:00:00+05:30",
+     "level_m": 74.277
+    },
+    {
+     "time": "2025-04-13T10:00:00+05:30",
+     "level_m": 74.292
+    },
+    {
+     "time": "2025-04-13T11:00:00+05:30",
+     "level_m": 74.3
+    },
+    {
+     "time": "2025-04-13T12:00:00+05:30",
+     "level_m": 74.298
+    },
+    {
+     "time": "2025-04-13T13:00:00+05:30",
+     "level_m": 74.298
+    },
+    {
+     "time": "2025-04-13T14:00:00+05:30",
+     "level_m": 74.289
+    },
+    {
+     "time": "2025-04-13T15:00:00+05:30",
+     "level_m": 74.277
+    },
+    {
+     "time": "2025-04-13T16:00:00+05:30",
+     "level_m": 74.264
+    },
+    {
+     "time": "2025-04-13T17:00:00+05:30",
+     "level_m": 74.236
+    },
+    {
+     "time": "2025-04-13T18:00:00+05:30",
+     "level_m": 74.207
+    },
+    {
+     "time": "2025-04-13T19:00:00+05:30",
+     "level_m": 74.178
+    },
+    {
+     "time": "2025-04-13T20:00:00+05:30",
+     "level_m": 74.149
+    },
+    {
+     "time": "2025-04-13T21:00:00+05:30",
+     "level_m": 74.113
+    },
+    {
+     "time": "2025-04-13T22:00:00+05:30",
+     "level_m": 74.078
+    },
+    {
+     "time": "2025-04-13T23:00:00+05:30",
+     "level_m": 74.041
+    },
+    {
+     "time": "2025-04-14T00:00:00+05:30",
+     "level_m": 74.005
+    },
+    {
+     "time": "2025-04-14T01:00:00+05:30",
+     "level_m": 73.962
+    },
+    {
+     "time": "2025-04-14T02:00:00+05:30",
+     "level_m": 73.924
+    },
+    {
+     "time": "2025-04-14T03:00:00+05:30",
+     "level_m": 73.883
+    },
+    {
+     "time": "2025-04-14T04:00:00+05:30",
+     "level_m": 73.852
+    },
+    {
+     "time": "2025-04-14T05:00:00+05:30",
+     "level_m": 73.821
+    },
+    {
+     "time": "2025-04-14T06:00:00+05:30",
+     "level_m": 73.792
+    },
+    {
+     "time": "2025-04-14T07:00:00+05:30",
+     "level_m": 73.756
+    },
+    {
+     "time": "2025-04-14T08:00:00+05:30",
+     "level_m": 73.743
+    },
+    {
+     "time": "2025-04-14T09:00:00+05:30",
+     "level_m": 73.727
+    },
+    {
+     "time": "2025-04-14T10:00:00+05:30",
+     "level_m": 73.713
+    },
+    {
+     "time": "2025-04-14T11:00:00+05:30",
+     "level_m": 73.698
+    },
+    {
+     "time": "2025-04-14T12:00:00+05:30",
+     "level_m": 73.699
+    },
+    {
+     "time": "2025-04-14T13:00:00+05:30",
+     "level_m": 73.704
+    },
+    {
+     "time": "2025-04-14T14:00:00+05:30",
+     "level_m": 73.711
+    },
+    {
+     "time": "2025-04-14T15:00:00+05:30",
+     "level_m": 73.72
+    },
+    {
+     "time": "2025-04-14T16:00:00+05:30",
+     "level_m": 73.738
+    },
+    {
+     "time": "2025-04-14T17:00:00+05:30",
+     "level_m": 73.765
+    },
+    {
+     "time": "2025-04-14T18:00:00+05:30",
+     "level_m": 73.784
+    },
+    {
+     "time": "2025-04-14T19:00:00+05:30",
+     "level_m": 73.822
+    },
+    {
+     "time": "2025-04-14T20:00:00+05:30",
+     "level_m": 73.85
+    },
+    {
+     "time": "2025-04-14T21:00:00+05:30",
+     "level_m": 73.886
+    },
+    {
+     "time": "2025-04-14T22:00:00+05:30",
+     "level_m": 73.919
+    },
+    {
+     "time": "2025-04-14T23:00:00+05:30",
+     "level_m": 73.959
+    },
+    {
+     "time": "2025-04-15T00:00:00+05:30",
+     "level_m": 74.002
+    },
+    {
+     "time": "2025-04-15T01:00:00+05:30",
+     "level_m": 74.035
+    },
+    {
+     "time": "2025-04-15T02:00:00+05:30",
+     "level_m": 74.084
+    },
+    {
+     "time": "2025-04-15T03:00:00+05:30",
+     "level_m": 74.111
+    }
+   ]
+  },
+  "input": {
+   "latest_observed_at": "2025-04-15T03:00:00+05:30",
+   "age_hours": 0.5,
+   "max_age_hours": 3.0,
+   "status": "FRESH"
+  },
+  "affects_risk_assessment": false,
+  "affects_disaster_state": false,
+  "authorizes_actions": false,
+  "note": "Model predictions are never CWC measurements. They are shown only for horizons that beat persistence in chronological validation, and only from fresh, complete inputs."
+ }
+}

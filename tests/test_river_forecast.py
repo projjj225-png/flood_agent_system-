@@ -124,6 +124,7 @@ def test_a_predictable_series_is_published_and_beats_persistence():
         assert chosen["interval"]["test_coverage"] >= 0.8
         assert set(h["models"]) == {BASELINE, "moving_average_6h", "linear_trend_6h",
                                     "ridge_ar_6h"}
+        assert h["validation_status"] == "PUBLISHED"
 
 
 @pytest.mark.parametrize("seed", [7, 8, 9])
@@ -131,11 +132,13 @@ def test_persistence_wins_on_a_random_walk_and_nothing_is_published(seed):
     result = evaluate(series("walk", seed=seed), "S", horizons=(1, 6))
     for h in result["horizons"]:
         assert not h["published"] and "persistence" in h["reason"]
+        assert h["validation_status"] == "FAILED_VALIDATION"
 
 
 def test_insufficient_data_publishes_nothing():
     h = evaluate(series(n=200), "S", horizons=(1,))["horizons"][0]
     assert not h["published"] and h["reason"].startswith("Insufficient data")
+    assert h["validation_status"] == "INSUFFICIENT_DATA"
 
 
 def test_outputs_never_claim_authority():
@@ -249,6 +252,11 @@ def test_analysis_document_is_labelled_and_separate(tmp_path):
     assert published                                          # the tide is predictable ...
     assert all(f["predicted_level_m"] is None for f in forecast["live"])  # ... but stale
     assert forecast["input"]["status"] == "STALE" and forecast["input"]["max_age_hours"] == 3.0
+    recent = forecast["recent_measurements"]
+    assert recent["label"] == "MEASURED" and recent["points"]
+    times = [datetime.fromisoformat(p["time"]) for p in recent["points"]]
+    assert times == sorted(times) and times[-1] - times[0] <= timedelta(hours=72)
+    assert times[-1].isoformat() == ua["latest"]["observed_at"]   # ends at the latest reading
     assert {f["status"] for f in forecast["live"]} <= {"NO_FORECAST_INPUT_STALE",
                                                        "NOT_PUBLISHED"}
     assert str(tmp_path) not in json.dumps(doc)
