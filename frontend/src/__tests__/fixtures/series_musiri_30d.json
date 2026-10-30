@@ -1,0 +1,61 @@
+{
+ "schema_version": "1.0",
+ "generated_at": "2026-10-30T16:24:47.455387+00:00",
+ "mode": "analysis",
+ "is_simulated": false,
+ "data_label": "HISTORICAL CWC DATA",
+ "timezone": "Asia/Kolkata",
+ "location": {
+  "description": "Cauvery River near Upper Anicut, Tamil Nadu, India",
+  "latitude": 10.888611,
+  "longitude": 78.58
+ },
+ "cache_seconds": 300.0,
+ "station_id": "MUSIRI",
+ "stations": [
+  "UPPER_ANICUT",
+  "MUSIRI"
+ ],
+ "range": "30d",
+ "source_name": "MUSIRI",
+ "value_basis": "MEASURED",
+ "points": [
+  {
+   "time": "2025-12-05T14:00:00+05:30",
+   "level_m": 82.17
+  },
+  {
+   "time": "2025-12-05T15:00:00+05:30",
+   "level_m": 81.169
+  },
+  {
+   "time": "2025-12-13T16:00:00+05:30",
+   "level_m": 81.01
+  }
+ ],
+ "stats": {
+  "min_m": 81.01,
+  "max_m": 82.17,
+  "mean_m": 81.45,
+  "readings": 3
+ },
+ "window_start": "2025-11-13T16:00:00+05:30",
+ "window_end": "2025-12-13T16:00:00+05:30",
+ "latest": {
+  "level_m": 81.01,
+  "observed_at": "2025-12-13T16:00:00+05:30"
+ },
+ "quality": {
+  "accepted": 3,
+  "rejected": 465,
+  "accepted_pct": 0.6,
+  "rejected_by_reason": {
+   "PLACEHOLDER_VALUE": 464,
+   "OUT_OF_RANGE": 1
+  },
+  "station_accepted": 8113,
+  "station_checked": 21815
+ },
+ "thinned": false,
+ "max_points": 1200
+}

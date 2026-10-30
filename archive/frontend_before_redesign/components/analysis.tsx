@@ -4,8 +4,19 @@
 import type { AnalysisDoc, AnalysisStation, DashboardDoc } from "../types";
 import { fmtAge, fmtNum, fmtShort, fmtTime, humanize, isNum } from "../format";
 import { Badge, Field, Section, Unavailable } from "./common";
-import { riverDataClass } from "./sections";
 import { ForecastSection } from "./forecast";
+
+/** What kind of river reading the evidence holds, from the backend's source label and
+ *  freshness: a live-feed reading is an actual current observation only while FRESH. */
+export function riverDataClass(label?: string | null, freshness?: string | null): { text: string; tone: string } {
+  const live = label === "LIVE_VERIFIED" || label === "LIVE_UNVERIFIED";
+  if (live && freshness !== "FRESH") return { text: "STALE LIVE FEED", tone: "warn" };
+  if (label === "LIVE_VERIFIED") return { text: "ACTUAL CWC OBSERVATION", tone: "ok" };
+  if (label === "LIVE_UNVERIFIED") return { text: "ACTUAL CWC OBSERVATION (UNVERIFIED)", tone: "warn" };
+  if (label === "HISTORICAL_CSV" || label === "HISTORICAL_FALLBACK") return { text: "HISTORICAL CWC DATA", tone: "neutral" };
+  if (label === "SIMULATED_TEST_DATA") return { text: "SIMULATED DATA", tone: "sim" };
+  return { text: "NO CWC OBSERVATION", tone: "danger" };
+}
 
 const WINDOWS = ["1h", "3h", "6h", "24h"];
 const pct = (x?: number | null) => (isNum(x) ? `${(x * 100).toFixed(1)}%` : "—");

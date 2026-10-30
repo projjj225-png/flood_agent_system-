@@ -48,12 +48,15 @@ from typing import Any
 from src.audit_log import AuditLog
 from src.capability_control import (
     REAL_WORLD_CAPABILITIES,
+    STATE_CAPABILITIES,
     DisasterState,
     assess_evidence_for_authorization,
     authorize_with_evidence_and_audit,
     execute_if_authorized,
 )
 from src.disaster_state_manager import (
+    ACCEPTED,
+    STATES,
     audit_and_finalize,
     evaluate_state,
     failed_result,
@@ -64,6 +67,7 @@ from src.disaster_state_manager import (
     save_state_record,
 )
 from src.evidence_layer import build_evidence_layer
+from src.traffic_agent import run_simulated_at as run_simulated_traffic_at
 from src.evidence_reverification import (
     OUTCOME_FAILED,
     OUTCOME_PERSISTS,
@@ -138,6 +142,10 @@ RISK_SCENARIOS = {
     "recovery-after-high-water": {"river": f"{SIM_DIR}/river_recession.csv",
                                   "weather": f"{SIM_WEATHER}/easing_after_event.json"},
 }
+# Fabricated traffic (data/simulated/traffic/) for each risk scenario; re-timed to it.
+RISK_SCENARIO_TRAFFIC = {"simulated-high-risk": "flood_road_closure",
+                         "recovery-after-high-water": "flood_road_closure",
+                         "missing-weather": "degraded_data"}
 DEFAULT_CAPABILITIES = ("read_river", "request_evidence_reverification", "prepare_advisory",
                         "propose_evacuation_plan", "request_human_emergency_authorization")
 DEFAULT_AUDIT_PATH = "outputs/audit/river_workflow_audit.jsonl"
@@ -335,6 +343,7 @@ def run_river_workflow(
     state_record: dict[str, Any] | None = None,
     state_config: dict[str, Any] | None = None,
     include_evidence: bool = False,
+    traffic: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Run the full river workflow once. Never raises for evidence problems.
 
@@ -345,6 +354,13 @@ def run_river_workflow(
 
     ``weather`` is a WeatherAgent result (or a simulated one from
     risk_assessment.load_simulated_weather); None means no weather evidence.
+    ``traffic`` is a TrafficAgent result; None means no traffic evidence (never
+    "roads are fine"). The state manager uses it only for the RECOVERY exit.
+
+    After an ACCEPTED state transition the capability decisions are made again
+    for the new state (``capability_state``); the decisions made with the
+    caller's state are kept in ``capability_decisions_before_transition`` and
+    the difference in ``capability_changes``.
 
     ``include_evidence`` adds copies of the river evidence and weather used
     (``evidence``, ``weather_evidence``) for display, e.g. the dashboard. They
@@ -584,18 +600,38 @@ def run_river_workflow(
             state_result = evaluate_state(
                 copy.deepcopy(record_in), copy.deepcopy(evidence), copy.deepcopy(risk),
                 config=state_cfg, risk_config=risk_cfg, now=state_now,
-                weather=copy.deepcopy(weather), reverification=copy.deepcopy(reverification))
+                weather=copy.deepcopy(weather), reverification=copy.deepcopy(reverification),
+                traffic=copy.deepcopy(traffic))
     except Exception as exc:  # bad config or record: fail closed, state unchanged
         state_result = failed_result(record_in, state_now, f"{type(exc).__name__}: {exc}")
     state_result = audit_and_finalize(state_result, record_in, audit_log, run_id)
     result["state_evaluation"] = state_result
     result["state_decision_id"] = state_result["state_decision_id"]
 
+    # Capabilities follow the accepted state: decided again, with the same evidence
+    # gate and evidence-layer denial, for the state the record has just entered.
+    decisions_before = decisions
+    capability_state = state_value
+    if state_result.get("outcome") == ACCEPTED and state_result.get("resulting_state") in STATES:
+        capability_state = state_result["resulting_state"]
+        audit_log.log(run_id, "capabilities_reevaluated_after_transition",
+                      from_state=state_value, to_state=capability_state,
+                      state_decision_id=state_result["state_decision_id"])
+        decisions = [authorize_with_evidence_and_audit(capability_state, cap, agent_id,
+                                                       evidence_assessment, audit_log, run_id,
+                                                       evidence=evidence,
+                                                       reverification=reverification,
+                                                       now=decided_at)
+                     for cap in capabilities]
+        _deny_if_layer_insufficient(decisions, layer, audit_log, run_id, capability_state)
+    _set_capability_summary(result, decisions, decisions_before, state_value, capability_state)
+
     stable = {k: v for k, v in result.items()
               if k not in ("run_id", "service_audit", "workflow_audit_log_path",
                            "risk_assessment", "state_evaluation", "evidence_layer")}
     stable["capability_decisions"] = [{k: v for k, v in d.items() if k != "audit_written"}
                                       for d in decisions]
+    stable.pop("capability_decisions_before_transition", None)
     result["decision_id"] = hashlib.sha256(json.dumps(
         stable, sort_keys=True, default=str).encode("utf-8")).hexdigest()
     audit_log.log(run_id, "river_workflow_completed", scenario=scenario, mode=mode,
@@ -613,8 +649,13 @@ def run_river_workflow(
     result["workflow_audit_events_written"] = audit_log.events_written
     result["workflow_audit_write_errors"] = list(audit_log.write_errors)
     if audit_log.write_errors:
-        # An incomplete audit trail never leaves a real-world permission standing,
-        # neither in the summary nor in the individual decisions.
+        # An incomplete audit trail never leaves a state change standing, so the
+        # capabilities go back to those of the caller's state ...
+        if decisions is not decisions_before:
+            decisions = decisions_before
+            _set_capability_summary(result, decisions, decisions, state_value, state_value)
+        # ... and never leaves a real-world permission standing, neither in the summary
+        # nor in the individual decisions.
         result["real_world_authorization"] = result["authorization"] = "RESTRICTED"
         result["real_world_capabilities_pending_human_approval"] = []
         for d in decisions:
@@ -626,7 +667,61 @@ def run_river_workflow(
     if include_evidence:  # display copies only; added after everything is decided
         result["evidence"] = copy.deepcopy(evidence)
         result["weather_evidence"] = copy.deepcopy(weather)
+        result["traffic_evidence"] = copy.deepcopy(traffic)
     return result
+
+
+def _deny_if_layer_insufficient(decisions: list[dict[str, Any]], layer: dict[str, Any],
+                                audit_log: AuditLog, run_id: str, state: str) -> None:
+    """The evidence layer can only deny: same rule as for the first decisions."""
+    if layer.get("real_world_evidence_sufficient"):
+        return
+    for d in decisions:
+        if d["allowed"] and d["capability"] in REAL_WORLD_CAPABILITIES:
+            d.update(allowed=False, reason="EVIDENCE_LAYER_INSUFFICIENT",
+                     human_approval_required=False,
+                     evidence_reasons=list(d.get("evidence_reasons") or [])
+                     + list(layer.get("deny_reasons") or []))
+            audit_log.log(run_id, "capability_denied_by_evidence_layer",
+                          capability=d["capability"], deny_reasons=layer.get("deny_reasons"),
+                          disaster_state=state)
+
+
+def capability_changes(before_state: str, after_state: str,
+                       before: list[dict[str, Any]],
+                       after: list[dict[str, Any]]) -> dict[str, Any]:
+    """What a state change did to permissions: the allowlists and this run's decisions."""
+    def allowlist(state: str) -> set[str]:
+        return set(STATE_CAPABILITIES.get(DisasterState(state), ())) if state in STATES else set()
+    allowed_before = {d["capability"] for d in before if d["allowed"]}
+    allowed_after = {d["capability"] for d in after if d["allowed"]}
+    return {
+        "from_state": before_state, "to_state": after_state,
+        "changed": before_state != after_state,
+        "allowlist_added": sorted(allowlist(after_state) - allowlist(before_state)),
+        "allowlist_revoked": sorted(allowlist(before_state) - allowlist(after_state)),
+        "decisions_granted": sorted(allowed_after - allowed_before),
+        "decisions_revoked": sorted(allowed_before - allowed_after),
+        "note": ("Allowlist changes follow the state; a capability is granted only if the "
+                 "evidence gate also allows it, and real-world capabilities at most go to a "
+                 "human for approval."),
+    }
+
+
+def _set_capability_summary(result: dict[str, Any], decisions: list[dict[str, Any]],
+                            before: list[dict[str, Any]], before_state: str,
+                            capability_state: str) -> None:
+    real_world_allowed = [d["capability"] for d in decisions
+                          if d["allowed"] and d["capability"] in REAL_WORLD_CAPABILITIES]
+    authorization = "HUMAN_AUTHORIZATION_REQUIRED" if real_world_allowed else "RESTRICTED"
+    result["capability_decisions"] = decisions
+    result["capability_state"] = capability_state
+    result["capability_decisions_before_transition"] = (
+        before if decisions is not before else None)
+    result["capability_changes"] = capability_changes(before_state, capability_state,
+                                                      before, decisions)
+    result["real_world_authorization"] = result["authorization"] = authorization
+    result["real_world_capabilities_pending_human_approval"] = real_world_allowed
 
 
 def run_simulated_scenario(
@@ -689,13 +784,15 @@ def run_risk_scenario(
     weather = (load_simulated_weather(service.resolve_path(spec["weather"]),
                                       retrieved_at=as_of if "as_of" in spec else None)
                if spec["weather"] else None)
+    traffic = run_simulated_traffic_at(
+        RISK_SCENARIO_TRAFFIC.get(scenario, "normal_flow"), as_of)
     return run_river_workflow(scenario_service, audit_log, mode=MODE_SIMULATED,
                               disaster_state=disaster_state, capabilities=capabilities,
                               as_of=as_of, cross_check_paths=spec.get("cross_check_paths"),
                               independent_paths=spec.get("independent_paths", []),
                               run_id=run_id, scenario=scenario, weather=weather,
                               risk_config=risk_config, state_record=state_record,
-                              include_evidence=include_evidence)
+                              include_evidence=include_evidence, traffic=traffic)
 
 
 def _load_weather_option(value: str | None,

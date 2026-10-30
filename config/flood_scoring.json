@@ -1,0 +1,69 @@
+{
+  "_comment": "Flood Risk Score and Evidence Trust Score (src/risk_score.py, src/trust_score.py). PROTOTYPE PRESENTATION values for a research dashboard: they are NOT official CWC or IMD flood-warning levels and have not been calibrated against observed floods. Hazard thresholds (river warning/danger levels, rainfall breakpoints) are NOT set here: they stay in config/river_simulation.json, config/river_thresholds*.json and config/risk_assessment.json. The scores only present the deterministic Risk Assessment Engine result and the evidence it used.",
+  "risk_bands": {
+    "_comment": "Presentation bands for the 0-100 Flood Risk Score. The band is chosen by the Risk Assessment Engine's category; the score only positions the assessment within it. INDETERMINATE has no score.",
+    "LOW": [0, 24],
+    "MODERATE": [25, 49],
+    "HIGH": [50, 74],
+    "CRITICAL": [75, 100]
+  },
+  "risk_combination": {
+    "_comment": "Within-band position = dominant indicator + corroboration_weight x (100 - dominant) x (second indicator / 100). Not an average: one strong indicator is never diluted by weak ones, and a second indicator can only add.",
+    "corroboration_weight": 0.25
+  },
+  "traffic_context_index": {
+    "_comment": "Traffic never changes the risk category (only the river and rainfall do); it can only corroborate within the band.",
+    "BLOCKED": 40,
+    "SEVERE": 25,
+    "HEAVY": 15,
+    "MODERATE": 5,
+    "FREE_FLOW": 0
+  },
+  "trust_bands": {
+    "_comment": "Presentation bands for the 0-100 Evidence Trust Score (reliability of the evidence, NOT flood danger).",
+    "HIGH": [80, 100],
+    "MODERATE": [60, 79],
+    "LOW": [30, 59],
+    "VERY_LOW": [0, 29]
+  },
+  "trust_factor_weights": {
+    "_comment": "Points out of 100 for each documented factor. Must sum to 100.",
+    "authenticity": 20,
+    "freshness": 20,
+    "quality": 15,
+    "completeness": 15,
+    "consistency": 15,
+    "timestamp_validity": 5,
+    "provenance": 10
+  },
+  "trust_agent_weights": {
+    "_comment": "Share of each agent in completeness and in the per-agent factors. The river is the primary hazard evidence.",
+    "river": 0.5,
+    "weather": 0.3,
+    "traffic": 0.2
+  },
+  "trust_authenticity": {
+    "_comment": "Source authenticity by evidence class. SIMULATED evidence has known provenance (this system generated it) but is never verified real-world evidence.",
+    "LIVE_VERIFIED": 100,
+    "LIVE_STALE": 90,
+    "REAL_TIME_PROBE_TRAFFIC": 85,
+    "MODEL_ESTIMATE": 80,
+    "MODEL_STALE": 70,
+    "SIMULATED": 60,
+    "HISTORICAL_NOT_CURRENT": 50,
+    "LIVE_UNVERIFIED": 20,
+    "UNAVAILABLE": 0
+  },
+  "trust_consistency_penalties": {
+    "unresolved_river_conflict": 60,
+    "resolved_river_conflict": 15,
+    "traffic_contradicts_river": 30,
+    "weather_time_mismatch": 15,
+    "contradicted_claim": 10
+  },
+  "trust_caps": {
+    "_comment": "Hard ceilings: without usable primary river evidence the overall evidence cannot be trusted, whatever the other agents say.",
+    "river_missing": 29,
+    "river_unusable": 59
+  }
+}

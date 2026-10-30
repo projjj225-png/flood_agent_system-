@@ -36,6 +36,7 @@ from src.disaster_state_manager import (
 from src.risk_assessment import assess_flood_risk, load_risk_config, load_simulated_weather
 from src.river_agent_workflow import TEST_THRESHOLDS_PATH, run_river_workflow
 from src.river_monitoring_agent import PROJECT_DIR
+from src.traffic_agent import run_simulated_at as run_simulated_traffic_at
 from tests.nwdp_fixtures import IST, ok_session, synthetic_records
 from tests.test_river_service import NOW, TEST_THRESHOLDS, clean_live_session, make_service
 
@@ -70,10 +71,20 @@ def inputs(tmp_path, hour, delay_hours=0.0, cross_check_paths=None, river_until=
     return evidence, weather, risk
 
 
-def evaluate(tmp_path, record, hour, requested_state=None, config=CFG, **kw):
+def traffic_at(scenario="normal_flow", at=None):
+    """Fabricated TrafficAgent result (data/simulated/traffic/<scenario>.json) as of ``at``."""
+    return run_simulated_traffic_at(scenario, at or NOW)
+
+
+def evaluate(tmp_path, record, hour, requested_state=None, config=CFG, traffic="normal_flow",
+             **kw):
+    """One evaluation. ``traffic`` is a scenario name (fresh at NOW), a result, or None."""
     evidence, weather, risk = inputs(tmp_path, hour, **kw)
+    if isinstance(traffic, str):
+        traffic = traffic_at(traffic)
     return evaluate_state(record, evidence, risk, config=config, risk_config=RISK_CFG,
-                          now=NOW, weather=weather, requested_state=requested_state)
+                          now=NOW, weather=weather, requested_state=requested_state,
+                          traffic=traffic)
 
 
 def walk(tmp_path, record, hours, **kw):
@@ -108,63 +119,94 @@ def audit(tmp_path, name="wf.jsonl"):
 # ---- 1-2. escalation ----------------------------------------------------------------------
 
 def test_normal_to_alert(tmp_path):
-    result = evaluate(tmp_path, sim_record("NORMAL"), 34)  # 24 h rain >= 115.6 mm: HIGH
+    # h46 and h48: the river is at or above the TEST warning level (3.0 m) twice.
+    first, result = walk(tmp_path, sim_record("NORMAL"), [46, 48])
+    assert first["outcome"] == UNCHANGED and first["proposed_state"] == "ALERT"
     assert result["outcome"] == ACCEPTED
     assert (result["current_state"], result["resulting_state"]) == ("NORMAL", "ALERT")
     assert result["condition"] == "ALERT" and result["transition_rule"]["kind"] == "escalation"
     assert result["record"]["state"] == "ALERT" and result["record"]["entered_at"]
-    assert result["supporting_evidence_ids"] == [result["evidence_id"]]
-    assert result["persistence"]["required_observations"] == 1
+    assert len(result["supporting_evidence_ids"]) == 2
+    assert result["persistence"]["required_observations"] == 2
+    last = result["record"]["last_transition"]
+    assert (last["from"], last["to"]) == ("NORMAL", "ALERT")
+    assert last["threshold"] == {"name": "warning", "level_m": 3.0, "label": "TEST / RESEARCH",
+                                 "official": False}
+    assert last["river_level_m"] >= 3.0 and last["evidence_id"] == result["evidence_id"]
+    assert "at or above the test / research warning level" in last["reason"]
+
+
+def test_heavy_rain_alone_does_not_raise_alert_below_the_warning_level(tmp_path):
+    # h34-h44: HIGH risk from heavy rain and a rising river, but the river is below 3.0 m.
+    results = walk(tmp_path, sim_record("NORMAL"), [34, 38, 42, 44])
+    assert all(r["risk_level"] == "HIGH" for r in results)
+    assert all(r["condition"] == "ELEVATED" and r["resulting_state"] == "NORMAL"
+               for r in results)
 
 
 def test_alert_to_emergency_needs_a_second_observation(tmp_path):
-    first, second = walk(tmp_path, sim_record("ALERT"), [46, 48])
+    first, second = walk(tmp_path, sim_record("ALERT"), [52, 54])  # >= 4.0 m danger
     assert first["condition"] == "EMERGENCY" and first["outcome"] == UNCHANGED
     assert first["proposed_state"] == "EMERGENCY"
     assert first["persistence"]["observations"] == 1 and not first["persistence"]["satisfied"]
     assert second["outcome"] == ACCEPTED and second["resulting_state"] == "EMERGENCY"
     assert len(second["supporting_evidence_ids"]) == 2
+    assert second["record"]["last_transition"]["threshold"]["name"] == "danger"
+
+
+def test_critical_risk_above_warning_but_below_danger_is_not_an_emergency(tmp_path):
+    # h46-h50: CRITICAL risk (above warning, rising, heavy rain) but below the 4.0 m danger level.
+    results = walk(tmp_path, sim_record("ALERT"), [46, 48, 50])
+    assert all(r["risk_level"] == "CRITICAL" and r["condition"] == "ALERT" for r in results)
+    assert all(r["resulting_state"] == "ALERT" for r in results)
 
 
 def test_emergency_from_normal_goes_through_alert(tmp_path):
-    a, b = walk(tmp_path, sim_record("NORMAL"), [46, 48])
-    assert (a["resulting_state"], b["resulting_state"]) == ("ALERT", "EMERGENCY")
+    results = walk(tmp_path, sim_record("NORMAL"), [46, 48, 52, 54])
+    assert [r["resulting_state"] for r in results] == ["NORMAL", "ALERT", "ALERT", "EMERGENCY"]
 
 
 # ---- 3. escalation is never delayed by de-escalation persistence ------------------------------
 
-def test_worsening_in_recovery_escalates_immediately(tmp_path):
+def test_worsening_in_recovery_escalates_without_waiting_for_recovery(tmp_path):
     # RECOVERY, three NORMAL observations into a 4-observation de-escalation run.
     record = with_history(sim_record("RECOVERY"), [("NORMAL", 20), ("NORMAL", 24),
                                                    ("NORMAL", 28)])
-    result = evaluate(tmp_path, record, 34)  # ALERT condition
+    first, result = walk(tmp_path, record, [46, 48])  # ALERT condition twice
+    assert first["outcome"] == UNCHANGED and first["proposed_state"] == "ALERT"
     assert result["outcome"] == ACCEPTED and result["resulting_state"] == "ALERT"
 
 
-def test_emergency_condition_in_recovery_escalates_to_alert_at_once(tmp_path):
+def test_emergency_condition_in_recovery_returns_to_emergency_when_confirmed(tmp_path):
     record = with_history(sim_record("RECOVERY"), [("NORMAL", 20), ("NORMAL", 30)])
-    first = evaluate(tmp_path, record, 46)  # EMERGENCY condition, first observation
-    assert first["outcome"] == ACCEPTED and first["resulting_state"] == "ALERT"
-    second = evaluate(tmp_path, first["record"], 48)
-    assert second["resulting_state"] == "EMERGENCY"  # confirmation carries across
+    first = evaluate(tmp_path, record, 52)  # EMERGENCY condition, first observation
+    assert first["outcome"] == UNCHANGED and first["resulting_state"] == "RECOVERY"
+    second = evaluate(tmp_path, first["record"], 54)
+    assert second["resulting_state"] == "EMERGENCY"  # two observations confirm
 
 
 # ---- 4-5. de-escalation needs verified, sustained improvement -----------------------------------
 
 def test_emergency_to_recovery_requires_improvement(tmp_path):
-    results = walk(tmp_path, sim_record("EMERGENCY"), [62, 64, 66, 68, 70, 72])
+    results = walk(tmp_path, sim_record("EMERGENCY"), [62, 64, 66, 68, 70, 72, 74, 76])
     assert [r["condition"] for r in results[:4]] == ["ALERT"] * 4  # still above warning
-    assert all(r["outcome"] == UNCHANGED for r in results[:5])
-    assert results[4]["proposed_state"] == "RECOVERY"
-    assert results[5]["outcome"] == ACCEPTED and results[5]["resulting_state"] == "RECOVERY"
+    # h70/h72 (2.98 m, 2.81 m): below warning, not yet below the 2.8 m recovery level.
+    assert [r["condition"] for r in results[4:6]] == ["ELEVATED"] * 2
+    assert "not yet below the recovery level 2.8 m" in results[5]["reasons"][0]
+    assert all(r["outcome"] == UNCHANGED for r in results[:7])
+    assert results[6]["proposed_state"] == "RECOVERY"
+    assert results[7]["outcome"] == ACCEPTED and results[7]["resulting_state"] == "RECOVERY"
+    assert results[7]["record"]["last_transition"]["threshold"]["level_m"] == 2.8
 
 
 def test_gap_in_evidence_restarts_the_recovery_run(tmp_path):
-    first = evaluate(tmp_path, sim_record("EMERGENCY"), 70)
-    stale = evaluate(tmp_path, first["record"], 71, delay_hours=4,
-                     river_until=71)  # no reading after h71: 4.5 h old, STALE
+    first = evaluate(tmp_path, sim_record("EMERGENCY"), 74)
+    assert first["condition"] == "NORMAL"
+    stale = evaluate(tmp_path, first["record"], 75, delay_hours=4,
+                     river_until=75)  # no reading after h75: 4.5 h old, STALE
     assert stale["outcome"] == INSUFFICIENT and "EVIDENCE_STALE" in stale["reasons"]
-    after = evaluate(tmp_path, stale["record"], 72)
+    assert stale["resulting_state"] == "EMERGENCY"  # stale evidence never de-escalates
+    after = evaluate(tmp_path, stale["record"], 76)
     assert after["outcome"] == UNCHANGED and after["persistence"]["observations"] == 1
 
 
@@ -218,7 +260,7 @@ def test_missing_or_malformed_evidence_cannot_escalate(tmp_path, evidence):
 def test_edited_evidence_cannot_escalate(tmp_path, edit):
     evidence, weather, risk = inputs(tmp_path, 48)
     edit(evidence)
-    record = with_history(sim_record("ALERT"), [("EMERGENCY", 46)])
+    record = with_history(sim_record("ALERT"), [("EMERGENCY", 52)])
     result = evaluate_state(record, evidence, risk, config=CFG, risk_config=RISK_CFG,
                             now=NOW, weather=weather)
     assert result["outcome"] == INSUFFICIENT and result["resulting_state"] == "ALERT"
@@ -292,6 +334,13 @@ def test_real_scope_transition_needs_verified_fresh_live_evidence(tmp_path):
     evidence = service.get_evidence("live")
     risk = assess_flood_risk(copy.deepcopy(evidence), None, None, RISK_CFG, clock=lambda: NOW)
     record = new_state_record("NORMAL", "real")
+    once = evaluate_state(record, evidence, risk, config=CFG, risk_config=RISK_CFG, now=NOW)
+    assert once["outcome"] == UNCHANGED and once["proposed_state"] == "ALERT"  # 1 of 2
+    observed = datetime.fromisoformat(evidence["observed_at"])
+    record = copy.deepcopy(record)
+    record["history"].append({"observed_at": (observed - timedelta(hours=1)).isoformat(),
+                              "condition": "ALERT", "evidence_id": "earlier"})
+    record["record_id"] = _record_digest(record)
     ok = evaluate_state(record, evidence, risk, config=CFG, risk_config=RISK_CFG, now=NOW)
     assert ok["outcome"] == ACCEPTED and ok["resulting_state"] == "ALERT"  # TEST thresholds
     assert ok["state_applies_to"] == "CURRENT_CONDITIONS"
@@ -325,7 +374,8 @@ def test_requested_transitions_are_checked(tmp_path, state, hour, requested, cod
 
 
 def test_requested_transition_backed_by_evidence_is_accepted(tmp_path):
-    result = evaluate(tmp_path, sim_record("NORMAL"), 34, requested_state="ALERT")
+    record = with_history(sim_record("NORMAL"), [("ALERT", 46)])
+    result = evaluate(tmp_path, record, 48, requested_state="ALERT")
     assert result["outcome"] == ACCEPTED
 
 
@@ -379,31 +429,42 @@ def _run(tmp_path, state, record, hour, log=None):
 
 
 def test_emergency_classification_is_not_a_permission(tmp_path):
-    record = with_history(sim_record("ALERT"), [("EMERGENCY", 46)])
-    result = _run(tmp_path, "ALERT", record, 48)
+    record = with_history(sim_record("ALERT"), [("EMERGENCY", 52)])
+    result = _run(tmp_path, "ALERT", record, 54)
     assert result["state_evaluation"]["resulting_state"] == "EMERGENCY"
-    # This run's decisions used the caller's state (ALERT): the state gate still applies.
+    # Before the transition the caller's state (ALERT) applied: the state gate denied it.
+    before = {x["capability"]: x for x in result["capability_decisions_before_transition"]}
+    assert before["request_human_emergency_authorization"]["reason"] == "CAPABILITY_DENIED"
+    # Re-evaluated in EMERGENCY: the allowlist now has it, but the evidence gate denies it.
+    assert result["capability_state"] == "EMERGENCY"
     d = {x["capability"]: x for x in result["capability_decisions"]}
-    assert d["request_human_emergency_authorization"]["reason"] == "CAPABILITY_DENIED"
+    x = d["request_human_emergency_authorization"]
+    assert x["allowed"] is False and x["reason"] == "EVIDENCE_INSUFFICIENT"
+    assert "EVIDENCE_SIMULATED" in x["evidence_reasons"]
+    assert result["real_world_authorization"] == "RESTRICTED"
     assert result["state_evaluation"]["authorizes_actions"] is False
     assert result["state_evaluation"]["executes_actions"] is False
     # Next run in EMERGENCY: the evidence gate still denies every real-world capability.
-    nxt = _run(tmp_path, "EMERGENCY", result["state_evaluation"]["record"], 50)
+    nxt = _run(tmp_path, "EMERGENCY", result["state_evaluation"]["record"], 56)
     for cap in REAL_WORLD_CAPABILITIES:
         x = next(c for c in nxt["capability_decisions"] if c["capability"] == cap)
         assert x["allowed"] is False and "EVIDENCE_SIMULATED" in x["evidence_reasons"]
     assert nxt["real_world_authorization"] == "RESTRICTED"
 
 
-def test_state_evaluation_does_not_change_decisions(tmp_path):
-    record = with_history(sim_record("ALERT"), [("EMERGENCY", 46)])
-    with_state = _run(tmp_path, "ALERT", record, 48)
-    without = _run(tmp_path, "ALERT", None, 48)
-    strip = lambda r: [{k: v for k, v in d.items() if k != "audit_written"}
-                       for d in r["capability_decisions"]]
-    assert strip(with_state) == strip(without)
+def test_decisions_before_a_transition_use_the_callers_state(tmp_path):
+    record = with_history(sim_record("ALERT"), [("EMERGENCY", 52)])
+    with_state = _run(tmp_path, "ALERT", record, 54)
+    without = _run(tmp_path, "ALERT", None, 54)
+    strip = lambda ds: [{k: v for k, v in d.items() if k != "audit_written"} for d in ds]
+    assert strip(with_state["capability_decisions_before_transition"]) \
+        == strip(without["capability_decisions"])
     assert with_state["state_evaluation"]["outcome"] == ACCEPTED
     assert without["state_evaluation"]["outcome"] == UNCHANGED  # no history: 1 of 2
+    # No transition: nothing re-evaluated, nothing changed.
+    assert without["capability_decisions_before_transition"] is None
+    assert without["capability_state"] == "ALERT"
+    assert without["capability_changes"]["changed"] is False
 
 
 def test_record_state_must_match_the_callers_state(tmp_path):
@@ -428,9 +489,9 @@ class FailsOnEvent(AuditLog):
 
 
 def test_unaudited_transition_is_not_applied(tmp_path):
-    record = with_history(sim_record("ALERT"), [("EMERGENCY", 46)])
+    record = with_history(sim_record("ALERT"), [("EMERGENCY", 52)])
     result = _run(tmp_path, "ALERT", record,
-                  48, log=FailsOnEvent(tmp_path / "a.jsonl",
+                  54, log=FailsOnEvent(tmp_path / "a.jsonl",
                                        "disaster_state_transition_accepted"))
     state = result["state_evaluation"]
     assert state["outcome"] == REJECTED and "AUDIT_WRITE_FAILED" in state["reasons"]
@@ -438,8 +499,8 @@ def test_unaudited_transition_is_not_applied(tmp_path):
 
 
 def test_late_audit_failure_reverts_the_transition(tmp_path):
-    record = with_history(sim_record("ALERT"), [("EMERGENCY", 46)])
-    result = _run(tmp_path, "ALERT", record, 48,
+    record = with_history(sim_record("ALERT"), [("EMERGENCY", 52)])
+    result = _run(tmp_path, "ALERT", record, 54,
                   log=FailsOnEvent(tmp_path / "a.jsonl", "river_workflow_completed"))
     state = result["state_evaluation"]
     assert state["outcome"] == REJECTED and "AUDIT_TRAIL_INCOMPLETE" in state["reasons"]
@@ -458,9 +519,9 @@ def test_raising_logger_is_handled():
 
 def test_every_outcome_is_audited(tmp_path):
     log = audit(tmp_path)
-    record = with_history(sim_record("ALERT"), [("EMERGENCY", 46)])
-    _run(tmp_path, "ALERT", record, 48, log=log)                      # accepted
-    _run(tmp_path, "ALERT", sim_record("ALERT"), 46, log=log)         # unchanged
+    record = with_history(sim_record("ALERT"), [("EMERGENCY", 52)])
+    _run(tmp_path, "ALERT", record, 54, log=log)                      # accepted
+    _run(tmp_path, "ALERT", sim_record("ALERT"), 52, log=log)         # unchanged
     _run(tmp_path, "ALERT", new_state_record("ALERT", "real"), 46, log=log)  # rejected
     run_river_workflow(cycle_service(tmp_path, river_until=46), log, mode="simulated",
                        disaster_state="ALERT", as_of=START + timedelta(hours=51),
@@ -481,7 +542,7 @@ def test_every_outcome_is_audited(tmp_path):
 def test_reevaluating_the_same_observation_never_confirms(tmp_path):
     record = sim_record("ALERT")
     for _ in range(5):
-        result = evaluate(tmp_path, record, 46)
+        result = evaluate(tmp_path, record, 52)
         record = result["record"]
     assert result["outcome"] == UNCHANGED and result["persistence"]["observations"] == 1
     assert len(record["history"]) == 1
@@ -500,7 +561,15 @@ def test_full_flood_cycle_has_exactly_four_transitions(tmp_path):
                if s["state_before"] != s["state_after"]]
     assert [(a, b) for _, a, b in changes] == [("NORMAL", "ALERT"), ("ALERT", "EMERGENCY"),
                                                ("EMERGENCY", "RECOVERY"), ("RECOVERY", "NORMAL")]
-    assert [h for h, _, _ in changes] == [34, 48, 72, 86]
+    # RECOVERY -> NORMAL persistence is met at h86, but the riverside route is still
+    # closed (fabricated traffic): held until it reopens at h88.
+    # ALERT once the river has been at/above warning twice (h46, h48); EMERGENCY once at/above
+    # danger twice (h52, h54); RECOVERY once below the recovery level for 2 h (h74, h76).
+    assert [h for h, _, _ in changes] == [48, 54, 76, 88]
+    held = next(s for s in steps if s["hour"] == 86)
+    assert held["state_after"] == "RECOVERY"
+    assert held["traffic_hold"] == "CONFLICTING_EVIDENCE_ROUTE_BLOCKED"
+    assert all(s["real_world_authorization"] == "RESTRICTED" for s in steps)
 
 
 # ---- 15. configuration errors fail safely ----------------------------------------------------------------
@@ -555,7 +624,7 @@ def test_workflow_with_bad_config_keeps_state_and_decisions(tmp_path, monkeypatc
     def broken():
         raise ValueError("State config: broken")
     monkeypatch.setattr(workflow, "load_state_config", broken)
-    record = with_history(sim_record("ALERT"), [("EMERGENCY", 46)])
+    record = with_history(sim_record("ALERT"), [("EMERGENCY", 52)])
     result = _run(tmp_path, "ALERT", record, 48)
     state = result["state_evaluation"]
     assert state["outcome"] == FAILED and state["resulting_state"] == "ALERT"
@@ -596,12 +665,16 @@ def test_cli_state_file_round_trip(tmp_path, capsys):
             "--state-file", str(state_file)]
     assert workflow.main(args + ["--state", "NORMAL"]) == 0
     first = json.loads(capsys.readouterr().out)["state_evaluation"]
-    assert first["outcome"] == ACCEPTED and load_state_record(state_file)["state"] == "ALERT"
+    # One observation above danger: ALERT is proposed but needs a second observation.
+    assert first["outcome"] == UNCHANGED and first["proposed_state"] == "ALERT"
+    assert load_state_record(state_file)["state"] == "NORMAL"
+    assert len(load_state_record(state_file)["history"]) == 1
     assert workflow.main(args) == 0  # state now read from the file
     second = json.loads(capsys.readouterr().out)["state_evaluation"]
-    # Same observation again: no confirmation, so no EMERGENCY.
-    assert second["current_state"] == "ALERT" and second["outcome"] == UNCHANGED
-    assert workflow.main(args + ["--state", "NORMAL"]) == 2  # contradicts the file
+    # Same observation again: never confirms itself.
+    assert second["current_state"] == "NORMAL" and second["outcome"] == UNCHANGED
+    assert second["persistence"]["observations"] == 1
+    assert workflow.main(args + ["--state", "ALERT"]) == 2  # contradicts the file
 
 
 def test_cli_refuses_a_tampered_state_file(tmp_path, capsys):
@@ -668,7 +741,7 @@ def test_rules_carry_sampling_limits():
 def test_single_emergency_reading_cannot_confirm_itself(tmp_path):
     """Regression: ALERT -> EMERGENCY used to be accepted on ONE reading evaluated twice
     with an INSUFFICIENT evaluation in between (the duplicate was appended, not replaced)."""
-    evidence, weather, risk = inputs(tmp_path, 46)
+    evidence, weather, risk = inputs(tmp_path, 52)
     first = evaluate_state(sim_record("ALERT"), evidence, risk, config=CFG,
                            risk_config=RISK_CFG, now=NOW, weather=weather)
     gap = evaluate_state(first["record"], None, None, config=CFG, risk_config=RISK_CFG,
@@ -749,9 +822,9 @@ def test_gaps_never_hold_back_escalation(tmp_path):
     # EMERGENCY readings 10 h apart still confirm: escalation has no gap limit.
     stats = run_statistics(entries("EMERGENCY", [0, 10]), CONFIRM)
     assert satisfied(stats, CONFIRM)
-    # And a single ALERT-level reading after a long silence escalates at once.
-    record = with_history(sim_record("RECOVERY"), [("NORMAL", 10)])
-    result = evaluate(tmp_path, record, 34)
+    # And an ALERT-level reading confirms an earlier one even after a long silence.
+    record = with_history(sim_record("RECOVERY"), [("ALERT", 10)])
+    result = evaluate(tmp_path, record, 46)
     assert result["outcome"] == ACCEPTED and result["resulting_state"] == "ALERT"
 
 

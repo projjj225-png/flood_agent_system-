@@ -262,22 +262,26 @@ def test_stable_river_stays_normal(tmp_path):
     assert {r["state_evaluation"]["resulting_state"] for r in results} == {"NORMAL"}
 
 
-def test_slowly_rising_river_raises_alert(tmp_path):
+def test_slowly_rising_river_below_warning_is_high_risk_but_not_alert(tmp_path):
+    # ALERT needs the river itself at or above the configured warning level; a rising river
+    # with heavy rain below it is HIGH risk, reported as ELEVATED, and the state stays NORMAL.
     sim, clock, audit = make_sim(tmp_path, "slowly-rising")
     results = walk(sim, clock, audit, 60)
     first = results[0]
     assert "R5_RIVER_RISING" in first["risk_assessment"]["rules_fired"]
     assert first["risk_assessment"]["risk_level"] == "HIGH"
-    assert first["state_evaluation"]["outcome"] == "TRANSITION_ACCEPTED"
-    assert sim.record["state"] == "ALERT"
+    assert all(r["state_evaluation"]["condition"] == "ELEVATED" for r in results
+               if r["evidence"]["threshold_evaluation"]["status"] == "BELOW_WARNING")
+    assert sim.record["state"] == "NORMAL"
 
 
 def test_rapidly_rising_river_escalates_to_emergency(tmp_path):
     sim, clock, audit = make_sim(tmp_path, "rapidly-rising")
-    results = walk(sim, clock, audit, 60)
+    results = walk(sim, clock, audit, 180)  # EMERGENCY needs two readings at/above danger
     states = [r["state_evaluation"]["resulting_state"] for r in results]
-    assert states[0] == "ALERT"                      # NORMAL may only go to ALERT
-    assert "EMERGENCY" in states and sim.record["state"] == "EMERGENCY"
+    assert states[0] == "NORMAL"                     # one reading never confirms ALERT
+    assert states.index("ALERT") < states.index("EMERGENCY")  # NORMAL may only go to ALERT
+    assert sim.record["state"] == "EMERGENCY"
     assert all(r["risk_assessment"]["risk_level"] == "CRITICAL" for r in results)
     # EMERGENCY permits the request by state, but simulated evidence never satisfies it.
     emergency = next(r for r in results if r["disaster_state"] == "EMERGENCY")
@@ -351,7 +355,7 @@ def live_dashboard(tmp_path, clock):
 def test_dashboard_document_is_labelled_simulated_live(tmp_path):
     clock = Clock()
     dash = live_dashboard(tmp_path, clock)
-    doc, age = dash.get("simulated_live", "rapidly-rising", "NORMAL")
+    doc, age = dash.get("simulated_live", "rapidly-rising")
     assert "error" not in doc, doc.get("error")
     assert doc["mode"] == "simulated_live" and doc["is_simulated"] is True
     assert doc["data_label"] == "SIMULATED LIVE"
@@ -368,35 +372,43 @@ def test_dashboard_document_is_labelled_simulated_live(tmp_path):
     assert doc["safety"]["real_world_authorization"] == "RESTRICTED"
     assert doc["state"]["state_basis"] == "SIMULATION_SESSION_RECORD"
     assert doc["state"]["record_saved_by_dashboard"] is False
+    assert doc["state"]["label"] == "AUTOMATIC STATE EVALUATION"
+    assert doc["state"]["automatic"]["agent_evidence"]["traffic"]["evidence_class"] in (
+        "SIMULATED", "CONFLICTING")
+    assert doc["state"]["automatic"]["record_saved"]["saved"] is False
+    assert not (tmp_path / "no_record.json").exists()  # simulated: never the real file
     assert str(tmp_path) not in json.dumps(doc)       # no absolute paths leak
 
 
 def test_dashboard_recomputes_only_when_a_new_reading_is_due(tmp_path):
     clock = Clock()
     dash = live_dashboard(tmp_path, clock)
-    first, _ = dash.get("simulated_live", "stable", "NORMAL")
+    first, _ = dash.get("simulated_live", "stable")
     clock.advance(timedelta(minutes=1))
-    again, age = dash.get("simulated_live", "stable", "NORMAL")
+    again, age = dash.get("simulated_live", "stable")
     assert again is first and age >= 0
     clock.advance(timedelta(minutes=4))
-    newer, _ = dash.get("simulated_live", "stable", "NORMAL")
+    newer, _ = dash.get("simulated_live", "stable")
     assert newer["river"]["level"]["observed_at"] > first["river"]["level"]["observed_at"]
     assert newer["simulation"]["readings_generated"] == \
         first["simulation"]["readings_generated"] + 1
 
 
-def test_dashboard_sessions_are_separate_per_scenario_and_state(tmp_path):
+def test_dashboard_sessions_are_separate_per_scenario_and_start_in_normal(tmp_path):
     clock = Clock()
     dash = live_dashboard(tmp_path, clock)
-    a, _ = dash.get("simulated_live", "stable", "NORMAL")
-    b, _ = dash.get("simulated_live", "falling", "EMERGENCY")
+    a, _ = dash.get("simulated_live", "stable")
+    b, _ = dash.get("simulated_live", "falling")
     assert a["simulation"]["session_id"] != b["simulation"]["session_id"]
-    assert b["state"]["state_used_for_capability_checks"] == "EMERGENCY"
+    for doc in (a, b):
+        assert doc["simulation"]["start_state"] == "NORMAL"
+        assert doc["state"]["evaluation"]["current_state"] == "NORMAL"
 
 
-@pytest.mark.parametrize("scenario, state", [("flood", "NORMAL"), ("stable", "PANIC"),
-                                             ("../../etc", "NORMAL")])
-def test_dashboard_rejects_unknown_simulation_inputs(tmp_path, scenario, state):
+@pytest.mark.parametrize("scenario, state", [("flood", None), ("stable", "PANIC"),
+                                             ("../../etc", None), ("falling", "EMERGENCY"),
+                                             ("stable", "NORMAL")])
+def test_dashboard_rejects_unknown_inputs_and_any_chosen_state(tmp_path, scenario, state):
     with pytest.raises(ValueError):
         live_dashboard(tmp_path, Clock()).get("simulated_live", scenario, state)
 
@@ -424,9 +436,12 @@ def test_http_route_serves_the_live_simulation(tmp_path):
     threading.Thread(target=server.serve_forever, daemon=True).start()
     base = f"http://127.0.0.1:{server.server_address[1]}"
     try:
-        status, body = get(base + "/dashboard?mode=simulated_live&scenario=falling"
-                                  "&state=EMERGENCY")
+        status, body = get(base + "/dashboard?mode=simulated_live&scenario=falling")
         assert status == 200 and body["data_label"] == "SIMULATED LIVE"
+        # The state cannot be chosen over HTTP either.
+        status, refused = get(base + "/dashboard?mode=simulated_live&scenario=falling"
+                                     "&state=EMERGENCY")
+        assert status == 400 and "state" in refused["error"]
         assert body["safety"]["real_world_authorization"] == "RESTRICTED"
         status, body = get(base + "/dashboard?mode=simulated_live&scenario=nope")
         assert status == 400 and "scenario must be one of" in body["error"]

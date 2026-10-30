@@ -742,6 +742,20 @@ def make_source(mode: str, config: dict[str, Any], scenario: str | None = None,
     return LiveTrafficSource(key, zoom=provider.get("zoom", 10), session=session)
 
 
+def run_simulated_at(scenario: str | Path, at: datetime,
+                     config: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Run a FABRICATED traffic scenario as if retrieved at ``at`` (simulations only).
+
+    The responses are parsed by the same code as live data; the result stays
+    SIMULATED_TEST_DATA and its source says it was re-timed.
+    """
+    config = config if config is not None else load_config()
+    source = make_source(MODE_SIMULATED, config, str(scenario))
+    source.retrieved_at = at
+    source.source = f"{source.source} (re-timed to {at.isoformat()})"
+    return TrafficAgent(source, config).run()
+
+
 def save_result(result: dict[str, Any], raw_responses: dict[str, Any],
                 output_dir: Path = OUTPUT_DIR) -> Path:
     """Save a result, labelled with its mode and retrieval time.

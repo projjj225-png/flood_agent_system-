@@ -8,6 +8,11 @@ Endpoints (GET only, JSON responses):
     /river/evidence?mode=historical&as_of=2025-12-30T06:00:00%2B05:30
     /river/summary?mode=auto        -> decision_support block + identifiers
 
+    /simulation                     -> continuous SIMULATED LIVE demonstration
+    POST /simulation/control        -> start/pause/resume/reset/scenario/speed of the
+                                       simulation only (the one write route; it can
+                                       never set a disaster state or touch real data)
+
 Binds to 127.0.0.1 by default. Live/auto results are cached for
 ``cache_seconds`` (default 300) so callers cannot hammer the provider; the
 cache age is reported in the X-Evidence-Cache-Age header and the response.
@@ -70,18 +75,23 @@ ENDPOINTS = [
     "GET /river/evidence?mode=auto|live|historical|simulated[&as_of=ISO]",
     "GET /river/summary?mode=...",
     "GET /dashboard?mode=real",
-    "GET /dashboard?mode=simulated&scenario=NAME&state=NORMAL|ALERT|EMERGENCY|RECOVERY",
-    "GET /dashboard?mode=simulated_live&scenario=stable|slowly-rising|rapidly-rising|falling"
-    "&state=NORMAL|ALERT|EMERGENCY|RECOVERY",
+    "GET /dashboard?mode=simulated&scenario=NAME   (state evaluated automatically from NORMAL)",
+    "GET /dashboard?mode=simulated_live&scenario=stable|slowly-rising|rapidly-rising|falling",
     "GET /dashboard/analysis   (historical CWC analysis + forecast validation)",
+    "GET /dashboard/analysis/series?station=UPPER_ANICUT|MUSIRI&range=24h|7d|30d|all",
     "GET /dashboard/scenarios",
     "GET /dashboard/sequence?name=flood-cycle|short-rise",
+    "GET /simulation   (continuous SIMULATED LIVE demonstration: latest evaluation + history)",
+    "POST /simulation/control  {\"action\": start|pause|resume|reset|scenario|speed, "
+    "\"scenario\"?: NORMAL|ALERT|EMERGENCY|RECOVERY|FULL_CYCLE, \"speed\"?: 1|2|5}",
 ]
+MAX_CONTROL_BYTES = 1024
+CONTROL_KEYS = {"action", "scenario", "speed"}
 
 
 def make_handler(provider: EvidenceProvider,
                  request_timeout: float | None = DEFAULT_REQUEST_TIMEOUT,
-                 dashboard: Any = None):
+                 dashboard: Any = None, simulation: Any = None):
     class Handler(BaseHTTPRequestHandler):
         server_version = "RiverEvidenceAPI/" + SCHEMA_VERSION
 
@@ -111,6 +121,13 @@ def make_handler(provider: EvidenceProvider,
                                         if dashboard is not None else ENDPOINTS[:3]})
             if parts.path.startswith("/dashboard") and dashboard is not None:
                 return self._dashboard(parts.path, query)
+            if parts.path == "/simulation" and simulation is not None:
+                if query:
+                    return self._send(400, {"error": "/simulation takes no query parameters"})
+                try:
+                    return self._send(200, simulation.snapshot())
+                except Exception as exc:  # never crash the server
+                    return self._send(500, {"error": f"internal error: {type(exc).__name__}"})
             if parts.path not in ("/river/evidence", "/river/summary"):
                 return self._send(404, {"error": "not found", "path": parts.path})
             mode = query.get("mode", MODE_AUTO)
@@ -141,9 +158,11 @@ def make_handler(provider: EvidenceProvider,
 
         def _dashboard(self, path: str, query: dict[str, str]) -> None:
             """Read-only dashboard routes. Only whitelisted query keys are accepted."""
-            allowed = {"/dashboard": {"mode", "scenario", "state"},
+            # No "state" parameter: the disaster state is evaluated automatically.
+            allowed = {"/dashboard": {"mode", "scenario"},
                        "/dashboard/scenarios": set(), "/dashboard/sequence": {"name"},
-                       "/dashboard/analysis": set()}
+                       "/dashboard/analysis": set(),
+                       "/dashboard/analysis/series": {"station", "range"}}
             if path not in allowed:
                 return self._send(404, {"error": "not found", "path": path})
             unknown = sorted(set(query) - allowed[path])
@@ -156,11 +175,14 @@ def make_handler(provider: EvidenceProvider,
                 if path == "/dashboard/analysis":
                     doc = dashboard.analysis()
                     return self._send(500 if doc.get("error") else 200, doc)
+                if path == "/dashboard/analysis/series":
+                    doc = dashboard.analysis_series(query.get("station"),
+                                                    query.get("range", "7d"))
+                    return self._send(500 if doc.get("error") else 200, doc)
                 if path == "/dashboard/sequence":
                     doc, age = dashboard.sequence(query.get("name", "flood-cycle"))
                 else:
-                    doc, age = dashboard.get(query.get("mode", "real"), query.get("scenario"),
-                                             query.get("state"))
+                    doc, age = dashboard.get(query.get("mode", "real"), query.get("scenario"))
             except ValueError as exc:
                 return self._send(400, {"error": str(exc)})
             except Exception as exc:  # never crash the server; never invent data
@@ -190,8 +212,41 @@ def make_handler(provider: EvidenceProvider,
             self.close_connection = True
 
         def do_POST(self) -> None:  # noqa: N802
+            # The ONLY write route: controls of the simulation (never a disaster state,
+            # never real data). Everything else is read-only.
+            if urlsplit(self.path).path == "/simulation/control" and simulation is not None:
+                return self._simulation_control()
             self._discard_body()
             self._send(405, {"error": "read-only API"})
+
+        def _simulation_control(self) -> None:
+            try:
+                length = int(self.headers.get("Content-Length", 0))
+            except ValueError:
+                length = -1
+            if not 0 < length <= MAX_CONTROL_BYTES:
+                self.close_connection = True
+                return self._send(400, {"error": "control body must be a small JSON object"})
+            try:
+                body = json.loads(self.rfile.read(length).decode("utf-8"))
+            except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+                return self._send(400, {"error": "control body is not valid JSON"})
+            if not isinstance(body, dict):
+                return self._send(400, {"error": "control body must be a JSON object"})
+            unknown = sorted(set(body) - CONTROL_KEYS)
+            if unknown:
+                # e.g. "state": the disaster state is evaluated, never assigned.
+                return self._send(400, {"error": f"unknown control field(s): "
+                                                 f"{', '.join(unknown)}; the disaster state "
+                                                 "cannot be set"})
+            try:
+                doc = simulation.control(body.get("action"), body.get("scenario"),
+                                         body.get("speed"))
+            except ValueError as exc:
+                return self._send(400, {"error": str(exc)})
+            except Exception as exc:  # never crash the server
+                return self._send(500, {"error": f"internal error: {type(exc).__name__}"})
+            return self._send(200, doc)
 
     Handler.timeout = request_timeout  # socket timeout: a stalled client cannot pin a thread
     return Handler
@@ -200,11 +255,12 @@ def make_handler(provider: EvidenceProvider,
 def create_server(service: RiverEvidenceService, host: str = "127.0.0.1", port: int = 8765,
                   cache_seconds: float = 300.0,
                   request_timeout: float = DEFAULT_REQUEST_TIMEOUT,
-                  dashboard: Any = None) -> ThreadingHTTPServer:
-    """``dashboard``: a DashboardService for the /dashboard routes (None: not served)."""
+                  dashboard: Any = None, simulation: Any = None) -> ThreadingHTTPServer:
+    """``dashboard``: a DashboardService for the /dashboard routes (None: not served).
+    ``simulation``: a DemoSimulation for the /simulation routes (None: not served)."""
     return ThreadingHTTPServer((host, port),
                                make_handler(EvidenceProvider(service, cache_seconds),
-                                            request_timeout, dashboard))
+                                            request_timeout, dashboard, simulation))
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -214,10 +270,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--cache-seconds", type=float, default=300.0)
     parser.add_argument("--state-file", default="outputs/state/real_state.json",
-                        help="Real-scope state record shown by /dashboard (read only; never "
-                             "written by the API).")
+                        help="Real-scope state record: /dashboard evaluates the state "
+                             "automatically and saves the record here after a fully audited "
+                             "run.")
+    parser.add_argument("--no-traffic", action="store_true",
+                        help="Do not call the live Traffic Agent (no traffic evidence; a real "
+                             "record then cannot leave RECOVERY automatically).")
     parser.add_argument("--no-dashboard", action="store_true",
                         help="Serve only the original /health and /river routes.")
+    parser.add_argument("--no-simulation", action="store_true",
+                        help="Do not run the continuous SIMULATED LIVE demonstration.")
+    parser.add_argument("--simulation-paused", action="store_true",
+                        help="Create the demonstration but do not start ticking.")
     args = parser.parse_args(argv)
     try:
         service = RiverEvidenceService.from_file(args.config)
@@ -227,10 +291,25 @@ def main(argv: list[str] | None = None) -> int:
     dashboard = None
     if not args.no_dashboard:
         from src.dashboard_service import DashboardService
+        from src.traffic_agent import TrafficAgent, load_config, make_source
+
+        def live_traffic() -> dict:
+            config = load_config()
+            return TrafficAgent(make_source("live", config), config).run()
         dashboard = DashboardService(service, state_file=args.state_file,
-                                     cache_seconds=args.cache_seconds)
+                                     cache_seconds=args.cache_seconds,
+                                     traffic_fetcher=None if args.no_traffic else live_traffic)
+    simulation = None
+    if not args.no_dashboard and not args.no_simulation:
+        from src.simulation_engine import DemoSimulation
+        try:
+            simulation = DemoSimulation(service)
+        except (ValueError, OSError) as exc:  # a broken demo config never stops real mode
+            print(f"Simulation disabled: {exc}", file=sys.stderr)
+        if simulation is not None and simulation.config.get("autostart")                 and not args.simulation_paused:
+            simulation.start()
     server = create_server(service, args.host, args.port, args.cache_seconds,
-                           dashboard=dashboard)
+                           dashboard=dashboard, simulation=simulation)
     print(f"River evidence API on http://{args.host}:{server.server_address[1]} "
           "(Ctrl+C to stop)")
     try:
@@ -238,6 +317,8 @@ def main(argv: list[str] | None = None) -> int:
     except KeyboardInterrupt:
         pass
     finally:
+        if simulation is not None:
+            simulation.stop()
         server.server_close()
     return 0
 

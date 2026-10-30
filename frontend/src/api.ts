@@ -1,7 +1,7 @@
 // API access and runtime validation. The page never trusts a response just
 // because it parsed as JSON: anything malformed, or any real-mode response that
 // contains simulated parts, is rejected and shown as an error.
-import type { AnalysisDoc, DashboardDoc, Mode, ScenarioList, SequenceDoc } from "./types";
+import type { AnalysisDoc, DashboardDoc, Mode, ScenarioList, SequenceDoc, SeriesDoc, SeriesRange } from "./types";
 
 export const API_BASE: string = (import.meta.env?.VITE_API_BASE_URL as string | undefined) ?? "/api";
 const pollEnv = Number(import.meta.env?.VITE_POLL_SECONDS ?? 60);
@@ -97,7 +97,7 @@ export function parseSequence(json: unknown): Result<SequenceDoc> {
 }
 
 export function parseScenarios(json: unknown): Result<ScenarioList> {
-  if (!isObj(json) || !Array.isArray(json.scenarios) || !Array.isArray(json.start_states))
+  if (!isObj(json) || !Array.isArray(json.scenarios))
     return { ok: false, error: "Scenario list is malformed." };
   return { ok: true, value: json as unknown as ScenarioList };
 }
@@ -127,14 +127,12 @@ async function getJson(path: string, signal?: AbortSignal): Promise<Result<unkno
   return { ok: true, value: body };
 }
 
+/** The disaster state is never sent: the backend evaluates it automatically. */
 export async function fetchDashboard(
-  mode: Mode, scenario: string | null, state: string | null, signal?: AbortSignal,
+  mode: Mode, scenario: string | null, signal?: AbortSignal,
 ): Promise<Result<DashboardDoc>> {
   const params = new URLSearchParams({ mode });
-  if (mode !== "real") {
-    if (scenario) params.set("scenario", scenario);
-    if (state) params.set("state", state);
-  }
+  if (mode !== "real" && scenario) params.set("scenario", scenario);
   const r = await getJson(`/dashboard?${params}`, signal);
   return r.ok ? parseDashboard(r.value) : r;
 }
@@ -157,4 +155,20 @@ export async function fetchHealth(signal?: AbortSignal): Promise<boolean> {
 export async function fetchAnalysis(signal?: AbortSignal): Promise<Result<AnalysisDoc>> {
   const r = await getJson("/dashboard/analysis", signal);
   return r.ok ? parseAnalysis(r.value) : r;
+}
+
+/** Validate a /dashboard/analysis/series response: historical, measured, never simulated. */
+export function parseSeries(json: unknown): Result<SeriesDoc> {
+  if (!isObj(json)) return { ok: false, error: "Response is not a JSON object." };
+  if (typeof json.error === "string") return { ok: false, error: json.error };
+  if (json.mode !== "analysis" || json.is_simulated !== false || json.data_label !== HISTORICAL_LABEL)
+    return { ok: false, error: "Historical series is not labelled HISTORICAL CWC DATA; not shown." };
+  if (json.value_basis !== "MEASURED" || !Array.isArray(json.points) || typeof json.station_id !== "string")
+    return { ok: false, error: "Historical series is malformed." };
+  return { ok: true, value: json as unknown as SeriesDoc };
+}
+
+export async function fetchSeries(station: string, range: SeriesRange, signal?: AbortSignal): Promise<Result<SeriesDoc>> {
+  const r = await getJson(`/dashboard/analysis/series?${new URLSearchParams({ station, range })}`, signal);
+  return r.ok ? parseSeries(r.value) : r;
 }

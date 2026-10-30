@@ -23,7 +23,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "NORMAL",
    "state_after": "NORMAL",
-   "reason": "NORMAL kept: condition IMPROVED."
+   "reason": "NORMAL kept: condition IMPROVED.",
+   "traffic_scenario": "normal_flow",
+   "traffic_status": "ROUTES_USABLE",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "NORMAL",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 32,
@@ -34,7 +47,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "NORMAL",
    "state_after": "NORMAL",
-   "reason": "NORMAL kept: condition IMPROVED."
+   "reason": "NORMAL kept: condition IMPROVED.",
+   "traffic_scenario": "normal_flow",
+   "traffic_status": "ROUTES_USABLE",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "NORMAL",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 34,
@@ -45,7 +71,23 @@
    "outcome": "TRANSITION_ACCEPTED",
    "state_before": "NORMAL",
    "state_after": "ALERT",
-   "reason": "NORMAL -> ALERT (escalation): ALERT held for 1 observation(s) over 0.0 h."
+   "reason": "NORMAL -> ALERT (escalation): ALERT held for 1 observation(s) over 0.0 h.",
+   "traffic_scenario": "normal_flow",
+   "traffic_status": "ROUTES_USABLE",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "ALERT",
+   "capabilities_granted": [
+    "propose_evacuation_plan",
+    "request_evidence_reverification"
+   ],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 36,
@@ -56,7 +98,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "ALERT",
    "state_after": "ALERT",
-   "reason": "ALERT kept: condition ALERT."
+   "reason": "ALERT kept: condition ALERT.",
+   "traffic_scenario": "normal_flow",
+   "traffic_status": "ROUTES_USABLE",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "ALERT",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 38,
@@ -67,7 +122,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "ALERT",
    "state_after": "ALERT",
-   "reason": "ALERT kept: condition ALERT."
+   "reason": "ALERT kept: condition ALERT.",
+   "traffic_scenario": "normal_flow",
+   "traffic_status": "ROUTES_USABLE",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "ALERT",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 40,
@@ -78,7 +146,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "ALERT",
    "state_after": "ALERT",
-   "reason": "ALERT kept: condition ALERT."
+   "reason": "ALERT kept: condition ALERT.",
+   "traffic_scenario": "normal_flow",
+   "traffic_status": "ROUTES_USABLE",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "ALERT",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 42,
@@ -89,7 +170,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "ALERT",
    "state_after": "ALERT",
-   "reason": "ALERT kept: condition ALERT."
+   "reason": "ALERT kept: condition ALERT.",
+   "traffic_scenario": "normal_flow",
+   "traffic_status": "ROUTES_USABLE",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "ALERT",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 44,
@@ -100,7 +194,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "ALERT",
    "state_after": "ALERT",
-   "reason": "ALERT kept: condition ALERT."
+   "reason": "ALERT kept: condition ALERT.",
+   "traffic_scenario": "normal_flow",
+   "traffic_status": "ROUTES_USABLE",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "ALERT",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 46,
@@ -111,7 +218,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "ALERT",
    "state_after": "ALERT",
-   "reason": "ALERT kept: ALERT -> EMERGENCY needs 2 observation(s) over 0.0 h (have 1 over 0.0 h)."
+   "reason": "ALERT kept: ALERT -> EMERGENCY needs 2 observation(s) over 0.0 h (have 1 over 0.0 h).",
+   "traffic_scenario": "flood_road_closure",
+   "traffic_status": "ROUTE_BLOCKED",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "ALERT",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 48,
@@ -122,7 +242,22 @@
    "outcome": "TRANSITION_ACCEPTED",
    "state_before": "ALERT",
    "state_after": "EMERGENCY",
-   "reason": "ALERT -> EMERGENCY (escalation): EMERGENCY held for 2 observation(s) over 2.0 h."
+   "reason": "ALERT -> EMERGENCY (escalation): EMERGENCY held for 2 observation(s) over 2.0 h.",
+   "traffic_scenario": "flood_road_closure",
+   "traffic_status": "ROUTE_BLOCKED",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "EMERGENCY",
+   "capabilities_granted": [
+    "request_human_emergency_authorization"
+   ],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 50,
@@ -133,7 +268,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "EMERGENCY",
    "state_after": "EMERGENCY",
-   "reason": "EMERGENCY kept: condition EMERGENCY."
+   "reason": "EMERGENCY kept: condition EMERGENCY.",
+   "traffic_scenario": "flood_road_closure",
+   "traffic_status": "ROUTE_BLOCKED",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "EMERGENCY",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 52,
@@ -144,7 +292,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "EMERGENCY",
    "state_after": "EMERGENCY",
-   "reason": "EMERGENCY kept: condition EMERGENCY."
+   "reason": "EMERGENCY kept: condition EMERGENCY.",
+   "traffic_scenario": "flood_road_closure",
+   "traffic_status": "ROUTE_BLOCKED",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "EMERGENCY",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 54,
@@ -155,7 +316,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "EMERGENCY",
    "state_after": "EMERGENCY",
-   "reason": "EMERGENCY kept: condition EMERGENCY."
+   "reason": "EMERGENCY kept: condition EMERGENCY.",
+   "traffic_scenario": "flood_road_closure",
+   "traffic_status": "ROUTE_BLOCKED",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "EMERGENCY",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 56,
@@ -166,7 +340,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "EMERGENCY",
    "state_after": "EMERGENCY",
-   "reason": "EMERGENCY kept: condition EMERGENCY."
+   "reason": "EMERGENCY kept: condition EMERGENCY.",
+   "traffic_scenario": "flood_road_closure",
+   "traffic_status": "ROUTE_BLOCKED",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "EMERGENCY",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 58,
@@ -177,7 +364,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "EMERGENCY",
    "state_after": "EMERGENCY",
-   "reason": "EMERGENCY kept: condition EMERGENCY."
+   "reason": "EMERGENCY kept: condition EMERGENCY.",
+   "traffic_scenario": "flood_road_closure",
+   "traffic_status": "ROUTE_BLOCKED",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "EMERGENCY",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 60,
@@ -188,7 +388,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "EMERGENCY",
    "state_after": "EMERGENCY",
-   "reason": "EMERGENCY kept: condition EMERGENCY."
+   "reason": "EMERGENCY kept: condition EMERGENCY.",
+   "traffic_scenario": "flood_road_closure",
+   "traffic_status": "ROUTE_BLOCKED",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "EMERGENCY",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 62,
@@ -199,7 +412,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "EMERGENCY",
    "state_after": "EMERGENCY",
-   "reason": "EMERGENCY kept: condition ALERT."
+   "reason": "EMERGENCY kept: condition ALERT.",
+   "traffic_scenario": "flood_road_closure",
+   "traffic_status": "ROUTE_BLOCKED",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "EMERGENCY",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 64,
@@ -210,7 +436,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "EMERGENCY",
    "state_after": "EMERGENCY",
-   "reason": "EMERGENCY kept: condition ALERT."
+   "reason": "EMERGENCY kept: condition ALERT.",
+   "traffic_scenario": "flood_road_closure",
+   "traffic_status": "ROUTE_BLOCKED",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "EMERGENCY",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 66,
@@ -221,7 +460,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "EMERGENCY",
    "state_after": "EMERGENCY",
-   "reason": "EMERGENCY kept: condition ALERT."
+   "reason": "EMERGENCY kept: condition ALERT.",
+   "traffic_scenario": "flood_road_closure",
+   "traffic_status": "ROUTE_BLOCKED",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "EMERGENCY",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 68,
@@ -232,7 +484,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "EMERGENCY",
    "state_after": "EMERGENCY",
-   "reason": "EMERGENCY kept: condition ALERT."
+   "reason": "EMERGENCY kept: condition ALERT.",
+   "traffic_scenario": "flood_road_closure",
+   "traffic_status": "ROUTE_BLOCKED",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "EMERGENCY",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 70,
@@ -243,7 +508,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "EMERGENCY",
    "state_after": "EMERGENCY",
-   "reason": "EMERGENCY kept: EMERGENCY -> RECOVERY needs 2 observation(s) over 2.0 h (have 1 over 0.0 h)."
+   "reason": "EMERGENCY kept: EMERGENCY -> RECOVERY needs 2 observation(s) over 2.0 h (have 1 over 0.0 h).",
+   "traffic_scenario": "flood_road_closure",
+   "traffic_status": "ROUTE_BLOCKED",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "CONFLICTING"
+   },
+   "capability_state": "EMERGENCY",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 72,
@@ -254,7 +532,25 @@
    "outcome": "TRANSITION_ACCEPTED",
    "state_before": "EMERGENCY",
    "state_after": "RECOVERY",
-   "reason": "EMERGENCY -> RECOVERY (de-escalation): IMPROVED held for 2 observation(s) over 2.0 h."
+   "reason": "EMERGENCY -> RECOVERY (de-escalation): IMPROVED held for 2 observation(s) over 2.0 h.",
+   "traffic_scenario": "flood_road_closure",
+   "traffic_status": "ROUTE_BLOCKED",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "CONFLICTING"
+   },
+   "capability_state": "RECOVERY",
+   "capabilities_granted": [
+    "prepare_recovery_assessment"
+   ],
+   "capabilities_revoked": [
+    "propose_evacuation_plan",
+    "request_human_emergency_authorization"
+   ],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 74,
@@ -265,7 +561,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "RECOVERY",
    "state_after": "RECOVERY",
-   "reason": "RECOVERY kept: RECOVERY -> NORMAL needs 4 observation(s) over 12.0 h (have 1 over 0.0 h)."
+   "reason": "RECOVERY kept: RECOVERY -> NORMAL needs 4 observation(s) over 12.0 h (have 1 over 0.0 h).",
+   "traffic_scenario": "flood_road_closure",
+   "traffic_status": "ROUTE_BLOCKED",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "CONFLICTING"
+   },
+   "capability_state": "RECOVERY",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 76,
@@ -276,7 +585,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "RECOVERY",
    "state_after": "RECOVERY",
-   "reason": "RECOVERY kept: RECOVERY -> NORMAL needs 4 observation(s) over 12.0 h (have 2 over 2.0 h)."
+   "reason": "RECOVERY kept: RECOVERY -> NORMAL needs 4 observation(s) over 12.0 h (have 2 over 2.0 h).",
+   "traffic_scenario": "flood_road_closure",
+   "traffic_status": "ROUTE_BLOCKED",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "CONFLICTING"
+   },
+   "capability_state": "RECOVERY",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 78,
@@ -287,7 +609,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "RECOVERY",
    "state_after": "RECOVERY",
-   "reason": "RECOVERY kept: RECOVERY -> NORMAL needs 4 observation(s) over 12.0 h (have 3 over 4.0 h)."
+   "reason": "RECOVERY kept: RECOVERY -> NORMAL needs 4 observation(s) over 12.0 h (have 3 over 4.0 h).",
+   "traffic_scenario": "flood_road_closure",
+   "traffic_status": "ROUTE_BLOCKED",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "CONFLICTING"
+   },
+   "capability_state": "RECOVERY",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 80,
@@ -298,7 +633,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "RECOVERY",
    "state_after": "RECOVERY",
-   "reason": "RECOVERY kept: RECOVERY -> NORMAL needs 4 observation(s) over 12.0 h (have 4 over 6.0 h)."
+   "reason": "RECOVERY kept: RECOVERY -> NORMAL needs 4 observation(s) over 12.0 h (have 4 over 6.0 h).",
+   "traffic_scenario": "flood_road_closure",
+   "traffic_status": "ROUTE_BLOCKED",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "CONFLICTING"
+   },
+   "capability_state": "RECOVERY",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 82,
@@ -309,7 +657,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "RECOVERY",
    "state_after": "RECOVERY",
-   "reason": "RECOVERY kept: RECOVERY -> NORMAL needs 4 observation(s) over 12.0 h (have 5 over 8.0 h)."
+   "reason": "RECOVERY kept: RECOVERY -> NORMAL needs 4 observation(s) over 12.0 h (have 5 over 8.0 h).",
+   "traffic_scenario": "flood_road_closure",
+   "traffic_status": "ROUTE_BLOCKED",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "CONFLICTING"
+   },
+   "capability_state": "RECOVERY",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 84,
@@ -320,7 +681,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "RECOVERY",
    "state_after": "RECOVERY",
-   "reason": "RECOVERY kept: RECOVERY -> NORMAL needs 4 observation(s) over 12.0 h (have 6 over 10.0 h)."
+   "reason": "RECOVERY kept: RECOVERY -> NORMAL needs 4 observation(s) over 12.0 h (have 6 over 10.0 h).",
+   "traffic_scenario": "flood_road_closure",
+   "traffic_status": "ROUTE_BLOCKED",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "CONFLICTING"
+   },
+   "capability_state": "RECOVERY",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 86,
@@ -328,10 +702,23 @@
    "river_level_m": 2.25,
    "risk_level": "LOW",
    "condition": "NORMAL",
-   "outcome": "TRANSITION_ACCEPTED",
+   "outcome": "STATE_UNCHANGED",
    "state_before": "RECOVERY",
-   "state_after": "NORMAL",
-   "reason": "RECOVERY -> NORMAL (de-escalation): NORMAL held for 7 observation(s) over 12.0 h."
+   "state_after": "RECOVERY",
+   "reason": "RECOVERY kept: the RECOVERY -> NORMAL persistence is met (7 observation(s) over 12.0 h), but traffic evidence does not confirm usable evacuation routes (ROUTE_BLOCKED).",
+   "traffic_scenario": "flood_road_closure",
+   "traffic_status": "ROUTE_BLOCKED",
+   "traffic_hold": "CONFLICTING_EVIDENCE_ROUTE_BLOCKED",
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "CONFLICTING"
+   },
+   "capability_state": "RECOVERY",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 88,
@@ -339,10 +726,26 @@
    "river_level_m": 2.25,
    "risk_level": "LOW",
    "condition": "NORMAL",
-   "outcome": "STATE_UNCHANGED",
-   "state_before": "NORMAL",
+   "outcome": "TRANSITION_ACCEPTED",
+   "state_before": "RECOVERY",
    "state_after": "NORMAL",
-   "reason": "NORMAL kept: condition NORMAL."
+   "reason": "RECOVERY -> NORMAL (de-escalation): NORMAL held for 8 observation(s) over 14.0 h.",
+   "traffic_scenario": "normal_flow",
+   "traffic_status": "ROUTES_USABLE",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "NORMAL",
+   "capabilities_granted": [],
+   "capabilities_revoked": [
+    "prepare_recovery_assessment",
+    "request_evidence_reverification"
+   ],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 90,
@@ -353,7 +756,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "NORMAL",
    "state_after": "NORMAL",
-   "reason": "NORMAL kept: condition NORMAL."
+   "reason": "NORMAL kept: condition NORMAL.",
+   "traffic_scenario": "normal_flow",
+   "traffic_status": "ROUTES_USABLE",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "NORMAL",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 92,
@@ -364,7 +780,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "NORMAL",
    "state_after": "NORMAL",
-   "reason": "NORMAL kept: condition NORMAL."
+   "reason": "NORMAL kept: condition NORMAL.",
+   "traffic_scenario": "normal_flow",
+   "traffic_status": "ROUTES_USABLE",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "NORMAL",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 94,
@@ -375,7 +804,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "NORMAL",
    "state_after": "NORMAL",
-   "reason": "NORMAL kept: condition NORMAL."
+   "reason": "NORMAL kept: condition NORMAL.",
+   "traffic_scenario": "normal_flow",
+   "traffic_status": "ROUTES_USABLE",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "NORMAL",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 96,
@@ -386,7 +828,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "NORMAL",
    "state_after": "NORMAL",
-   "reason": "NORMAL kept: condition NORMAL."
+   "reason": "NORMAL kept: condition NORMAL.",
+   "traffic_scenario": "normal_flow",
+   "traffic_status": "ROUTES_USABLE",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "NORMAL",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 98,
@@ -397,7 +852,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "NORMAL",
    "state_after": "NORMAL",
-   "reason": "NORMAL kept: condition NORMAL."
+   "reason": "NORMAL kept: condition NORMAL.",
+   "traffic_scenario": "normal_flow",
+   "traffic_status": "ROUTES_USABLE",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "NORMAL",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 100,
@@ -408,7 +876,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "NORMAL",
    "state_after": "NORMAL",
-   "reason": "NORMAL kept: condition NORMAL."
+   "reason": "NORMAL kept: condition NORMAL.",
+   "traffic_scenario": "normal_flow",
+   "traffic_status": "ROUTES_USABLE",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "NORMAL",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 102,
@@ -419,7 +900,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "NORMAL",
    "state_after": "NORMAL",
-   "reason": "NORMAL kept: condition NORMAL."
+   "reason": "NORMAL kept: condition NORMAL.",
+   "traffic_scenario": "normal_flow",
+   "traffic_status": "ROUTES_USABLE",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "NORMAL",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 104,
@@ -430,7 +924,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "NORMAL",
    "state_after": "NORMAL",
-   "reason": "NORMAL kept: condition NORMAL."
+   "reason": "NORMAL kept: condition NORMAL.",
+   "traffic_scenario": "normal_flow",
+   "traffic_status": "ROUTES_USABLE",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "NORMAL",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 106,
@@ -441,7 +948,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "NORMAL",
    "state_after": "NORMAL",
-   "reason": "NORMAL kept: condition NORMAL."
+   "reason": "NORMAL kept: condition NORMAL.",
+   "traffic_scenario": "normal_flow",
+   "traffic_status": "ROUTES_USABLE",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "NORMAL",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 108,
@@ -452,7 +972,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "NORMAL",
    "state_after": "NORMAL",
-   "reason": "NORMAL kept: condition NORMAL."
+   "reason": "NORMAL kept: condition NORMAL.",
+   "traffic_scenario": "normal_flow",
+   "traffic_status": "ROUTES_USABLE",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "NORMAL",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 110,
@@ -463,7 +996,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "NORMAL",
    "state_after": "NORMAL",
-   "reason": "NORMAL kept: condition NORMAL."
+   "reason": "NORMAL kept: condition NORMAL.",
+   "traffic_scenario": "normal_flow",
+   "traffic_status": "ROUTES_USABLE",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "NORMAL",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 112,
@@ -474,7 +1020,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "NORMAL",
    "state_after": "NORMAL",
-   "reason": "NORMAL kept: condition NORMAL."
+   "reason": "NORMAL kept: condition NORMAL.",
+   "traffic_scenario": "normal_flow",
+   "traffic_status": "ROUTES_USABLE",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "NORMAL",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 114,
@@ -485,7 +1044,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "NORMAL",
    "state_after": "NORMAL",
-   "reason": "NORMAL kept: condition NORMAL."
+   "reason": "NORMAL kept: condition NORMAL.",
+   "traffic_scenario": "normal_flow",
+   "traffic_status": "ROUTES_USABLE",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "NORMAL",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 116,
@@ -496,7 +1068,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "NORMAL",
    "state_after": "NORMAL",
-   "reason": "NORMAL kept: condition NORMAL."
+   "reason": "NORMAL kept: condition NORMAL.",
+   "traffic_scenario": "normal_flow",
+   "traffic_status": "ROUTES_USABLE",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "NORMAL",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   },
   {
    "hour": 118,
@@ -507,7 +1092,20 @@
    "outcome": "STATE_UNCHANGED",
    "state_before": "NORMAL",
    "state_after": "NORMAL",
-   "reason": "NORMAL kept: condition NORMAL."
+   "reason": "NORMAL kept: condition NORMAL.",
+   "traffic_scenario": "normal_flow",
+   "traffic_status": "ROUTES_USABLE",
+   "traffic_hold": null,
+   "evidence_classes": {
+    "river": "SIMULATED",
+    "weather": "SIMULATED",
+    "traffic": "SIMULATED"
+   },
+   "capability_state": "NORMAL",
+   "capabilities_granted": [],
+   "capabilities_revoked": [],
+   "real_world_authorization": "RESTRICTED",
+   "is_simulated": true
   }
  ]
 }

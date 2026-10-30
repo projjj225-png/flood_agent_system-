@@ -28,7 +28,9 @@ export function KpiCards({ doc }: { doc: DashboardDoc }) {
   const rain = weather?.rainfall ?? {};
   const temp = weather?.current?.values?.temperature_2m;
   const persisted = state?.persisted;
-  const shownState = persisted?.available ? persisted.state : state?.state_used_for_capability_checks;
+  // The state the backend's automatic evaluation accepted in this run (never computed here).
+  const shownState = state?.automatic?.accepted_state
+    ?? (persisted?.available ? persisted.state : state?.state_used_for_capability_checks);
   return (
     <div className="kpis" role="list">
       <article className="kpi" role="listitem">
@@ -88,7 +90,7 @@ export function KpiCards({ doc }: { doc: DashboardDoc }) {
         <h3>Disaster state</h3>
         <p className="kpi-value"><Badge tone={STATE_TONE[shownState ?? ""] ?? "unknown"}>{shownState ?? "UNKNOWN"}</Badge></p>
         <p className="kpi-note">
-          {persisted?.available ? "Persisted state" :
+          <strong>Automatic evaluation</strong> · {persisted?.available ? "persisted record" :
             state?.state_basis === "SCENARIO_START_STATE" ? "Scenario start state (simulated)" :
             state?.state_basis === "SIMULATION_SESSION_RECORD" ? "Simulation session state (in memory, never saved)" :
               "No persisted record — NORMAL assumed for checks"}
@@ -435,56 +437,115 @@ export function RiskSection({ doc }: { doc: DashboardDoc }) {
 
 // ---- Disaster state -------------------------------------------------------------------
 
+const CLASS_TONE: Record<string, string> = {
+  VERIFIED_LIVE: "ok", LIVE_PROVIDER_DATA: "info", MODEL_ESTIMATE: "info", HISTORICAL: "neutral",
+  SIMULATED: "sim", INSUFFICIENT: "danger", UNAVAILABLE: "unknown", CONFLICTING: "warn",
+};
+const CLASS_TEXT: Record<string, string> = {
+  VERIFIED_LIVE: "Verified live evidence", LIVE_PROVIDER_DATA: "Live provider data (not verified by CWC)",
+  MODEL_ESTIMATE: "Modelled weather estimate", HISTORICAL: "Historical evidence",
+  SIMULATED: "Simulated evidence", INSUFFICIENT: "Insufficient evidence",
+  UNAVAILABLE: "No evidence", CONFLICTING: "Conflicting evidence",
+};
+const AGENT_NAMES: Record<string, string> = { river: "River Agent", weather: "Weather Agent", traffic: "Traffic Agent" };
+
+const stateBadge = (state?: string | null) =>
+  <Badge tone={STATE_TONE[state ?? ""] ?? "unknown"}>{state ?? "—"}</Badge>;
+
 export function StateSection({ doc }: { doc: DashboardDoc }) {
   const s = doc.state;
+  const a = s?.automatic;
   const e = s?.evaluation;
   const p = s?.persisted;
-  const accepted = e?.outcome === "TRANSITION_ACCEPTED";
+  const accepted = a?.accepted_state ?? e?.resulting_state;
+  const transitioned = e?.outcome === "TRANSITION_ACCEPTED";
+  const changes = a?.capability_changes;
+  const agents = Object.entries(a?.agent_evidence ?? {});
   const history = [...(s?.history ?? [])].reverse();
+  const persistence = e?.persistence;
   return (
     <Section id="state" title="Disaster state"
-      subtitle="Classification only — it never authorizes or executes an action."
-      badges={<>{e?.is_simulated && <Badge tone="sim">SIMULATED</Badge>}</>}>
-      <div className="grid-2">
-        <div className="card">
-          <span className="eyebrow">Persisted state (operative)</span>
-          {p?.available
-            ? <><Badge tone={STATE_TONE[p.state ?? ""] ?? "unknown"}>{p.state}</Badge>
-                <dl className="fields compact">
-                  <Field label="Scope">{p.scope}</Field>
-                  <Field label="Entered">{fmtTime(p.entered_at)}</Field>
-                  <Field label="Last transition">{p.last_transition ? `${p.last_transition.from} → ${p.last_transition.to} (${p.last_transition.kind}) at ${fmtShort(p.last_transition.at)}` : "—"}</Field>
-                  <Field label="Record">{p.record_file ?? "—"}</Field>
-                </dl></>
-            : <Unavailable>
-                {s?.state_basis === "SCENARIO_START_STATE"
-                  ? <>Simulated scenario: no persisted record. It starts from <strong>{s?.state_used_for_capability_checks}</strong>.</>
-                  : s?.state_basis === "SIMULATION_SESSION_RECORD"
-                  ? <>Real-time simulation: the session carries its own simulated-scope record in memory. It is never written to the real state record. This tick was checked in <strong>{s?.state_used_for_capability_checks}</strong>.</>
-                  : <>No valid persisted real-state record{p?.problem ? <> ({p.problem})</> : ""}. Capability checks use <strong>NORMAL</strong>, the most restrictive state.</>}
-              </Unavailable>}
-          <p className="small">State used for this run's capability checks: <strong>{s?.state_used_for_capability_checks ?? "—"}</strong> ({humanize(s?.state_basis)})</p>
+      subtitle="Evaluated automatically by the backend from the River, Weather and Traffic Agents' evidence. It cannot be selected, and it never authorizes or executes an action."
+      badges={<><Badge tone="info">{s?.label ?? "AUTOMATIC STATE EVALUATION"}</Badge>{e?.is_simulated && <Badge tone="sim">SIMULATED</Badge>}</>}>
+      <div className="state-hero" aria-label="Automatic state evaluation">
+        <div className={`state-now ${transitioned ? "changed" : ""}`}>
+          <span className="eyebrow">Current accepted state</span>
+          <p className="state-big">{stateBadge(accepted)}</p>
+          <span className="small muted">{transitioned ? "Changed in this evaluation" : "Unchanged in this evaluation"} · {humanize(e?.outcome)}</span>
         </div>
-        <div className={`card ${accepted ? "card-accent" : ""}`}>
-          <span className="eyebrow">This evaluation (proposed, not saved)</span>
-          <p className="transition">
-            <Badge tone={STATE_TONE[e?.current_state ?? ""] ?? "unknown"}>{e?.current_state ?? "—"}</Badge>
-            <span aria-hidden="true">→</span>
-            <Badge tone={STATE_TONE[e?.resulting_state ?? ""] ?? "unknown"}>{e?.resulting_state ?? "—"}</Badge>
-            <Badge tone={accepted ? "ok" : e?.outcome === "INSUFFICIENT_EVIDENCE" || e?.outcome === "EVALUATION_FAILED" ? "danger" : "neutral"}>{humanize(e?.outcome)}</Badge>
-          </p>
+        <dl className="state-facts">
+          <div><dt>Previous state</dt><dd>{a?.previous_state ? stateBadge(a.previous_state) : <span className="muted">none recorded</span>}</dd></div>
+          <div><dt>Proposed next state</dt><dd>{a?.proposed_state ? <>{stateBadge(a.proposed_state)} <span className="small muted">not yet met</span></> : <span className="muted">none</span>}</dd></div>
+          <div><dt>Last transition</dt><dd>{a?.transition_at ? `${fmtTime(a.transition_at)}` : <span className="muted">none recorded</span>}</dd></div>
+          <div><dt>Evidence confidence</dt><dd>{a?.confidence ?? "—"} <span className="small muted">river {humanize(a?.evidence_quality?.river_freshness)} · grade {a?.evidence_quality?.river_evidence_grade ?? "—"}</span></dd></div>
+        </dl>
+      </div>
+
+      <div className="grid-2">
+        <div className={`card ${transitioned ? "card-accent" : ""}`}>
+          <span className="eyebrow">Automatic transition reason</span>
+          <p className="state-reason">{a?.reason ?? e?.reason ?? "—"}</p>
           <dl className="fields compact">
-            <Field label="Condition">{e?.condition ?? "—"}</Field>
-            <Field label="Proposed next">{e?.proposed_state ?? "none"}</Field>
-            <Field label="Why">{e?.reason ?? "—"}</Field>
-            {e?.persistence && <Field label="Persistence">{e.persistence.observations ?? 0} of {e.persistence.required_observations} observation(s), {fmtNum(e.persistence.span_hours, "h", 1)} of {fmtNum(e.persistence.required_hours, "h", 1)}{isNum(e.persistence.run_broken_by_gap_hours) ? ` · run broken by a ${e.persistence.run_broken_by_gap_hours} h gap` : ""}</Field>}
+            <Field label="Condition">{a?.condition ?? e?.condition ?? "—"}</Field>
+            {persistence && <Field label="Persistence">{persistence.observations ?? 0} of {persistence.required_observations} observation(s), {fmtNum(persistence.span_hours, "h", 1)} of {fmtNum(persistence.required_hours, "h", 1)}{isNum(persistence.run_broken_by_gap_hours) ? ` · run broken by a ${persistence.run_broken_by_gap_hours} h gap` : ""}{persistence.traffic_required ? ` · traffic must be ${humanize(persistence.traffic_required)} (now ${humanize(persistence.traffic_status)})` : ""}</Field>}
+            {a?.traffic_hold && <Field label="Held by"><Badge tone="warn">{humanize(a.traffic_hold)}</Badge></Field>}
             <Field label="Observed / evaluated">{fmtShort(e?.observed_at)} / {fmtShort(e?.evaluated_at)} IST</Field>
             <Field label="Applies to">{humanize(e?.state_applies_to)}</Field>
           </dl>
-          <CodeList items={e?.reasons} tone={accepted ? "neutral" : "warn"} empty="" />
+          <CodeList items={a?.reasons ?? e?.reasons} tone={transitioned ? "neutral" : "warn"} empty="" />
+        </div>
+        <div className="card">
+          <span className="eyebrow">Evidence used by the evaluation</span>
+          {agents.length ? (
+            <table className="table compact-table">
+              <thead><tr><th>Agent</th><th>Evidence</th><th>Used for</th></tr></thead>
+              <tbody>{agents.map(([k, v]) => (
+                <tr key={k}><td>{AGENT_NAMES[k] ?? k}</td>
+                  <td><Badge tone={CLASS_TONE[v.evidence_class ?? ""] ?? "unknown"}>{CLASS_TEXT[v.evidence_class ?? ""] ?? v.evidence_class ?? "—"}</Badge>
+                    {(v.reasons ?? []).length > 0 && <div className="small muted">{(v.reasons ?? []).map(humanize).join(", ")}</div>}</td>
+                  <td className="small">{v.used_for ?? "—"}</td></tr>))}</tbody>
+            </table>
+          ) : <Unavailable>No per-agent evidence in this response.</Unavailable>}
+          <dl className="fields compact">
+            <Field label="Triggering evidence">{a?.trigger_evidence?.evidence_id ? <code>{a.trigger_evidence.evidence_id.slice(0, 12)}…</code> : "—"} · risk {a?.trigger_evidence?.risk_level ?? "—"}</Field>
+            <Field label="Supporting readings">{(a?.trigger_evidence?.supporting_evidence_ids ?? []).length}</Field>
+            {a?.traffic && <Field label="Evacuation routes">{humanize(a.traffic.status)}{a.traffic.blocked_routes?.length ? ` · blocked: ${a.traffic.blocked_routes.join(", ")}` : ""}</Field>}
+            {a?.traffic_fetch_error && <Field label="Traffic fetch">{a.traffic_fetch_error}</Field>}
+          </dl>
         </div>
       </div>
+
+      <div className="card">
+        <span className="eyebrow">Capability changes from this evaluation</span>
+        {changes?.changed ? (
+          <div className="cap-changes">
+            <p className="transition">{stateBadge(changes.from_state)}<span aria-hidden="true">→</span>{stateBadge(changes.to_state)}</p>
+            <div><strong>Added to the allowlist:</strong> {(changes.allowlist_added ?? []).length ? (changes.allowlist_added ?? []).map((c) => <code key={c} className="cap add">+ {c}</code>) : <span className="muted">none</span>}</div>
+            <div><strong>Revoked:</strong> {(changes.allowlist_revoked ?? []).length ? (changes.allowlist_revoked ?? []).map((c) => <code key={c} className="cap revoke">− {c}</code>) : <span className="muted">none</span>}</div>
+            <p className="small muted">{changes.note}</p>
+          </div>
+        ) : <p className="small">No state change in this evaluation: permissions are those of <strong>{a?.capability_state ?? s?.state_used_for_capability_checks ?? "—"}</strong>.</p>}
+      </div>
+
+      <div className="card">
+        <span className="eyebrow">State record</span>
+        {p?.available
+          ? <dl className="fields compact">
+              <Field label="Record read at start">{stateBadge(p.state)} ({p.scope})</Field>
+              <Field label="Entered">{fmtTime(p.entered_at)}</Field>
+              <Field label="Record">{p.record_file ?? "—"}</Field>
+            </dl>
+          : <p className="small">
+              {s?.state_basis === "SCENARIO_START_STATE"
+                ? <>Simulated scenario: a fresh simulated record starting from <strong>NORMAL</strong>; never saved.</>
+                : s?.state_basis === "SIMULATION_SESSION_RECORD"
+                ? <>Real-time simulation: the session carries its own simulated-scope record in memory, started in NORMAL. It is never written to the real state record.</>
+                : <>No valid persisted real-state record{p?.problem ? <> ({p.problem})</> : ""}. This run started from <strong>NORMAL</strong>, the most restrictive state.</>}
+            </p>}
+        <p className="small">Saved after this evaluation: <strong>{a?.record_saved?.saved ? "yes" : "no"}</strong>{a?.record_saved?.reason ? ` — ${a.record_saved.reason}` : ""}</p>
+      </div>
       <p className="note">{s?.note}</p>
+
       <h3>Evaluation history {history.length ? `(${history.length})` : ""}</h3>
       {history.length ? (
         <table className="table">
@@ -659,20 +720,27 @@ export function AuditSection({ doc }: { doc: DashboardDoc }) {
 // ---- Simulated flood-cycle timeline --------------------------------------------------------
 
 export function TimelineSection({ seq, error }: { seq: SequenceDoc | null; error: string | null }) {
-  const changes = (seq?.steps ?? []).filter((s) => s.state_before !== s.state_after);
+  // Transitions, and steps held by the traffic check, as the backend reported them.
+  const changes = (seq?.steps ?? []).filter((s) => s.state_before !== s.state_after || s.traffic_hold);
   return (
     <Section id="timeline" title="State timeline — simulated flood cycle"
       subtitle={seq?.description ?? "Fabricated river and weather series, TEST thresholds"}
       badges={<Badge tone="sim">SIMULATED</Badge>}>
-      <SimulatedBanner text="A fabricated flood cycle run through the real workflow, step by step. It shows how the state manager behaves; it is not a forecast." />
+      <SimulatedBanner text="A fabricated flood cycle (river, weather and traffic, all SIMULATED) run through the real workflow, step by step. Every state change is the state manager's own automatic decision; it is not a forecast." />
       {error ? <Unavailable>Timeline unavailable: {error}</Unavailable> : !seq ? <Unavailable>Loading…</Unavailable> : (
         <>
           <StateTimelineChart steps={seq.steps} />
           <table className="table">
-            <thead><tr><th>Hour</th><th>Level</th><th>Risk</th><th>Transition</th><th>Reason</th></tr></thead>
+            <thead><tr><th>Hour</th><th>Level</th><th>Risk</th><th>Traffic</th><th>Transition</th><th>Capability changes</th><th>Reason</th></tr></thead>
             <tbody>{changes.map((s) => (
               <tr key={s.hour}><td>{s.hour}</td><td>{fmtNum(s.river_level_m, "m", 2)}</td><td>{s.risk_level}</td>
-                <td><Badge tone={STATE_TONE[s.state_before ?? ""] ?? "unknown"}>{s.state_before}</Badge> → <Badge tone={STATE_TONE[s.state_after ?? ""] ?? "unknown"}>{s.state_after}</Badge></td>
+                <td className="small">{humanize(s.traffic_status)}</td>
+                <td>{s.state_before !== s.state_after
+                  ? <><Badge tone={STATE_TONE[s.state_before ?? ""] ?? "unknown"}>{s.state_before}</Badge> → <Badge tone={STATE_TONE[s.state_after ?? ""] ?? "unknown"}>{s.state_after}</Badge></>
+                  : <><Badge tone={STATE_TONE[s.state_after ?? ""] ?? "unknown"}>{s.state_after}</Badge> <Badge tone="warn">held: {humanize(s.traffic_hold)}</Badge></>}</td>
+                <td className="small">{s.state_before !== s.state_after
+                  ? <>{(s.capabilities_granted ?? []).map((c) => <code key={c} className="cap add">+ {c}</code>)}{(s.capabilities_revoked ?? []).map((c) => <code key={c} className="cap revoke">− {c}</code>)}</>
+                  : "—"}</td>
                 <td className="small">{s.reason}</td></tr>))}</tbody>
           </table>
         </>

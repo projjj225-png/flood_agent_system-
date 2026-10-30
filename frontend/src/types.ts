@@ -1,3 +1,5 @@
+import type { Insights } from "./model";
+
 // Shapes returned by the Python API (src/dashboard_service.py). Every field is
 // optional or nullable on purpose: the UI must cope with missing data and must
 // never fill a gap with a made-up value.
@@ -137,7 +139,66 @@ export interface StateHistoryEntry {
   reasons?: string[] | null;  // null on valid entries (only INSUFFICIENT ones carry reasons)
 }
 
+export interface AgentEvidence {
+  agent?: string;
+  evidence_class?: string;
+  reasons?: string[];
+  retrieved_at?: string | null;
+  used_for?: string;
+}
+
+export interface TrafficView {
+  status?: string;
+  evidence_class?: string;
+  is_simulated?: boolean | null;
+  retrieved_at?: string | null;
+  age_hours?: number | null;
+  max_age_hours?: number;
+  routes?: Record<string, string>;
+  blocked_routes?: string[];
+  reasons?: string[];
+  role?: string;
+}
+
+export interface CapabilityChanges {
+  from_state?: string;
+  to_state?: string;
+  changed?: boolean;
+  allowlist_added?: string[];
+  allowlist_revoked?: string[];
+  decisions_granted?: string[];
+  decisions_revoked?: string[];
+  note?: string;
+}
+
+/** The backend's automatic state evaluation (display only; never recomputed here). */
+export interface AutomaticState {
+  accepted_state?: string | null;
+  previous_state?: string | null;
+  proposed_state?: string | null;
+  outcome?: string;
+  transition_this_run?: boolean;
+  transition_at?: string | null;
+  reason?: string | null;
+  reasons?: string[];
+  condition?: string | null;
+  trigger_evidence?: { evidence_id?: string | null; observed_at?: string | null; risk_assessment_id?: string | null; risk_level?: string | null; supporting_evidence_ids?: (string | null)[] };
+  agent_evidence?: Record<string, AgentEvidence> | null;
+  traffic?: TrafficView | null;
+  traffic_hold?: string | null;
+  traffic_fetch_error?: string;
+  confidence?: string | null;
+  evidence_quality?: { confidence?: string; river_evidence_grade?: string; river_freshness?: string; confidence_downgrades?: unknown[] } | null;
+  capability_state?: string | null;
+  capability_changes?: CapabilityChanges | null;
+  record_saved?: { saved?: boolean; reason?: string; state?: string; record_file?: string };
+}
+
 export interface StateBlock {
+  label?: string;
+  selection?: string;
+  automatic?: AutomaticState;
+  state_at_start_of_run?: string | null;
   persisted?: {
     available?: boolean;
     state?: string | null;
@@ -158,7 +219,7 @@ export interface StateBlock {
     condition?: string | null;
     reason?: string | null;
     reasons?: string[];
-    persistence?: { observations?: number; required_observations?: number; span_hours?: number; required_hours?: number; satisfied?: boolean; run_broken_by_gap_hours?: number | null } | null;
+    persistence?: { observations?: number; required_observations?: number; span_hours?: number; required_hours?: number; satisfied?: boolean; run_broken_by_gap_hours?: number | null; traffic_required?: string; traffic_status?: string } | null;
     transition_rule?: { to?: string; kind?: string } | null;
     observed_at?: string | null;
     evaluated_at?: string | null;
@@ -274,6 +335,8 @@ export interface DashboardDoc {
   evidence_layer?: EvidenceLayerBlock;
   audit?: { events?: AuditEvent[]; write_errors?: string[]; log_file?: string | null };
   simulation?: SimulationInfo;
+  /** Backend-derived dashboard insights (src/insights.py). */
+  insights?: Insights;
 }
 
 /** One evaluation of the real-time simulation session (all values from the backend). */
@@ -327,6 +390,14 @@ export interface SequenceStep {
   state_before: string | null;
   state_after: string | null;
   reason: string | null;
+  traffic_scenario?: string;
+  traffic_status?: string | null;
+  traffic_hold?: string | null;
+  evidence_classes?: Record<string, string>;
+  capability_state?: string | null;
+  capabilities_granted?: string[];
+  capabilities_revoked?: string[];
+  real_world_authorization?: string;
 }
 
 export interface SequenceDoc {
@@ -340,7 +411,7 @@ export interface SequenceDoc {
 export interface ScenarioList {
   scenarios: { name: string; description: string }[];
   sequences: { name: string; description: string }[];
-  start_states: string[];
+  state_selection?: string;
   live_simulation?: {
     available?: boolean;
     reason?: string;
@@ -458,4 +529,32 @@ export interface AnalysisDoc {
     authorizes_actions?: boolean;
     note?: string;
   };
+}
+
+// ---- /dashboard/analysis/series: one historical station over a time range ----------
+
+export type SeriesRange = "24h" | "7d" | "30d" | "all";
+
+export interface SeriesDoc {
+  schema_version: string;
+  generated_at: string;
+  mode: "analysis";
+  is_simulated: false;
+  data_label: string;
+  error?: string;
+  reason?: string;
+  station_id: string;
+  source_name?: string;
+  stations: string[];
+  range: SeriesRange;
+  value_basis: "MEASURED";
+  window_start?: string;
+  window_end?: string;
+  latest?: { level_m: number; observed_at: string };
+  stats: { min_m: number; max_m: number; mean_m: number; readings: number } | null;
+  quality?: { accepted: number; rejected: number; accepted_pct: number | null; rejected_by_reason: Record<string, number>;
+    station_accepted?: number | null; station_checked?: number | null };
+  points: { time: string; level_m: number }[];
+  thinned?: boolean;
+  max_points?: number;
 }

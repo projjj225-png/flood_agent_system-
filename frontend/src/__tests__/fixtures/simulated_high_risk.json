@@ -1,1892 +1,2169 @@
 {
-  "schema_version": "1.0",
-  "generated_at": "2026-10-13T08:00:00+00:00",
-  "mode": "simulated",
+ "schema_version": "1.0",
+ "generated_at": "2026-10-13T08:00:00+00:00",
+ "mode": "simulated",
+ "is_simulated": true,
+ "data_label": "SIMULATED DATA",
+ "timezone": "Asia/Kolkata",
+ "location": {
+  "description": "Cauvery River near Upper Anicut, Tamil Nadu, India",
+  "latitude": 10.888611,
+  "longitude": 78.58
+ },
+ "cache_seconds": 300.0,
+ "scenario": "simulated-high-risk",
+ "scenario_description": "River above the TEST danger level and rising, extreme rain.",
+ "start_state": "NORMAL",
+ "run_id": "cae9897026284d3287c630e9266009c5",
+ "decision_id": "58e7e874591682e2dbcc8b2de70d57a714229cff3756d8aaeed0ec8bee6b8bce",
+ "weather": {
+  "status": "OK",
+  "source": "SIMULATED weather file (fabricated): data/simulated/weather/extreme_rain.json",
+  "source_type": "SIMULATED_TEST_DATA",
   "is_simulated": true,
-  "data_label": "SIMULATED DATA",
-  "timezone": "Asia/Kolkata",
-  "location": {
-    "description": "Cauvery River near Upper Anicut, Tamil Nadu, India",
-    "latitude": 10.888611,
-    "longitude": 78.58
+  "retrieved_at": "2026-10-10T12:00:00+00:00",
+  "timezone": {
+   "requested": "Asia/Kolkata",
+   "returned": "Asia/Kolkata",
+   "abbreviation": "GMT+5:30",
+   "utc_offset_seconds": 19800
   },
-  "cache_seconds": 300.0,
-  "scenario": "simulated-high-risk",
-  "scenario_description": "River above the TEST danger level and rising, extreme rain.",
-  "start_state": "ALERT",
-  "run_id": "2967682ff1e64268a6b503ccda33afdb",
-  "decision_id": "ebf9c2da24f2409275d88ca1cd3f2bb44d9478fc26ff0b22d1af0e08293a08ae",
-  "weather": {
+  "requested_location": {
+   "latitude": 10.888611,
+   "longitude": 78.58,
+   "description": "Cauvery River near Upper Anicut, Tamil Nadu, India"
+  },
+  "grid_location": {
+   "latitude": 10.86116,
+   "longitude": 78.61063,
+   "elevation_m": 73.0,
+   "reason": null
+  },
+  "current": {
+   "status": "AVAILABLE",
+   "time": "2026-10-10T17:30:00+05:30",
+   "interval_seconds": 900,
+   "values": {
+    "temperature_2m": 27.0,
+    "relative_humidity_2m": 85.0,
+    "precipitation": 2.25,
+    "rain": 2.25,
+    "wind_speed_10m": 10.0,
+    "wind_direction_10m": 90.0,
+    "wind_gusts_10m": 20.0
+   },
+   "missing": {}
+  },
+  "units": {
+   "current": {
+    "temperature_2m": "°C",
+    "relative_humidity_2m": "%",
+    "precipitation": "mm",
+    "rain": "mm",
+    "wind_speed_10m": "km/h",
+    "wind_direction_10m": "°",
+    "wind_gusts_10m": "km/h"
+   },
+   "hourly": {
+    "precipitation": "mm",
+    "rain": "mm",
+    "wind_gusts_10m": "km/h",
+    "wind_speed_10m": "km/h",
+    "precipitation_probability": "%",
+    "temperature_2m": "°C",
+    "relative_humidity_2m": "%"
+   }
+  },
+  "rainfall": {
+   "3h": {
+    "period_start": "2026-10-10T14:00:00+05:30",
+    "period_end": "2026-10-10T17:00:00+05:30",
+    "precipitation": {
+     "status": "AVAILABLE",
+     "total": 27.0,
+     "reason": null
+    },
+    "rain": {
+     "status": "AVAILABLE",
+     "total": 27.0,
+     "reason": null
+    }
+   },
+   "6h": {
+    "period_start": "2026-10-10T11:00:00+05:30",
+    "period_end": "2026-10-10T17:00:00+05:30",
+    "precipitation": {
+     "status": "AVAILABLE",
+     "total": 54.0,
+     "reason": null
+    },
+    "rain": {
+     "status": "AVAILABLE",
+     "total": 54.0,
+     "reason": null
+    }
+   },
+   "24h": {
+    "period_start": "2026-10-09T17:00:00+05:30",
+    "period_end": "2026-10-10T17:00:00+05:30",
+    "precipitation": {
+     "status": "AVAILABLE",
+     "total": 156.0,
+     "reason": null
+    },
+    "rain": {
+     "status": "AVAILABLE",
+     "total": 156.0,
+     "reason": null
+    }
+   }
+  },
+  "hourly": [
+   {
+    "time": "2026-10-09T18:00:00+05:30",
+    "precipitation_mm": 4.0,
+    "rain_mm": 4.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-09T19:00:00+05:30",
+    "precipitation_mm": 4.0,
+    "rain_mm": 4.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-09T20:00:00+05:30",
+    "precipitation_mm": 4.0,
+    "rain_mm": 4.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-09T21:00:00+05:30",
+    "precipitation_mm": 4.0,
+    "rain_mm": 4.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-09T22:00:00+05:30",
+    "precipitation_mm": 4.0,
+    "rain_mm": 4.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-09T23:00:00+05:30",
+    "precipitation_mm": 4.0,
+    "rain_mm": 4.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-10T00:00:00+05:30",
+    "precipitation_mm": 4.0,
+    "rain_mm": 4.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-10T01:00:00+05:30",
+    "precipitation_mm": 4.0,
+    "rain_mm": 4.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-10T02:00:00+05:30",
+    "precipitation_mm": 4.0,
+    "rain_mm": 4.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-10T03:00:00+05:30",
+    "precipitation_mm": 4.0,
+    "rain_mm": 4.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-10T04:00:00+05:30",
+    "precipitation_mm": 4.0,
+    "rain_mm": 4.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-10T05:00:00+05:30",
+    "precipitation_mm": 4.0,
+    "rain_mm": 4.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-10T06:00:00+05:30",
+    "precipitation_mm": 9.0,
+    "rain_mm": 9.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-10T07:00:00+05:30",
+    "precipitation_mm": 9.0,
+    "rain_mm": 9.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-10T08:00:00+05:30",
+    "precipitation_mm": 9.0,
+    "rain_mm": 9.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-10T09:00:00+05:30",
+    "precipitation_mm": 9.0,
+    "rain_mm": 9.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-10T10:00:00+05:30",
+    "precipitation_mm": 9.0,
+    "rain_mm": 9.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-10T11:00:00+05:30",
+    "precipitation_mm": 9.0,
+    "rain_mm": 9.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-10T12:00:00+05:30",
+    "precipitation_mm": 9.0,
+    "rain_mm": 9.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-10T13:00:00+05:30",
+    "precipitation_mm": 9.0,
+    "rain_mm": 9.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-10T14:00:00+05:30",
+    "precipitation_mm": 9.0,
+    "rain_mm": 9.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-10T15:00:00+05:30",
+    "precipitation_mm": 9.0,
+    "rain_mm": 9.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-10T16:00:00+05:30",
+    "precipitation_mm": 9.0,
+    "rain_mm": 9.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-10T17:00:00+05:30",
+    "precipitation_mm": 9.0,
+    "rain_mm": 9.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-10T18:00:00+05:30",
+    "precipitation_mm": 9.5,
+    "rain_mm": 9.5,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-10T19:00:00+05:30",
+    "precipitation_mm": 9.5,
+    "rain_mm": 9.5,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-10T20:00:00+05:30",
+    "precipitation_mm": 9.5,
+    "rain_mm": 9.5,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-10T21:00:00+05:30",
+    "precipitation_mm": 9.5,
+    "rain_mm": 9.5,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-10T22:00:00+05:30",
+    "precipitation_mm": 9.5,
+    "rain_mm": 9.5,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-10T23:00:00+05:30",
+    "precipitation_mm": 9.5,
+    "rain_mm": 9.5,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-11T00:00:00+05:30",
+    "precipitation_mm": 9.5,
+    "rain_mm": 9.5,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-11T01:00:00+05:30",
+    "precipitation_mm": 9.5,
+    "rain_mm": 9.5,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-11T02:00:00+05:30",
+    "precipitation_mm": 9.5,
+    "rain_mm": 9.5,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-11T03:00:00+05:30",
+    "precipitation_mm": 9.5,
+    "rain_mm": 9.5,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-11T04:00:00+05:30",
+    "precipitation_mm": 9.5,
+    "rain_mm": 9.5,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-11T05:00:00+05:30",
+    "precipitation_mm": 9.5,
+    "rain_mm": 9.5,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-11T06:00:00+05:30",
+    "precipitation_mm": 9.5,
+    "rain_mm": 9.5,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-11T07:00:00+05:30",
+    "precipitation_mm": 9.5,
+    "rain_mm": 9.5,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-11T08:00:00+05:30",
+    "precipitation_mm": 9.5,
+    "rain_mm": 9.5,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-11T09:00:00+05:30",
+    "precipitation_mm": 9.5,
+    "rain_mm": 9.5,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-11T10:00:00+05:30",
+    "precipitation_mm": 9.5,
+    "rain_mm": 9.5,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-11T11:00:00+05:30",
+    "precipitation_mm": 9.5,
+    "rain_mm": 9.5,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-11T12:00:00+05:30",
+    "precipitation_mm": 9.5,
+    "rain_mm": 9.5,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-11T13:00:00+05:30",
+    "precipitation_mm": 9.5,
+    "rain_mm": 9.5,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-11T14:00:00+05:30",
+    "precipitation_mm": 9.5,
+    "rain_mm": 9.5,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-11T15:00:00+05:30",
+    "precipitation_mm": 9.5,
+    "rain_mm": 9.5,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-11T16:00:00+05:30",
+    "precipitation_mm": 9.5,
+    "rain_mm": 9.5,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-11T17:00:00+05:30",
+    "precipitation_mm": 9.5,
+    "rain_mm": 9.5,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-11T18:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-11T19:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-11T20:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-11T21:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-11T22:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-11T23:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-12T00:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-12T01:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-12T02:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-12T03:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-12T04:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-12T05:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-12T06:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-12T07:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-12T08:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-12T09:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-12T10:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-12T11:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-12T12:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-12T13:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-12T14:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-12T15:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-12T16:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-12T17:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-12T18:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-12T19:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-12T20:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-12T21:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-12T22:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-12T23:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   }
+  ],
+  "errors": [],
+  "data_notes": [
+   "FABRICATED test weather; not an observation or forecast of the Cauvery basin.",
+   "Values are numerical weather model output (current conditions and forecasts), not guaranteed physical weather-station observations.",
+   "Coordinates are snapped by the provider to the nearest model grid cell; see returned_grid_location.",
+   "Hourly precipitation/rain values are sums over the preceding hour."
+  ]
+ },
+ "river": {
+  "station_id": "UPPER_ANICUT_TEST",
+  "status": "OK",
+  "source_label": "SIMULATED_TEST_DATA",
+  "source": "CSV file (historical or simulated observations): data/simulated/river_above_danger.csv",
+  "is_simulated": true,
+  "evidence_id": "f3095f5c3f0633d3b4c215269215675ecca800f26e199527a736e336a7d4e5f8",
+  "level": {
+   "value_m": 4.4,
+   "role": "SIMULATED",
+   "observed_at": "2026-10-10T11:00:00+00:00",
+   "datum": null
+  },
+  "freshness": {
+   "status": "FRESH",
+   "reference_time": "2026-10-10T12:00:00+00:00",
+   "max_age_hours": 3.0,
+   "age_minutes": 60.0,
+   "age_hours": 1.0,
+   "retrieval_time_available": false,
+   "retrieval_lag_minutes": null,
+   "reason": null,
+   "reference_mode": "AS_OF_REPLAY"
+  },
+  "evidence_grade": "SIMULATED",
+  "is_verified_live": false,
+  "source_verification": {
+   "status": "NOT_APPLICABLE",
+   "failed_checks": [],
+   "reason": "No live-source verification was supplied (CSV input)."
+  },
+  "recent_quality": {
+   "status": "ACCEPTABLE",
+   "window_hours": 24.0,
+   "window_start": "2026-10-09T12:00:00+00:00",
+   "window_end": "2026-10-10T12:00:00+00:00",
+   "readings_in_window": 4,
+   "rejected_in_window": 0,
+   "rejected_fraction": 0.0,
+   "suspect_fraction_limit": 0.2,
+   "reason": null
+  },
+  "qc": {
+   "configured": true,
+   "valid_min_m": 0.0,
+   "valid_max_m": 20.0,
+   "max_jump_m": 1.0,
+   "invalid_values_m": [],
+   "reference": "TEST VALUES for the simulated station only.",
+   "checked": 4,
+   "accepted": 4,
+   "rejected_negative": 0,
+   "rejected_placeholder": 0,
+   "rejected_out_of_range": 0,
+   "rejected_spike": 0,
+   "spike_check_skipped": 3
+  },
+  "counts": {
+   "rows_read": 4,
+   "valid_rows": 4,
+   "rejected_rows": 0,
+   "duplicate_rows_removed": 0,
+   "station_observations_used": 4
+  },
+  "trend": {
+   "status": "AVAILABLE",
+   "method": "Latest observation compared with the earliest observation within the preceding 3.0 h window.",
+   "window_hours": 3.0,
+   "baseline_observed_at": "2026-10-10T08:00:00+00:00",
+   "baseline_level_m": 3.7,
+   "latest_observed_at": "2026-10-10T11:00:00+00:00",
+   "latest_level_m": 4.4,
+   "duration_hours": 3.0,
+   "level_change_m": 0.7,
+   "rate_of_change_m_per_hour": 0.2333,
+   "direction": "RISING",
+   "observations_in_window": 4,
+   "reason": null
+  },
+  "thresholds": {
+   "status": "AT_OR_ABOVE_DANGER",
+   "warning_level_m": 3.0,
+   "danger_level_m": 4.0,
+   "threshold_reference": "TEST VALUES - not official; for software testing only",
+   "threshold_is_official": false,
+   "threshold_datum": null,
+   "data_datum": null,
+   "compared_level_m": 4.4,
+   "based_on_stale_data": false,
+   "reason": null
+  },
+  "cross_source_check": {
+   "status": "NOT_CHECKED",
+   "compared_with": null,
+   "conflicts": null,
+   "conflicts_affecting_current_evidence": null,
+   "tolerance_m": null,
+   "examples": null
+  },
+  "reverification": {
+   "status": "NOT_REQUIRED",
+   "outcome": "NOT_REQUIRED",
+   "reason": null,
+   "conflicts_remaining": null
+  },
+  "fallback": {
+   "used": false,
+   "reason": null
+  },
+  "live_fetch": {
+   "attempted": false,
+   "status": null,
+   "verification_status": null,
+   "failed_checks": null,
+   "error": null,
+   "retrieved_at": null
+  },
+  "reasons_not_usable": [
+   "Not verified live evidence (grade SIMULATED, source SIMULATED_TEST_DATA)."
+  ],
+  "warnings": [
+   {
+    "code": "SIMULATED_DATA",
+    "severity": "warning",
+    "field": "source_type",
+    "message": "Observations include simulated (fabricated) values; they are not real river measurements."
+   },
+   {
+    "code": "THRESHOLDS_NOT_OFFICIAL",
+    "severity": "warning",
+    "field": "threshold_evaluation",
+    "message": "Configured thresholds are not marked official; treat the threshold status as indicative only."
+   }
+  ],
+  "errors": [],
+  "series": {
+   "points": [
+    {
+     "time": "2026-10-10T08:00:00+00:00",
+     "level_m": 3.7
+    },
+    {
+     "time": "2026-10-10T09:00:00+00:00",
+     "level_m": 3.92
+    },
+    {
+     "time": "2026-10-10T10:00:00+00:00",
+     "level_m": 4.15
+    },
+    {
+     "time": "2026-10-10T11:00:00+00:00",
+     "level_m": 4.4
+    }
+   ],
+   "rejected": [],
+   "hours": 48,
+   "status": "AVAILABLE",
+   "reason": null,
+   "window_start": "2026-10-08T11:00:00+00:00",
+   "window_end": "2026-10-10T11:00:00+00:00"
+  }
+ },
+ "risk": {
+  "schema_version": "1.0",
+  "engine": "RiskAssessmentEngine",
+  "assessment_timestamp": "2026-10-10T12:00:00+00:00",
+  "reference_time": "2026-10-10T12:00:00+00:00",
+  "assessment_mode": "simulated",
+  "is_simulated": true,
+  "risk_level": "CRITICAL",
+  "risk_level_meaning": "River at or above the configured danger level, or at or above the warning level and rising with heavy rainfall. Only river evidence can produce CRITICAL.",
+  "hazard_indicated": "CRITICAL",
+  "risk_factors": [
+   {
+    "rule_id": "R1_RIVER_AT_OR_ABOVE_DANGER",
+    "factor": "river_level_vs_threshold",
+    "hazard_level": "CRITICAL",
+    "source": "river",
+    "description": "Level 4.4 m is at or above the configured TEST/prototype (not official) danger level 4.0 m.",
+    "evidence": {
+     "level_m": 4.4,
+     "danger_level_m": 4.0,
+     "threshold_reference": "TEST VALUES - not official; for software testing only"
+    }
+   },
+   {
+    "rule_id": "R5_RIVER_RISING",
+    "factor": "river_trend",
+    "hazard_level": "MODERATE",
+    "source": "river",
+    "description": "River rising 0.2333 m/h, at or above the prototype rise rate 0.1 m/h.",
+    "evidence": {
+     "rate_m_per_hour": 0.2333
+    }
+   },
+   {
+    "rule_id": "R8_OBSERVED_RAINFALL_24H",
+    "factor": "observed_rainfall",
+    "hazard_level": "HIGH",
+    "source": "weather",
+    "description": "156.0 mm in the past 24 h (model analysis); prototype breakpoints {'MODERATE': 64.5, 'HIGH': 115.6} mm.",
+    "evidence": {
+     "total_mm": 156.0,
+     "period_start": "2026-10-09T17:00:00+05:30",
+     "period_end": "2026-10-10T17:00:00+05:30"
+    }
+   },
+   {
+    "rule_id": "R9_FORECAST_RAINFALL",
+    "factor": "forecast_rainfall",
+    "hazard_level": "HIGH",
+    "source": "weather",
+    "description": "228.0 mm forecast for the next 24 h; prototype breakpoints {'MODERATE': 64.5, 'HIGH': 204.5} mm.",
+    "evidence": {
+     "total_mm": 228.0,
+     "period_start": "2026-10-10T17:00:00+05:30",
+     "period_end": "2026-10-11T17:00:00+05:30"
+    }
+   }
+  ],
+  "rules_fired": [
+   "R1_RIVER_AT_OR_ABOVE_DANGER",
+   "R5_RIVER_RISING",
+   "R8_OBSERVED_RAINFALL_24H",
+   "R9_FORECAST_RAINFALL"
+  ],
+  "decision_trace": [
+   "River evidence usable (grade SIMULATED, freshness FRESH, recent quality ACCEPTABLE).",
+   "Weather evidence used (SIMULATED_TEST_DATA, retrieved 2026-10-10T12:00:00+00:00).",
+   "Risk level CRITICAL from the highest hazard indicator."
+  ],
+  "supporting_evidence": {
+   "river": {
+    "evidence_id": "f3095f5c3f0633d3b4c215269215675ecca800f26e199527a736e336a7d4e5f8",
+    "source_label": "SIMULATED_TEST_DATA",
+    "evidence_grade": "SIMULATED",
     "status": "OK",
+    "freshness": "FRESH",
+    "age_hours": 1.0,
+    "recent_quality": "ACCEPTABLE",
+    "observed_at": "2026-10-10T11:00:00+00:00",
+    "trend_direction": "RISING",
+    "rate_of_change_m_per_hour": 0.2333,
+    "threshold_status": "AT_OR_ABOVE_DANGER",
+    "threshold_is_official": false,
+    "threshold_reference": "TEST VALUES - not official; for software testing only",
+    "threshold_label": "TEST / RESEARCH THRESHOLDS",
+    "measurement_basis": "SIMULATED",
+    "cross_source_status": "NOT_CHECKED",
+    "conflicts_affecting_current_evidence": 0,
+    "reverification_outcome": "NOT_REQUIRED",
+    "used_for_hazard": true,
+    "simulated_level_m": 4.4
+   },
+   "weather": {
     "source": "SIMULATED weather file (fabricated): data/simulated/weather/extreme_rain.json",
     "source_type": "SIMULATED_TEST_DATA",
-    "is_simulated": true,
+    "status": "OK",
     "retrieved_at": "2026-10-10T12:00:00+00:00",
-    "timezone": {
-      "requested": "Asia/Kolkata",
-      "returned": "Asia/Kolkata",
-      "abbreviation": "GMT+5:30",
-      "utc_offset_seconds": 19800
+    "is_simulated": true,
+    "used": true,
+    "not_used_reasons": [],
+    "observed_24h_mm": 156.0,
+    "observed_6h_mm": 54.0,
+    "forecast_mm": 228.0,
+    "forecast_hours": 24,
+    "observed_rainfall_basis": "SIMULATED",
+    "forecast_rainfall_basis": "SIMULATED"
+   }
+  },
+  "evidence_quality": {
+   "confidence": "MEDIUM",
+   "confidence_downgrades": [
+    "THRESHOLDS_NOT_OFFICIAL"
+   ],
+   "confidence_applies_to": "SIMULATION_ONLY",
+   "river_evidence_grade": "SIMULATED",
+   "river_freshness": "FRESH",
+   "river_recent_quality": "ACCEPTABLE",
+   "river_usable_for_hazard": true,
+   "river_blocking_reasons": [],
+   "real_world_evidence_gate": {
+    "eligible": false,
+    "reasons": [
+     "EVIDENCE_SIMULATED",
+     "EVIDENCE_NOT_VERIFIED_LIVE"
+    ]
+   },
+   "weather_used": true,
+   "weather_not_used_reasons": []
+  },
+  "uncertainties": [
+   {
+    "code": "THRESHOLDS_NOT_OFFICIAL",
+    "description": "Thresholds are configured TEST/prototype (not official): TEST VALUES - not official; for software testing only."
+   },
+   {
+    "code": "SIMULATED_DATA",
+    "description": "All inputs are FABRICATED test data. This assessment describes a simulation, not the actual river."
+   },
+   {
+    "code": "NO_CALIBRATED_PROBABILITY",
+    "description": "No validated flood model exists for this site, so no flood probability is given."
+   }
+  ],
+  "missing_data": [
+   {
+    "item": "upstream_reservoir_releases",
+    "reason": "Releases from upstream reservoirs (e.g. Mettur) are not ingested, although they often dominate flows at Upper Anicut."
+   }
+  ],
+  "recommended_monitoring_actions": [
+   {
+    "code": "INCREASE_RIVER_MONITORING_FREQUENCY",
+    "description": "Review river readings at every new observation and watch the rate of rise."
+   },
+   {
+    "code": "CHECK_UPSTREAM_RELEASES",
+    "description": "Check upstream reservoir release information with the responsible authority (not available to this system)."
+   },
+   {
+    "code": "REFER_TO_HUMAN_REVIEWER",
+    "description": "Refer this assessment to a human reviewer; it does not authorize any action."
+   }
+  ],
+  "requires_human_review": true,
+  "human_review_reasons": [
+   "ELEVATED_RISK"
+  ],
+  "calibrated_probability": null,
+  "authorizes_actions": false,
+  "assigns_disaster_state": false,
+  "disclaimer": "Decision support only. Categories and breakpoints are configurable prototype values, not official flood warning levels, and no calibrated flood probability is produced. This assessment does not assign a disaster state and does not authorize evacuation, emergency response or any other real-world action.",
+  "assessment_id": "d647e7a80ea3bbb87757e2f28d7e5796abb9cdf84d56ff617f59e944c7ccafc7",
+  "audit_written": true
+ },
+ "state": {
+  "label": "AUTOMATIC STATE EVALUATION",
+  "selection": "AUTOMATIC",
+  "automatic": {
+   "accepted_state": "ALERT",
+   "previous_state": "NORMAL",
+   "proposed_state": null,
+   "outcome": "TRANSITION_ACCEPTED",
+   "transition_this_run": true,
+   "transition_at": "2026-10-10T11:00:00+00:00",
+   "reason": "NORMAL -> ALERT (escalation): EMERGENCY held for 1 observation(s) over 0.0 h.",
+   "reasons": [
+    "risk CRITICAL (confidence MEDIUM) meets the EMERGENCY condition, with a river factor >= HIGH"
+   ],
+   "condition": "EMERGENCY",
+   "trigger_evidence": {
+    "evidence_id": "f3095f5c3f0633d3b4c215269215675ecca800f26e199527a736e336a7d4e5f8",
+    "observed_at": "2026-10-10T11:00:00+00:00",
+    "risk_assessment_id": "d647e7a80ea3bbb87757e2f28d7e5796abb9cdf84d56ff617f59e944c7ccafc7",
+    "risk_level": "CRITICAL",
+    "supporting_evidence_ids": [
+     "f3095f5c3f0633d3b4c215269215675ecca800f26e199527a736e336a7d4e5f8"
+    ]
+   },
+   "agent_evidence": {
+    "river": {
+     "agent": "RiverMonitoringAgent",
+     "evidence_class": "SIMULATED",
+     "reasons": [],
+     "used_for": "classification (primary hazard)"
     },
-    "requested_location": {
+    "weather": {
+     "agent": "WeatherAgent",
+     "evidence_class": "SIMULATED",
+     "reasons": [],
+     "retrieved_at": "2026-10-10T12:00:00+00:00",
+     "used_for": "classification, through the risk assessment"
+    },
+    "traffic": {
+     "agent": "TrafficAgent",
+     "evidence_class": "SIMULATED",
+     "reasons": [
+      "TRAFFIC_ROUTE_BLOCKED"
+     ],
+     "retrieved_at": "2026-10-10T12:00:00+00:00",
+     "used_for": "RECOVERY exit check only"
+    }
+   },
+   "traffic": {
+    "provided": true,
+    "status": "ROUTE_BLOCKED",
+    "evidence_class": "SIMULATED",
+    "is_simulated": true,
+    "source": "SIMULATED traffic file (fabricated): flood_road_closure.json (re-timed to 2026-10-10T12:00:00+00:00)",
+    "retrieved_at": "2026-10-10T12:00:00+00:00",
+    "age_hours": 0.0,
+    "max_age_hours": 1.0,
+    "routes": {
+     "EVAC_PRIMARY_NH81": "BLOCKED",
+     "EVAC_ALTERNATE_INLAND": "FREE_FLOW"
+    },
+    "blocked_routes": [
+     "EVAC_PRIMARY_NH81"
+    ],
+    "reasons": [
+     "TRAFFIC_ROUTE_BLOCKED"
+    ],
+    "role": "Required to leave RECOVERY for NORMAL; never used to escalate."
+   },
+   "traffic_hold": null,
+   "confidence": "MEDIUM",
+   "evidence_quality": {
+    "confidence": "MEDIUM",
+    "confidence_downgrades": [
+     "THRESHOLDS_NOT_OFFICIAL"
+    ],
+    "river_evidence_grade": "SIMULATED",
+    "river_freshness": "FRESH"
+   },
+   "capability_state": "ALERT",
+   "capability_changes": {
+    "from_state": "NORMAL",
+    "to_state": "ALERT",
+    "changed": true,
+    "allowlist_added": [
+     "propose_evacuation_plan",
+     "request_evidence_reverification"
+    ],
+    "allowlist_revoked": [],
+    "decisions_granted": [
+     "request_evidence_reverification"
+    ],
+    "decisions_revoked": [],
+    "note": "Allowlist changes follow the state; a capability is granted only if the evidence gate also allows it, and real-world capabilities at most go to a human for approval."
+   },
+   "record_saved": {
+    "saved": false,
+    "reason": "Not a real-scope record; never saved."
+   }
+  },
+  "persisted": {
+   "available": false,
+   "state": null,
+   "scope": null,
+   "entered_at": null,
+   "last_transition": null,
+   "record_file": "no_record.json",
+   "problem": null
+  },
+  "state_used_for_capability_checks": "ALERT",
+  "state_at_start_of_run": "NORMAL",
+  "state_basis": "SCENARIO_START_STATE",
+  "evaluation": {
+   "outcome": "TRANSITION_ACCEPTED",
+   "scope": "simulated",
+   "current_state": "NORMAL",
+   "proposed_state": "ALERT",
+   "resulting_state": "ALERT",
+   "condition": "EMERGENCY",
+   "reason": "NORMAL -> ALERT (escalation): EMERGENCY held for 1 observation(s) over 0.0 h.",
+   "reasons": [
+    "risk CRITICAL (confidence MEDIUM) meets the EMERGENCY condition, with a river factor >= HIGH"
+   ],
+   "persistence": {
+    "observations": 1,
+    "span_hours": 0.0,
+    "evidence_ids": [
+     "f3095f5c3f0633d3b4c215269215675ecca800f26e199527a736e336a7d4e5f8"
+    ],
+    "since": "2026-10-10T11:00:00+00:00",
+    "readings_skipped_as_duplicate_or_too_close": 0,
+    "largest_gap_hours": 0.0,
+    "run_broken_by_gap_hours": null,
+    "max_gap_hours": null,
+    "min_spacing_hours": 0.5,
+    "required_observations": 1,
+    "required_hours": 0.0,
+    "satisfied": true
+   },
+   "transition_rule": {
+    "to": "ALERT",
+    "when": [
+     "ALERT",
+     "EMERGENCY"
+    ],
+    "kind": "escalation",
+    "min_observations": 1,
+    "min_hours": 0.0,
+    "gap_breaks_run": false,
+    "min_spacing_hours": 0.5,
+    "max_gap_hours": null,
+    "requires_traffic": null
+   },
+   "supporting_evidence_ids": [
+    "f3095f5c3f0633d3b4c215269215675ecca800f26e199527a736e336a7d4e5f8"
+   ],
+   "evidence_id": "f3095f5c3f0633d3b4c215269215675ecca800f26e199527a736e336a7d4e5f8",
+   "observed_at": "2026-10-10T11:00:00+00:00",
+   "evaluated_at": "2026-10-10T12:00:00+00:00",
+   "risk_level": "CRITICAL",
+   "is_simulated": true,
+   "state_applies_to": "SIMULATION_ONLY",
+   "audit_written": true,
+   "record_changed": true,
+   "state_decision_id": "57a99b7a84e88daa0d2f61802c393896876613d51d9728b98fcbd73d858faa2a",
+   "authorizes_actions": false,
+   "executes_actions": false,
+   "previous_state": "NORMAL",
+   "transition_at": "2026-10-10T11:00:00+00:00",
+   "confidence": "MEDIUM",
+   "evidence_quality": {
+    "confidence": "MEDIUM",
+    "confidence_downgrades": [
+     "THRESHOLDS_NOT_OFFICIAL"
+    ],
+    "river_evidence_grade": "SIMULATED",
+    "river_freshness": "FRESH"
+   },
+   "agent_evidence": {
+    "river": {
+     "agent": "RiverMonitoringAgent",
+     "evidence_class": "SIMULATED",
+     "reasons": [],
+     "used_for": "classification (primary hazard)"
+    },
+    "weather": {
+     "agent": "WeatherAgent",
+     "evidence_class": "SIMULATED",
+     "reasons": [],
+     "retrieved_at": "2026-10-10T12:00:00+00:00",
+     "used_for": "classification, through the risk assessment"
+    },
+    "traffic": {
+     "agent": "TrafficAgent",
+     "evidence_class": "SIMULATED",
+     "reasons": [
+      "TRAFFIC_ROUTE_BLOCKED"
+     ],
+     "retrieved_at": "2026-10-10T12:00:00+00:00",
+     "used_for": "RECOVERY exit check only"
+    }
+   },
+   "traffic": {
+    "provided": true,
+    "status": "ROUTE_BLOCKED",
+    "evidence_class": "SIMULATED",
+    "is_simulated": true,
+    "source": "SIMULATED traffic file (fabricated): flood_road_closure.json (re-timed to 2026-10-10T12:00:00+00:00)",
+    "retrieved_at": "2026-10-10T12:00:00+00:00",
+    "age_hours": 0.0,
+    "max_age_hours": 1.0,
+    "routes": {
+     "EVAC_PRIMARY_NH81": "BLOCKED",
+     "EVAC_ALTERNATE_INLAND": "FREE_FLOW"
+    },
+    "blocked_routes": [
+     "EVAC_PRIMARY_NH81"
+    ],
+    "reasons": [
+     "TRAFFIC_ROUTE_BLOCKED"
+    ],
+    "role": "Required to leave RECOVERY for NORMAL; never used to escalate."
+   },
+   "traffic_hold": null
+  },
+  "history": [
+   {
+    "observed_at": "2026-10-10T11:00:00+00:00",
+    "condition": "EMERGENCY",
+    "risk_level": "CRITICAL",
+    "evaluated_at": "2026-10-10T12:00:00+00:00",
+    "reasons": null
+   }
+  ],
+  "record_saved_by_dashboard": false,
+  "note": "The state is evaluated automatically by the backend from the river, weather and traffic evidence; it cannot be selected. A real-scope record is saved only after a fully audited run; simulated records are never saved to the real state file."
+ },
+ "safety": {
+  "real_world_authorization": "RESTRICTED",
+  "pending_human_approval": [],
+  "decisions": [
+   {
+    "capability": "read_river",
+    "capability_class": "READ_ONLY",
+    "allowed": true,
+    "reason": "CAPABILITY_PERMITTED",
+    "evidence_reasons": [],
+    "human_approval_required": false,
+    "state": "ALERT"
+   },
+   {
+    "capability": "request_evidence_reverification",
+    "capability_class": "INTERNAL",
+    "allowed": true,
+    "reason": "CAPABILITY_PERMITTED",
+    "evidence_reasons": [],
+    "human_approval_required": false,
+    "state": "ALERT"
+   },
+   {
+    "capability": "prepare_advisory",
+    "capability_class": "REAL_WORLD",
+    "allowed": false,
+    "reason": "EVIDENCE_INSUFFICIENT",
+    "evidence_reasons": [
+     "EVIDENCE_SIMULATED",
+     "EVIDENCE_NOT_VERIFIED_LIVE",
+     "EVIDENCE_ASSESSMENT_REJECTED"
+    ],
+    "human_approval_required": false,
+    "state": "ALERT"
+   },
+   {
+    "capability": "propose_evacuation_plan",
+    "capability_class": "REAL_WORLD",
+    "allowed": false,
+    "reason": "EVIDENCE_INSUFFICIENT",
+    "evidence_reasons": [
+     "EVIDENCE_SIMULATED",
+     "EVIDENCE_NOT_VERIFIED_LIVE",
+     "EVIDENCE_ASSESSMENT_REJECTED"
+    ],
+    "human_approval_required": false,
+    "state": "ALERT"
+   },
+   {
+    "capability": "request_human_emergency_authorization",
+    "capability_class": null,
+    "allowed": false,
+    "reason": "CAPABILITY_DENIED",
+    "evidence_reasons": [],
+    "human_approval_required": false,
+    "state": "ALERT"
+   }
+  ],
+  "evidence_assessment": {
+   "eligible": false,
+   "reasons": [
+    "EVIDENCE_SIMULATED",
+    "EVIDENCE_NOT_VERIFIED_LIVE"
+   ],
+   "input_problems": []
+  },
+  "reason": "Simulated evidence passed simulation checks; it never authorizes real-world action.",
+  "executes_actions": false,
+  "note": "Read-only view of the workflow's own decisions. Nothing here can execute an action; real-world capabilities can at most be put to a human."
+ },
+ "evidence_layer": {
+  "available": true,
+  "error": null,
+  "reference_time": "2026-10-10T12:00:00+00:00",
+  "records": [
+   {
+    "evidence_id": "f3095f5c3f0633d3b4c215269215675ecca800f26e199527a736e336a7d4e5f8",
+    "kind": "RIVER_LEVEL",
+    "evidence_class": "SIMULATED",
+    "measurement_basis": "FABRICATED_TEST_DATA",
+    "source": {
+     "label": "SIMULATED_TEST_DATA",
+     "name": "CSV file (historical or simulated observations): data/simulated/river_above_danger.csv",
+     "provider": null,
+     "reference": "river_above_danger.csv",
+     "content_sha256": "adb5602078e83083a587a1207937a935c08a8ea17921aee1e3badbad7e9f3ae2",
+     "independence": "PRIMARY_SOURCE"
+    },
+    "observed_at": "2026-10-10T11:00:00+00:00",
+    "retrieved_at": null,
+    "retrieval_note": "File source: no retrieval time; read for this decision.",
+    "location": {
+     "station_id": "UPPER_ANICUT_TEST",
+     "latitude": null,
+     "longitude": null,
+     "basis": "simulated test station (no real coordinates)"
+    },
+    "value": {
+     "river_level_m": 4.4,
+     "unit": "m",
+     "datum": "reduced_level",
+     "trend_direction": "RISING",
+     "rate_of_change_m_per_hour": 0.2333,
+     "trend_status": "AVAILABLE"
+    },
+    "verification": {
+     "status": "NOT_APPLICABLE",
+     "is_verified_live": false,
+     "failed_checks": []
+    },
+    "freshness": {
+     "status": "FRESH",
+     "age_hours": 1.0,
+     "max_age_hours": 3.0,
+     "reference_time": "2026-10-10T12:00:00+00:00"
+    },
+    "quality": {
+     "evidence_grade": "SIMULATED",
+     "recent_quality": "ACCEPTABLE",
+     "completeness": null,
+     "qc_accepted": 4,
+     "qc_checked": 4
+    },
+    "uncertainty": [
+     "Provider timestamps carry no timezone; IST (+05:30) is assumed.",
+     "Datum assumed to be reduced level; not stated by the provider.",
+     "QC bounds are prototype values derived from one data file.",
+     "Trend: Latest observation compared with the earliest observation within the preceding 3.0 h window."
+    ],
+    "limitations": [
+     "Fabricated test data: demonstrates logic only, never real conditions."
+    ],
+    "validation": {
+     "status": "VALID",
+     "findings": [
+      {
+       "code": "SIMULATED_DATA",
+       "severity": "info",
+       "detail": "Fabricated test data; never real conditions."
+      }
+     ],
+     "error_codes": []
+    }
+   },
+   {
+    "evidence_id": "ev-888937260b0328453cc8bc99",
+    "kind": "WEATHER_MODEL",
+    "evidence_class": "SIMULATED",
+    "measurement_basis": "FABRICATED_TEST_DATA",
+    "source": {
+     "label": "SIMULATED_TEST_DATA",
+     "name": "SIMULATED weather file (fabricated): data/simulated/weather/extreme_rain.json",
+     "reference": null,
+     "independence": "SEPARATE_PROVIDER"
+    },
+    "observed_at": "2026-10-10T12:00:00+00:00",
+    "retrieved_at": "2026-10-10T12:00:00+00:00",
+    "location": {
+     "requested": {
       "latitude": 10.888611,
       "longitude": 78.58,
       "description": "Cauvery River near Upper Anicut, Tamil Nadu, India"
-    },
-    "grid_location": {
+     },
+     "model_grid": {
       "latitude": 10.86116,
-      "longitude": 78.61063,
-      "elevation_m": 73.0,
-      "reason": null
+      "longitude": 78.61063
+     },
+     "distance_to_station_km": 4.53
     },
-    "current": {
-      "status": "AVAILABLE",
-      "time": "2026-10-10T17:30:00+05:30",
-      "interval_seconds": 900,
-      "values": {
-        "temperature_2m": 27.0,
-        "relative_humidity_2m": 85.0,
-        "precipitation": 2.25,
-        "rain": 2.25,
-        "wind_speed_10m": 10.0,
-        "wind_direction_10m": 90.0,
-        "wind_gusts_10m": 20.0
-      },
-      "missing": {}
-    },
-    "units": {
-      "current": {
-        "temperature_2m": "°C",
-        "relative_humidity_2m": "%",
-        "precipitation": "mm",
-        "rain": "mm",
-        "wind_speed_10m": "km/h",
-        "wind_direction_10m": "°",
-        "wind_gusts_10m": "km/h"
-      },
-      "hourly": {
-        "precipitation": "mm",
-        "rain": "mm",
-        "wind_gusts_10m": "km/h",
-        "wind_speed_10m": "km/h",
-        "precipitation_probability": "%",
-        "temperature_2m": "°C",
-        "relative_humidity_2m": "%"
-      }
-    },
-    "rainfall": {
+    "value": {
+     "rainfall_mm": {
       "3h": {
-        "period_start": "2026-10-10T14:00:00+05:30",
-        "period_end": "2026-10-10T17:00:00+05:30",
-        "precipitation": {
-          "status": "AVAILABLE",
-          "total": 27.0,
-          "reason": null
-        },
-        "rain": {
-          "status": "AVAILABLE",
-          "total": 27.0,
-          "reason": null
-        }
+       "status": "AVAILABLE",
+       "total_mm": 27.0,
+       "reason": null
       },
       "6h": {
-        "period_start": "2026-10-10T11:00:00+05:30",
-        "period_end": "2026-10-10T17:00:00+05:30",
-        "precipitation": {
-          "status": "AVAILABLE",
-          "total": 54.0,
-          "reason": null
-        },
-        "rain": {
-          "status": "AVAILABLE",
-          "total": 54.0,
-          "reason": null
-        }
+       "status": "AVAILABLE",
+       "total_mm": 54.0,
+       "reason": null
       },
       "24h": {
-        "period_start": "2026-10-09T17:00:00+05:30",
-        "period_end": "2026-10-10T17:00:00+05:30",
-        "precipitation": {
-          "status": "AVAILABLE",
-          "total": 156.0,
-          "reason": null
-        },
-        "rain": {
-          "status": "AVAILABLE",
-          "total": 156.0,
-          "reason": null
-        }
+       "status": "AVAILABLE",
+       "total_mm": 156.0,
+       "reason": null
       }
+     },
+     "current_values": {
+      "temperature_2m": 27.0,
+      "relative_humidity_2m": 85.0,
+      "precipitation": 2.25,
+      "rain": 2.25,
+      "wind_speed_10m": 10.0,
+      "wind_direction_10m": 90.0,
+      "wind_gusts_10m": 20.0
+     }
     },
-    "hourly": [
-      {
-        "time": "2026-10-09T18:00:00+05:30",
-        "precipitation_mm": 4.0,
-        "rain_mm": 4.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "MODEL_ESTIMATE_PAST"
-      },
-      {
-        "time": "2026-10-09T19:00:00+05:30",
-        "precipitation_mm": 4.0,
-        "rain_mm": 4.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "MODEL_ESTIMATE_PAST"
-      },
-      {
-        "time": "2026-10-09T20:00:00+05:30",
-        "precipitation_mm": 4.0,
-        "rain_mm": 4.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "MODEL_ESTIMATE_PAST"
-      },
-      {
-        "time": "2026-10-09T21:00:00+05:30",
-        "precipitation_mm": 4.0,
-        "rain_mm": 4.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "MODEL_ESTIMATE_PAST"
-      },
-      {
-        "time": "2026-10-09T22:00:00+05:30",
-        "precipitation_mm": 4.0,
-        "rain_mm": 4.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "MODEL_ESTIMATE_PAST"
-      },
-      {
-        "time": "2026-10-09T23:00:00+05:30",
-        "precipitation_mm": 4.0,
-        "rain_mm": 4.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "MODEL_ESTIMATE_PAST"
-      },
-      {
-        "time": "2026-10-10T00:00:00+05:30",
-        "precipitation_mm": 4.0,
-        "rain_mm": 4.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "MODEL_ESTIMATE_PAST"
-      },
-      {
-        "time": "2026-10-10T01:00:00+05:30",
-        "precipitation_mm": 4.0,
-        "rain_mm": 4.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "MODEL_ESTIMATE_PAST"
-      },
-      {
-        "time": "2026-10-10T02:00:00+05:30",
-        "precipitation_mm": 4.0,
-        "rain_mm": 4.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "MODEL_ESTIMATE_PAST"
-      },
-      {
-        "time": "2026-10-10T03:00:00+05:30",
-        "precipitation_mm": 4.0,
-        "rain_mm": 4.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "MODEL_ESTIMATE_PAST"
-      },
-      {
-        "time": "2026-10-10T04:00:00+05:30",
-        "precipitation_mm": 4.0,
-        "rain_mm": 4.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "MODEL_ESTIMATE_PAST"
-      },
-      {
-        "time": "2026-10-10T05:00:00+05:30",
-        "precipitation_mm": 4.0,
-        "rain_mm": 4.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "MODEL_ESTIMATE_PAST"
-      },
-      {
-        "time": "2026-10-10T06:00:00+05:30",
-        "precipitation_mm": 9.0,
-        "rain_mm": 9.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "MODEL_ESTIMATE_PAST"
-      },
-      {
-        "time": "2026-10-10T07:00:00+05:30",
-        "precipitation_mm": 9.0,
-        "rain_mm": 9.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "MODEL_ESTIMATE_PAST"
-      },
-      {
-        "time": "2026-10-10T08:00:00+05:30",
-        "precipitation_mm": 9.0,
-        "rain_mm": 9.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "MODEL_ESTIMATE_PAST"
-      },
-      {
-        "time": "2026-10-10T09:00:00+05:30",
-        "precipitation_mm": 9.0,
-        "rain_mm": 9.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "MODEL_ESTIMATE_PAST"
-      },
-      {
-        "time": "2026-10-10T10:00:00+05:30",
-        "precipitation_mm": 9.0,
-        "rain_mm": 9.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "MODEL_ESTIMATE_PAST"
-      },
-      {
-        "time": "2026-10-10T11:00:00+05:30",
-        "precipitation_mm": 9.0,
-        "rain_mm": 9.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "MODEL_ESTIMATE_PAST"
-      },
-      {
-        "time": "2026-10-10T12:00:00+05:30",
-        "precipitation_mm": 9.0,
-        "rain_mm": 9.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "MODEL_ESTIMATE_PAST"
-      },
-      {
-        "time": "2026-10-10T13:00:00+05:30",
-        "precipitation_mm": 9.0,
-        "rain_mm": 9.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "MODEL_ESTIMATE_PAST"
-      },
-      {
-        "time": "2026-10-10T14:00:00+05:30",
-        "precipitation_mm": 9.0,
-        "rain_mm": 9.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "MODEL_ESTIMATE_PAST"
-      },
-      {
-        "time": "2026-10-10T15:00:00+05:30",
-        "precipitation_mm": 9.0,
-        "rain_mm": 9.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "MODEL_ESTIMATE_PAST"
-      },
-      {
-        "time": "2026-10-10T16:00:00+05:30",
-        "precipitation_mm": 9.0,
-        "rain_mm": 9.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "MODEL_ESTIMATE_PAST"
-      },
-      {
-        "time": "2026-10-10T17:00:00+05:30",
-        "precipitation_mm": 9.0,
-        "rain_mm": 9.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "MODEL_ESTIMATE_PAST"
-      },
-      {
-        "time": "2026-10-10T18:00:00+05:30",
-        "precipitation_mm": 9.5,
-        "rain_mm": 9.5,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-10T19:00:00+05:30",
-        "precipitation_mm": 9.5,
-        "rain_mm": 9.5,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-10T20:00:00+05:30",
-        "precipitation_mm": 9.5,
-        "rain_mm": 9.5,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-10T21:00:00+05:30",
-        "precipitation_mm": 9.5,
-        "rain_mm": 9.5,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-10T22:00:00+05:30",
-        "precipitation_mm": 9.5,
-        "rain_mm": 9.5,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-10T23:00:00+05:30",
-        "precipitation_mm": 9.5,
-        "rain_mm": 9.5,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-11T00:00:00+05:30",
-        "precipitation_mm": 9.5,
-        "rain_mm": 9.5,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-11T01:00:00+05:30",
-        "precipitation_mm": 9.5,
-        "rain_mm": 9.5,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-11T02:00:00+05:30",
-        "precipitation_mm": 9.5,
-        "rain_mm": 9.5,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-11T03:00:00+05:30",
-        "precipitation_mm": 9.5,
-        "rain_mm": 9.5,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-11T04:00:00+05:30",
-        "precipitation_mm": 9.5,
-        "rain_mm": 9.5,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-11T05:00:00+05:30",
-        "precipitation_mm": 9.5,
-        "rain_mm": 9.5,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-11T06:00:00+05:30",
-        "precipitation_mm": 9.5,
-        "rain_mm": 9.5,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-11T07:00:00+05:30",
-        "precipitation_mm": 9.5,
-        "rain_mm": 9.5,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-11T08:00:00+05:30",
-        "precipitation_mm": 9.5,
-        "rain_mm": 9.5,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-11T09:00:00+05:30",
-        "precipitation_mm": 9.5,
-        "rain_mm": 9.5,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-11T10:00:00+05:30",
-        "precipitation_mm": 9.5,
-        "rain_mm": 9.5,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-11T11:00:00+05:30",
-        "precipitation_mm": 9.5,
-        "rain_mm": 9.5,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-11T12:00:00+05:30",
-        "precipitation_mm": 9.5,
-        "rain_mm": 9.5,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-11T13:00:00+05:30",
-        "precipitation_mm": 9.5,
-        "rain_mm": 9.5,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-11T14:00:00+05:30",
-        "precipitation_mm": 9.5,
-        "rain_mm": 9.5,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-11T15:00:00+05:30",
-        "precipitation_mm": 9.5,
-        "rain_mm": 9.5,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-11T16:00:00+05:30",
-        "precipitation_mm": 9.5,
-        "rain_mm": 9.5,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-11T17:00:00+05:30",
-        "precipitation_mm": 9.5,
-        "rain_mm": 9.5,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-11T18:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-11T19:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-11T20:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-11T21:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-11T22:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-11T23:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-12T00:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-12T01:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-12T02:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-12T03:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-12T04:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-12T05:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-12T06:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-12T07:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-12T08:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-12T09:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-12T10:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-12T11:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-12T12:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-12T13:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-12T14:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-12T15:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-12T16:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-12T17:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-12T18:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-12T19:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-12T20:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-12T21:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-12T22:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      },
-      {
-        "time": "2026-10-12T23:00:00+05:30",
-        "precipitation_mm": 1.0,
-        "rain_mm": 1.0,
-        "precipitation_probability_pct": 90.0,
-        "temperature_c": 27.0,
-        "kind": "FORECAST"
-      }
-    ],
-    "errors": [],
-    "data_notes": [
-      "FABRICATED test weather; not an observation or forecast of the Cauvery basin.",
-      "Values are numerical weather model output (current conditions and forecasts), not guaranteed physical weather-station observations.",
-      "Coordinates are snapped by the provider to the nearest model grid cell; see returned_grid_location.",
-      "Hourly precipitation/rain values are sums over the preceding hour."
-    ]
-  },
-  "river": {
-    "station_id": "UPPER_ANICUT_TEST",
-    "status": "OK",
-    "source_label": "SIMULATED_TEST_DATA",
-    "source": "CSV file (historical or simulated observations): data/simulated/river_above_danger.csv",
-    "is_simulated": true,
-    "evidence_id": "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe",
-    "level": {
-      "value_m": 4.4,
-      "role": "SIMULATED",
-      "observed_at": "2026-10-10T11:00:00+00:00",
-      "datum": null
+    "verification": {
+     "status": "NOT_VERIFIABLE",
+     "detail": "Model output cannot be verified as a measurement."
     },
     "freshness": {
-      "status": "FRESH",
-      "reference_time": "2026-10-10T12:00:00+00:00",
-      "max_age_hours": 3.0,
-      "age_minutes": 60.0,
-      "age_hours": 1.0,
-      "retrieval_time_available": false,
-      "retrieval_lag_minutes": null,
-      "reason": null,
-      "reference_mode": "AS_OF_REPLAY"
+     "status": "FRESH",
+     "age_hours": 0.0,
+     "max_age_hours": 3.0
     },
-    "evidence_grade": "SIMULATED",
-    "is_verified_live": false,
-    "source_verification": {
-      "status": "NOT_APPLICABLE",
-      "failed_checks": [],
-      "reason": "No live-source verification was supplied (CSV input)."
+    "quality": {
+     "status": "OK",
+     "errors": []
     },
-    "recent_quality": {
-      "status": "ACCEPTABLE",
-      "window_hours": 24.0,
-      "window_start": "2026-10-09T12:00:00+00:00",
-      "window_end": "2026-10-10T12:00:00+00:00",
-      "readings_in_window": 4,
-      "rejected_in_window": 0,
-      "rejected_fraction": 0.0,
-      "suspect_fraction_limit": 0.2,
-      "reason": null
-    },
-    "qc": {
-      "configured": true,
-      "valid_min_m": 0.0,
-      "valid_max_m": 20.0,
-      "max_jump_m": 1.0,
-      "invalid_values_m": [],
-      "reference": "TEST VALUES for the simulated station only.",
-      "checked": 4,
-      "accepted": 4,
-      "rejected_negative": 0,
-      "rejected_placeholder": 0,
-      "rejected_out_of_range": 0,
-      "rejected_spike": 0,
-      "spike_check_skipped": 3
-    },
-    "counts": {
-      "rows_read": 4,
-      "valid_rows": 4,
-      "rejected_rows": 0,
-      "duplicate_rows_removed": 0,
-      "station_observations_used": 4
-    },
-    "trend": {
-      "status": "AVAILABLE",
-      "method": "Latest observation compared with the earliest observation within the preceding 3.0 h window.",
-      "window_hours": 3.0,
-      "baseline_observed_at": "2026-10-10T08:00:00+00:00",
-      "baseline_level_m": 3.7,
-      "latest_observed_at": "2026-10-10T11:00:00+00:00",
-      "latest_level_m": 4.4,
-      "duration_hours": 3.0,
-      "level_change_m": 0.7,
-      "rate_of_change_m_per_hour": 0.2333,
-      "direction": "RISING",
-      "observations_in_window": 4,
-      "reason": null
-    },
-    "thresholds": {
-      "status": "AT_OR_ABOVE_DANGER",
-      "warning_level_m": 3.0,
-      "danger_level_m": 4.0,
-      "threshold_reference": "TEST VALUES - not official; for software testing only",
-      "threshold_is_official": false,
-      "threshold_datum": null,
-      "data_datum": null,
-      "compared_level_m": 4.4,
-      "based_on_stale_data": false,
-      "reason": null
-    },
-    "cross_source_check": {
-      "status": "NOT_CHECKED",
-      "compared_with": null,
-      "conflicts": null,
-      "conflicts_affecting_current_evidence": null,
-      "tolerance_m": null,
-      "examples": null
-    },
-    "reverification": {
-      "status": "NOT_REQUIRED",
-      "outcome": "NOT_REQUIRED",
-      "reason": null,
-      "conflicts_remaining": null
-    },
-    "fallback": {
-      "used": false,
-      "reason": null
-    },
-    "live_fetch": {
-      "attempted": false,
-      "status": null,
-      "verification_status": null,
-      "failed_checks": null,
-      "error": null,
-      "retrieved_at": null
-    },
-    "reasons_not_usable": [
-      "Not verified live evidence (grade SIMULATED, source SIMULATED_TEST_DATA)."
+    "uncertainty": [
+     "Numerical weather model output; may differ from rain on the ground.",
+     "Model grid cell, not the station location."
     ],
-    "warnings": [
-      {
-        "code": "SIMULATED_DATA",
-        "severity": "warning",
-        "field": "source_type",
-        "message": "Observations include simulated (fabricated) values; they are not real river measurements."
-      },
-      {
-        "code": "THRESHOLDS_NOT_OFFICIAL",
-        "severity": "warning",
-        "field": "threshold_evaluation",
-        "message": "Configured thresholds are not marked official; treat the threshold status as indicative only."
-      }
+    "limitations": [
+     "Local modelled rain is a weak indicator at Upper Anicut, where upstream rain and dam releases dominate."
     ],
-    "errors": [],
-    "series": {
-      "points": [
-        {
-          "time": "2026-10-10T08:00:00+00:00",
-          "level_m": 3.7
-        },
-        {
-          "time": "2026-10-10T09:00:00+00:00",
-          "level_m": 3.92
-        },
-        {
-          "time": "2026-10-10T10:00:00+00:00",
-          "level_m": 4.15
-        },
-        {
-          "time": "2026-10-10T11:00:00+00:00",
-          "level_m": 4.4
-        }
-      ],
-      "rejected": [],
-      "hours": 48,
-      "status": "AVAILABLE",
-      "reason": null,
-      "window_start": "2026-10-08T11:00:00+00:00",
-      "window_end": "2026-10-10T11:00:00+00:00"
+    "validation": {
+     "status": "VALID",
+     "findings": [],
+     "error_codes": []
     }
-  },
-  "risk": {
-    "schema_version": "1.0",
-    "engine": "RiskAssessmentEngine",
-    "assessment_timestamp": "2026-10-10T12:00:00+00:00",
-    "reference_time": "2026-10-10T12:00:00+00:00",
-    "assessment_mode": "simulated",
-    "is_simulated": true,
-    "risk_level": "CRITICAL",
-    "risk_level_meaning": "River at or above the configured danger level, or at or above the warning level and rising with heavy rainfall. Only river evidence can produce CRITICAL.",
-    "hazard_indicated": "CRITICAL",
-    "risk_factors": [
-      {
-        "rule_id": "R1_RIVER_AT_OR_ABOVE_DANGER",
-        "factor": "river_level_vs_threshold",
-        "hazard_level": "CRITICAL",
-        "source": "river",
-        "description": "Level 4.4 m is at or above the configured TEST/prototype (not official) danger level 4.0 m.",
-        "evidence": {
-          "level_m": 4.4,
-          "danger_level_m": 4.0,
-          "threshold_reference": "TEST VALUES - not official; for software testing only"
-        }
-      },
-      {
-        "rule_id": "R5_RIVER_RISING",
-        "factor": "river_trend",
-        "hazard_level": "MODERATE",
-        "source": "river",
-        "description": "River rising 0.2333 m/h, at or above the prototype rise rate 0.1 m/h.",
-        "evidence": {
-          "rate_m_per_hour": 0.2333
-        }
-      },
-      {
-        "rule_id": "R8_OBSERVED_RAINFALL_24H",
-        "factor": "observed_rainfall",
-        "hazard_level": "HIGH",
-        "source": "weather",
-        "description": "156.0 mm in the past 24 h (model analysis); prototype breakpoints {'MODERATE': 64.5, 'HIGH': 115.6} mm.",
-        "evidence": {
-          "total_mm": 156.0,
-          "period_start": "2026-10-09T17:00:00+05:30",
-          "period_end": "2026-10-10T17:00:00+05:30"
-        }
-      },
-      {
-        "rule_id": "R9_FORECAST_RAINFALL",
-        "factor": "forecast_rainfall",
-        "hazard_level": "HIGH",
-        "source": "weather",
-        "description": "228.0 mm forecast for the next 24 h; prototype breakpoints {'MODERATE': 64.5, 'HIGH': 204.5} mm.",
-        "evidence": {
-          "total_mm": 228.0,
-          "period_start": "2026-10-10T17:00:00+05:30",
-          "period_end": "2026-10-11T17:00:00+05:30"
-        }
-      }
+   }
+  ],
+  "claims": [
+   {
+    "claim_id": "C1_RIVER_CURRENT_LEVEL",
+    "statement": "The current river level at the station is 4.4 m (reading observed 2026-10-10T11:00:00+00:00).",
+    "status": "SIMULATED_ONLY",
+    "value": 4.4,
+    "safety_critical": true,
+    "supporting_evidence_ids": [
+     "f3095f5c3f0633d3b4c215269215675ecca800f26e199527a736e336a7d4e5f8"
     ],
-    "rules_fired": [
+    "contradicting_evidence_ids": [],
+    "explanation": [
+     "Simulated test data: valid only inside the simulation."
+    ]
+   },
+   {
+    "claim_id": "C2_RIVER_TREND",
+    "statement": "The river is RISING at 0.2333 m/h.",
+    "status": "SIMULATED_ONLY",
+    "value": "RISING",
+    "safety_critical": true,
+    "supporting_evidence_ids": [
+     "f3095f5c3f0633d3b4c215269215675ecca800f26e199527a736e336a7d4e5f8"
+    ],
+    "contradicting_evidence_ids": [],
+    "explanation": [
+     "Derived from the accepted readings in the trend window."
+    ]
+   },
+   {
+    "claim_id": "C3_RIVER_THRESHOLD_STATUS",
+    "statement": "The river level is AT_OR_ABOVE_DANGER relative to the configured thresholds.",
+    "status": "SIMULATED_ONLY",
+    "value": "AT_OR_ABOVE_DANGER",
+    "safety_critical": true,
+    "supporting_evidence_ids": [
+     "f3095f5c3f0633d3b4c215269215675ecca800f26e199527a736e336a7d4e5f8"
+    ],
+    "contradicting_evidence_ids": [],
+    "explanation": [
+     "Compared with warning 3.0 m / danger 4.0 m.",
+     "Thresholds are prototype/test values, NOT official CWC thresholds.",
+     "Depends on C1 (SIMULATED_ONLY)."
+    ]
+   },
+   {
+    "claim_id": "C4_MODELLED_RAINFALL_24H",
+    "statement": "Modelled rainfall over the last 24 h is 156.0 mm (numerical weather model, not a sensor reading).",
+    "status": "SIMULATED_ONLY",
+    "value": 156.0,
+    "safety_critical": true,
+    "supporting_evidence_ids": [
+     "ev-888937260b0328453cc8bc99"
+    ],
+    "contradicting_evidence_ids": [],
+    "explanation": [
+     "Simulated test data: valid only inside the simulation."
+    ]
+   },
+   {
+    "claim_id": "C5_FLOOD_RISK_LEVEL",
+    "statement": "The assessed flood risk is CRITICAL.",
+    "status": "SIMULATED_ONLY",
+    "value": "CRITICAL",
+    "safety_critical": true,
+    "supporting_evidence_ids": [
+     "f3095f5c3f0633d3b4c215269215675ecca800f26e199527a736e336a7d4e5f8"
+    ],
+    "contradicting_evidence_ids": [],
+    "explanation": [
+     "Assessed on simulated evidence.",
+     "Rules fired: R1_RIVER_AT_OR_ABOVE_DANGER, R5_RIVER_RISING, R8_OBSERVED_RAINFALL_24H, R9_FORECAST_RAINFALL"
+    ]
+   },
+   {
+    "claim_id": "C6_EVIDENCE_SUFFICIENT_FOR_REAL_WORLD_ACTION",
+    "statement": "The evidence is sufficient to put real-world capabilities to a human for approval.",
+    "status": "INSUFFICIENT",
+    "value": false,
+    "safety_critical": true,
+    "supporting_evidence_ids": [],
+    "contradicting_evidence_ids": [],
+    "explanation": [
+     "Evidence gate: EVIDENCE_SIMULATED, EVIDENCE_NOT_VERIFIED_LIVE.",
+     "C1_RIVER_CURRENT_LEVEL is SIMULATED_ONLY."
+    ]
+   }
+  ],
+  "summary": {
+   "records_by_class": {
+    "SIMULATED": 2
+   },
+   "invalid_records": [],
+   "claims_by_status": {
+    "INSUFFICIENT": 1,
+    "SIMULATED_ONLY": 5
+   }
+  },
+  "real_world_evidence_sufficient": false,
+  "deny_reasons": [
+   "C6_INSUFFICIENT"
+  ],
+  "audit_complete": true,
+  "class_descriptions": {
+   "LIVE_VERIFIED": "Live CWC telemetry, source verified and fresh",
+   "LIVE_STALE": "Verified CWC source, but the reading is old: last known, NOT current",
+   "LIVE_UNVERIFIED": "Live data that failed source verification",
+   "HISTORICAL_NOT_CURRENT": "Historical CWC data: not current conditions",
+   "SIMULATED": "Fabricated test data: never real conditions",
+   "MODEL_ESTIMATE": "Open-Meteo numerical weather model output (not a sensor reading)",
+   "MODEL_STALE": "Open-Meteo model output that is too old",
+   "UNAVAILABLE": "No evidence could be obtained; nothing is substituted",
+   "RECHECK": "A recorded reverification attempt"
+  },
+  "disclaimer": "Evidence traceability for decision support. Validation limits are prototype settings, not official CWC/IMD thresholds. Open-Meteo values are numerical weather model output, not sensor readings. This layer can only deny; it never authorizes or executes an action.",
+  "reverification_attempts": []
+ },
+ "audit": {
+  "events": [
+   {
+    "at": "2026-10-13T08:00:00+00:00",
+    "event": "river_workflow_started",
+    "written": true,
+    "details": {
+     "mode": "simulated",
+     "scenario": "simulated-high-risk",
+     "disaster_state": "NORMAL",
+     "capabilities": [
+      "read_river",
+      "request_evidence_reverification",
+      "prepare_advisory",
+      "propose_evacuation_plan",
+      "request_human_emergency_authorization"
+     ],
+     "cross_check_paths": null,
+     "independent_paths": []
+    }
+   },
+   {
+    "at": "2026-10-13T08:00:00+00:00",
+    "event": "capability_authorization",
+    "written": true,
+    "details": {
+     "disaster_state": "NORMAL",
+     "capability": "read_river",
+     "agent_id": "river_agent",
+     "allowed": true,
+     "reason": "CAPABILITY_PERMITTED",
+     "capability_class": "READ_ONLY",
+     "evidence_reasons": [],
+     "human_approval_required": false,
+     "evidence_id": null,
+     "eligibility_source": null,
+     "caller_assessment_supplied": true
+    }
+   },
+   {
+    "at": "2026-10-13T08:00:00+00:00",
+    "event": "capability_authorization",
+    "written": true,
+    "details": {
+     "disaster_state": "NORMAL",
+     "capability": "request_evidence_reverification",
+     "agent_id": "river_agent",
+     "allowed": false,
+     "reason": "CAPABILITY_DENIED",
+     "capability_class": null,
+     "evidence_reasons": [],
+     "human_approval_required": false,
+     "evidence_id": null,
+     "eligibility_source": null,
+     "caller_assessment_supplied": true
+    }
+   },
+   {
+    "at": "2026-10-13T08:00:00+00:00",
+    "event": "capability_authorization",
+    "written": true,
+    "details": {
+     "disaster_state": "NORMAL",
+     "capability": "prepare_advisory",
+     "agent_id": "river_agent",
+     "allowed": false,
+     "reason": "EVIDENCE_INSUFFICIENT",
+     "capability_class": "REAL_WORLD",
+     "evidence_reasons": [
+      "EVIDENCE_SIMULATED",
+      "EVIDENCE_NOT_VERIFIED_LIVE",
+      "EVIDENCE_ASSESSMENT_REJECTED"
+     ],
+     "human_approval_required": false,
+     "evidence_id": "f3095f5c3f0633d3b4c215269215675ecca800f26e199527a736e336a7d4e5f8",
+     "eligibility_source": "COMPUTED_BY_GATE",
+     "caller_assessment_supplied": true
+    }
+   },
+   {
+    "at": "2026-10-13T08:00:00+00:00",
+    "event": "capability_authorization",
+    "written": true,
+    "details": {
+     "disaster_state": "NORMAL",
+     "capability": "propose_evacuation_plan",
+     "agent_id": "river_agent",
+     "allowed": false,
+     "reason": "CAPABILITY_DENIED",
+     "capability_class": null,
+     "evidence_reasons": [],
+     "human_approval_required": false,
+     "evidence_id": null,
+     "eligibility_source": null,
+     "caller_assessment_supplied": true
+    }
+   },
+   {
+    "at": "2026-10-13T08:00:00+00:00",
+    "event": "capability_authorization",
+    "written": true,
+    "details": {
+     "disaster_state": "NORMAL",
+     "capability": "request_human_emergency_authorization",
+     "agent_id": "river_agent",
+     "allowed": false,
+     "reason": "CAPABILITY_DENIED",
+     "capability_class": null,
+     "evidence_reasons": [],
+     "human_approval_required": false,
+     "evidence_id": null,
+     "eligibility_source": null,
+     "caller_assessment_supplied": true
+    }
+   },
+   {
+    "at": "2026-10-13T08:00:00+00:00",
+    "event": "risk_assessment_completed",
+    "written": true,
+    "details": {
+     "assessment_id": "d647e7a80ea3bbb87757e2f28d7e5796abb9cdf84d56ff617f59e944c7ccafc7",
+     "risk_level": "CRITICAL",
+     "hazard_indicated": "CRITICAL",
+     "assessment_mode": "simulated",
+     "confidence": "MEDIUM",
+     "rules_fired": [
       "R1_RIVER_AT_OR_ABOVE_DANGER",
       "R5_RIVER_RISING",
       "R8_OBSERVED_RAINFALL_24H",
       "R9_FORECAST_RAINFALL"
-    ],
-    "decision_trace": [
-      "River evidence usable (grade SIMULATED, freshness FRESH, recent quality ACCEPTABLE).",
-      "Weather evidence used (SIMULATED_TEST_DATA, retrieved 2026-10-10T12:00:00+00:00).",
-      "Risk level CRITICAL from the highest hazard indicator."
-    ],
-    "supporting_evidence": {
-      "river": {
-        "evidence_id": "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe",
-        "source_label": "SIMULATED_TEST_DATA",
-        "evidence_grade": "SIMULATED",
-        "status": "OK",
-        "freshness": "FRESH",
-        "age_hours": 1.0,
-        "recent_quality": "ACCEPTABLE",
-        "observed_at": "2026-10-10T11:00:00+00:00",
-        "trend_direction": "RISING",
-        "rate_of_change_m_per_hour": 0.2333,
-        "threshold_status": "AT_OR_ABOVE_DANGER",
-        "threshold_is_official": false,
-        "threshold_reference": "TEST VALUES - not official; for software testing only",
-        "cross_source_status": "NOT_CHECKED",
-        "conflicts_affecting_current_evidence": 0,
-        "reverification_outcome": "NOT_REQUIRED",
-        "used_for_hazard": true,
-        "simulated_level_m": 4.4
-      },
-      "weather": {
-        "source": "SIMULATED weather file (fabricated): data/simulated/weather/extreme_rain.json",
-        "source_type": "SIMULATED_TEST_DATA",
-        "status": "OK",
-        "retrieved_at": "2026-10-10T12:00:00+00:00",
-        "is_simulated": true,
-        "used": true,
-        "not_used_reasons": [],
-        "observed_24h_mm": 156.0,
-        "observed_6h_mm": 54.0,
-        "forecast_mm": 228.0,
-        "forecast_hours": 24
-      }
-    },
-    "evidence_quality": {
-      "confidence": "MEDIUM",
-      "confidence_downgrades": [
-        "THRESHOLDS_NOT_OFFICIAL"
-      ],
-      "confidence_applies_to": "SIMULATION_ONLY",
-      "river_evidence_grade": "SIMULATED",
-      "river_freshness": "FRESH",
-      "river_recent_quality": "ACCEPTABLE",
-      "river_usable_for_hazard": true,
-      "river_blocking_reasons": [],
-      "real_world_evidence_gate": {
-        "eligible": false,
-        "reasons": [
-          "EVIDENCE_SIMULATED",
-          "EVIDENCE_NOT_VERIFIED_LIVE"
-        ]
-      },
-      "weather_used": true,
-      "weather_not_used_reasons": []
-    },
-    "uncertainties": [
-      {
-        "code": "THRESHOLDS_NOT_OFFICIAL",
-        "description": "Thresholds are configured TEST/prototype (not official): TEST VALUES - not official; for software testing only."
-      },
-      {
-        "code": "SIMULATED_DATA",
-        "description": "All inputs are FABRICATED test data. This assessment describes a simulation, not the actual river."
-      },
-      {
-        "code": "NO_CALIBRATED_PROBABILITY",
-        "description": "No validated flood model exists for this site, so no flood probability is given."
-      }
-    ],
-    "missing_data": [
-      {
-        "item": "upstream_reservoir_releases",
-        "reason": "Releases from upstream reservoirs (e.g. Mettur) are not ingested, although they often dominate flows at Upper Anicut."
-      }
-    ],
-    "recommended_monitoring_actions": [
-      {
-        "code": "INCREASE_RIVER_MONITORING_FREQUENCY",
-        "description": "Review river readings at every new observation and watch the rate of rise."
-      },
-      {
-        "code": "CHECK_UPSTREAM_RELEASES",
-        "description": "Check upstream reservoir release information with the responsible authority (not available to this system)."
-      },
-      {
-        "code": "REFER_TO_HUMAN_REVIEWER",
-        "description": "Refer this assessment to a human reviewer; it does not authorize any action."
-      }
-    ],
-    "requires_human_review": true,
-    "human_review_reasons": [
+     ],
+     "requires_human_review": true,
+     "human_review_reasons": [
       "ELEVATED_RISK"
-    ],
-    "calibrated_probability": null,
-    "authorizes_actions": false,
-    "assigns_disaster_state": false,
-    "disclaimer": "Decision support only. Categories and breakpoints are configurable prototype values, not official flood warning levels, and no calibrated flood probability is produced. This assessment does not assign a disaster state and does not authorize evacuation, emergency response or any other real-world action.",
-    "assessment_id": "cc60ab9605fe03d3db6b7f19a0f39fc75c8e8020422c03dfbfcfb40bbd45a3c9",
-    "audit_written": true
-  },
-  "state": {
-    "persisted": {
-      "available": false,
-      "state": null,
-      "scope": null,
-      "entered_at": null,
-      "last_transition": null,
-      "record_file": "none.json",
-      "problem": null
-    },
-    "state_used_for_capability_checks": "ALERT",
-    "state_basis": "SCENARIO_START_STATE",
-    "evaluation": {
-      "outcome": "STATE_UNCHANGED",
-      "scope": "simulated",
-      "current_state": "ALERT",
-      "proposed_state": "EMERGENCY",
-      "resulting_state": "ALERT",
-      "condition": "EMERGENCY",
-      "reason": "ALERT kept: ALERT -> EMERGENCY needs 2 observation(s) over 0.0 h (have 1 over 0.0 h).",
-      "reasons": [
-        "risk CRITICAL (confidence MEDIUM) meets the EMERGENCY condition, with a river factor >= HIGH"
-      ],
-      "persistence": {
-        "observations": 1,
-        "span_hours": 0.0,
-        "evidence_ids": [
-          "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe"
-        ],
-        "since": "2026-10-10T11:00:00+00:00",
-        "readings_skipped_as_duplicate_or_too_close": 0,
-        "largest_gap_hours": 0.0,
-        "run_broken_by_gap_hours": null,
-        "max_gap_hours": null,
-        "min_spacing_hours": 0.5,
-        "required_observations": 2,
-        "required_hours": 0.0,
-        "satisfied": false
-      },
-      "transition_rule": {
-        "to": "EMERGENCY",
-        "when": [
-          "EMERGENCY"
-        ],
-        "kind": "escalation",
-        "min_observations": 2,
-        "min_hours": 0.0,
-        "gap_breaks_run": false,
-        "min_spacing_hours": 0.5,
-        "max_gap_hours": null
-      },
-      "supporting_evidence_ids": [
-        "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe"
-      ],
-      "evidence_id": "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe",
-      "observed_at": "2026-10-10T11:00:00+00:00",
-      "evaluated_at": "2026-10-10T12:00:00+00:00",
-      "risk_level": "CRITICAL",
-      "is_simulated": true,
-      "state_applies_to": "SIMULATION_ONLY",
-      "audit_written": true,
-      "record_changed": true,
-      "state_decision_id": "af22a76837eed05d60d0030ffc85aad4b3e0d83918988db56464da12394edee4",
-      "authorizes_actions": false,
-      "executes_actions": false
-    },
-    "history": [
-      {
-        "observed_at": "2026-10-10T11:00:00+00:00",
-        "condition": "EMERGENCY",
-        "risk_level": "CRITICAL",
-        "evaluated_at": "2026-10-10T12:00:00+00:00",
-        "reasons": null
-      }
-    ],
-    "record_saved_by_dashboard": false,
-    "note": "The dashboard never saves a state record. A proposed or accepted next state becomes the persisted state only when the workflow CLI saves it (--state-file) after a fully audited run."
-  },
-  "safety": {
-    "real_world_authorization": "RESTRICTED",
-    "pending_human_approval": [],
-    "decisions": [
-      {
-        "capability": "read_river",
-        "capability_class": "READ_ONLY",
-        "allowed": true,
-        "reason": "CAPABILITY_PERMITTED",
-        "evidence_reasons": [],
-        "human_approval_required": false,
-        "state": "ALERT"
-      },
-      {
-        "capability": "request_evidence_reverification",
-        "capability_class": "INTERNAL",
-        "allowed": true,
-        "reason": "CAPABILITY_PERMITTED",
-        "evidence_reasons": [],
-        "human_approval_required": false,
-        "state": "ALERT"
-      },
-      {
-        "capability": "prepare_advisory",
-        "capability_class": "REAL_WORLD",
-        "allowed": false,
-        "reason": "EVIDENCE_INSUFFICIENT",
-        "evidence_reasons": [
-          "EVIDENCE_SIMULATED",
-          "EVIDENCE_NOT_VERIFIED_LIVE",
-          "EVIDENCE_ASSESSMENT_REJECTED"
-        ],
-        "human_approval_required": false,
-        "state": "ALERT"
-      },
-      {
-        "capability": "propose_evacuation_plan",
-        "capability_class": "REAL_WORLD",
-        "allowed": false,
-        "reason": "EVIDENCE_INSUFFICIENT",
-        "evidence_reasons": [
-          "EVIDENCE_SIMULATED",
-          "EVIDENCE_NOT_VERIFIED_LIVE",
-          "EVIDENCE_ASSESSMENT_REJECTED"
-        ],
-        "human_approval_required": false,
-        "state": "ALERT"
-      },
-      {
-        "capability": "request_human_emergency_authorization",
-        "capability_class": null,
-        "allowed": false,
-        "reason": "CAPABILITY_DENIED",
-        "evidence_reasons": [],
-        "human_approval_required": false,
-        "state": "ALERT"
-      }
-    ],
-    "evidence_assessment": {
-      "eligible": false,
-      "reasons": [
-        "EVIDENCE_SIMULATED",
-        "EVIDENCE_NOT_VERIFIED_LIVE"
-      ],
-      "input_problems": []
-    },
-    "reason": "Simulated evidence passed simulation checks; it never authorizes real-world action.",
-    "executes_actions": false,
-    "note": "Read-only view of the workflow's own decisions. Nothing here can execute an action; real-world capabilities can at most be put to a human."
-  },
-  "evidence_layer": {
-    "available": true,
-    "error": null,
-    "reference_time": "2026-10-10T12:00:00+00:00",
-    "records": [
-      {
-        "evidence_id": "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe",
-        "kind": "RIVER_LEVEL",
-        "evidence_class": "SIMULATED",
-        "measurement_basis": "FABRICATED_TEST_DATA",
-        "source": {
-          "label": "SIMULATED_TEST_DATA",
-          "name": "CSV file (historical or simulated observations): data/simulated/river_above_danger.csv",
-          "provider": null,
-          "reference": "river_above_danger.csv",
-          "content_sha256": "adb5602078e83083a587a1207937a935c08a8ea17921aee1e3badbad7e9f3ae2",
-          "independence": "PRIMARY_SOURCE"
-        },
-        "observed_at": "2026-10-10T11:00:00+00:00",
-        "retrieved_at": null,
-        "retrieval_note": "File source: no retrieval time; read for this decision.",
-        "location": {
-          "station_id": "UPPER_ANICUT_TEST",
-          "latitude": null,
-          "longitude": null,
-          "basis": "simulated test station (no real coordinates)"
-        },
-        "value": {
-          "river_level_m": 4.4,
-          "unit": "m",
-          "datum": "reduced_level",
-          "trend_direction": "RISING",
-          "rate_of_change_m_per_hour": 0.2333,
-          "trend_status": "AVAILABLE"
-        },
-        "verification": {
-          "status": "NOT_APPLICABLE",
-          "is_verified_live": false,
-          "failed_checks": []
-        },
-        "freshness": {
-          "status": "FRESH",
-          "age_hours": 1.0,
-          "max_age_hours": 3.0,
-          "reference_time": "2026-10-10T12:00:00+00:00"
-        },
-        "quality": {
-          "evidence_grade": "SIMULATED",
-          "recent_quality": "ACCEPTABLE",
-          "completeness": null,
-          "qc_accepted": 4,
-          "qc_checked": 4
-        },
-        "uncertainty": [
-          "Provider timestamps carry no timezone; IST (+05:30) is assumed.",
-          "Datum assumed to be reduced level; not stated by the provider.",
-          "QC bounds are prototype values derived from one data file.",
-          "Trend: Latest observation compared with the earliest observation within the preceding 3.0 h window."
-        ],
-        "limitations": [
-          "Fabricated test data: demonstrates logic only, never real conditions."
-        ],
-        "validation": {
-          "status": "VALID",
-          "findings": [
-            {
-              "code": "SIMULATED_DATA",
-              "severity": "info",
-              "detail": "Fabricated test data; never real conditions."
-            }
-          ],
-          "error_codes": []
-        }
-      },
-      {
-        "evidence_id": "ev-6eee3c1b60a7c92950972d39",
-        "kind": "WEATHER_MODEL",
-        "evidence_class": "SIMULATED",
-        "measurement_basis": "FABRICATED_TEST_DATA",
-        "source": {
-          "label": "SIMULATED_TEST_DATA",
-          "name": "SIMULATED weather file (fabricated): data/simulated/weather/extreme_rain.json",
-          "reference": null,
-          "independence": "SEPARATE_PROVIDER"
-        },
-        "observed_at": "2026-10-10T12:00:00+00:00",
-        "retrieved_at": "2026-10-10T12:00:00+00:00",
-        "location": {
-          "requested": {
-            "latitude": 10.888611,
-            "longitude": 78.58,
-            "description": "Cauvery River near Upper Anicut, Tamil Nadu, India"
-          },
-          "model_grid": {
-            "latitude": 10.86116,
-            "longitude": 78.61063
-          },
-          "distance_to_station_km": 4.53
-        },
-        "value": {
-          "rainfall_mm": {
-            "3h": {
-              "status": "AVAILABLE",
-              "total_mm": 27.0,
-              "reason": null
-            },
-            "6h": {
-              "status": "AVAILABLE",
-              "total_mm": 54.0,
-              "reason": null
-            },
-            "24h": {
-              "status": "AVAILABLE",
-              "total_mm": 156.0,
-              "reason": null
-            }
-          },
-          "current_values": {
-            "temperature_2m": 27.0,
-            "relative_humidity_2m": 85.0,
-            "precipitation": 2.25,
-            "rain": 2.25,
-            "wind_speed_10m": 10.0,
-            "wind_direction_10m": 90.0,
-            "wind_gusts_10m": 20.0
-          }
-        },
-        "verification": {
-          "status": "NOT_VERIFIABLE",
-          "detail": "Model output cannot be verified as a measurement."
-        },
-        "freshness": {
-          "status": "FRESH",
-          "age_hours": 0.0,
-          "max_age_hours": 3.0
-        },
-        "quality": {
-          "status": "OK",
-          "errors": []
-        },
-        "uncertainty": [
-          "Numerical weather model output; may differ from rain on the ground.",
-          "Model grid cell, not the station location."
-        ],
-        "limitations": [
-          "Local modelled rain is a weak indicator at Upper Anicut, where upstream rain and dam releases dominate."
-        ],
-        "validation": {
-          "status": "VALID",
-          "findings": [],
-          "error_codes": []
-        }
-      }
-    ],
-    "claims": [
-      {
-        "claim_id": "C1_RIVER_CURRENT_LEVEL",
-        "statement": "The current river level at the station is 4.4 m (reading observed 2026-10-10T11:00:00+00:00).",
-        "status": "SIMULATED_ONLY",
-        "value": 4.4,
-        "safety_critical": true,
-        "supporting_evidence_ids": [
-          "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe"
-        ],
-        "contradicting_evidence_ids": [],
-        "explanation": [
-          "Simulated test data: valid only inside the simulation."
-        ]
-      },
-      {
-        "claim_id": "C2_RIVER_TREND",
-        "statement": "The river is RISING at 0.2333 m/h.",
-        "status": "SIMULATED_ONLY",
-        "value": "RISING",
-        "safety_critical": true,
-        "supporting_evidence_ids": [
-          "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe"
-        ],
-        "contradicting_evidence_ids": [],
-        "explanation": [
-          "Derived from the accepted readings in the trend window."
-        ]
-      },
-      {
-        "claim_id": "C3_RIVER_THRESHOLD_STATUS",
-        "statement": "The river level is AT_OR_ABOVE_DANGER relative to the configured thresholds.",
-        "status": "SIMULATED_ONLY",
-        "value": "AT_OR_ABOVE_DANGER",
-        "safety_critical": true,
-        "supporting_evidence_ids": [
-          "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe"
-        ],
-        "contradicting_evidence_ids": [],
-        "explanation": [
-          "Compared with warning 3.0 m / danger 4.0 m.",
-          "Thresholds are prototype/test values, NOT official CWC thresholds.",
-          "Depends on C1 (SIMULATED_ONLY)."
-        ]
-      },
-      {
-        "claim_id": "C4_MODELLED_RAINFALL_24H",
-        "statement": "Modelled rainfall over the last 24 h is 156.0 mm (numerical weather model, not a sensor reading).",
-        "status": "SIMULATED_ONLY",
-        "value": 156.0,
-        "safety_critical": true,
-        "supporting_evidence_ids": [
-          "ev-6eee3c1b60a7c92950972d39"
-        ],
-        "contradicting_evidence_ids": [],
-        "explanation": [
-          "Simulated test data: valid only inside the simulation."
-        ]
-      },
-      {
-        "claim_id": "C5_FLOOD_RISK_LEVEL",
-        "statement": "The assessed flood risk is CRITICAL.",
-        "status": "SIMULATED_ONLY",
-        "value": "CRITICAL",
-        "safety_critical": true,
-        "supporting_evidence_ids": [
-          "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe"
-        ],
-        "contradicting_evidence_ids": [],
-        "explanation": [
-          "Assessed on simulated evidence.",
-          "Rules fired: R1_RIVER_AT_OR_ABOVE_DANGER, R5_RIVER_RISING, R8_OBSERVED_RAINFALL_24H, R9_FORECAST_RAINFALL"
-        ]
-      },
-      {
-        "claim_id": "C6_EVIDENCE_SUFFICIENT_FOR_REAL_WORLD_ACTION",
-        "statement": "The evidence is sufficient to put real-world capabilities to a human for approval.",
-        "status": "INSUFFICIENT",
-        "value": false,
-        "safety_critical": true,
-        "supporting_evidence_ids": [],
-        "contradicting_evidence_ids": [],
-        "explanation": [
-          "Evidence gate: EVIDENCE_SIMULATED, EVIDENCE_NOT_VERIFIED_LIVE.",
-          "C1_RIVER_CURRENT_LEVEL is SIMULATED_ONLY."
-        ]
-      }
-    ],
-    "summary": {
-      "records_by_class": {
-        "SIMULATED": 2
-      },
-      "invalid_records": [],
-      "claims_by_status": {
-        "INSUFFICIENT": 1,
-        "SIMULATED_ONLY": 5
-      }
-    },
-    "real_world_evidence_sufficient": false,
-    "deny_reasons": [
+     ],
+     "missing_data": [
+      "upstream_reservoir_releases"
+     ],
+     "service_evidence_id": "f3095f5c3f0633d3b4c215269215675ecca800f26e199527a736e336a7d4e5f8",
+     "weather_retrieved_at": "2026-10-10T12:00:00+00:00",
+     "authorizes_actions": false
+    }
+   },
+   {
+    "at": "2026-10-13T08:00:00+00:00",
+    "event": "evidence_record_acquired",
+    "written": true,
+    "details": {
+     "evidence_id": "f3095f5c3f0633d3b4c215269215675ecca800f26e199527a736e336a7d4e5f8",
+     "kind": "RIVER_LEVEL",
+     "evidence_class": "SIMULATED",
+     "source_label": "SIMULATED_TEST_DATA",
+     "observed_at": "2026-10-10T11:00:00+00:00",
+     "retrieved_at": null
+    }
+   },
+   {
+    "at": "2026-10-13T08:00:00+00:00",
+    "event": "evidence_validated",
+    "written": true,
+    "details": {
+     "evidence_id": "f3095f5c3f0633d3b4c215269215675ecca800f26e199527a736e336a7d4e5f8",
+     "status": "VALID",
+     "findings": [
+      "SIMULATED_DATA"
+     ]
+    }
+   },
+   {
+    "at": "2026-10-13T08:00:00+00:00",
+    "event": "evidence_record_acquired",
+    "written": true,
+    "details": {
+     "evidence_id": "ev-888937260b0328453cc8bc99",
+     "kind": "WEATHER_MODEL",
+     "evidence_class": "SIMULATED",
+     "source_label": "SIMULATED_TEST_DATA",
+     "observed_at": "2026-10-10T12:00:00+00:00",
+     "retrieved_at": "2026-10-10T12:00:00+00:00"
+    }
+   },
+   {
+    "at": "2026-10-13T08:00:00+00:00",
+    "event": "evidence_validated",
+    "written": true,
+    "details": {
+     "evidence_id": "ev-888937260b0328453cc8bc99",
+     "status": "VALID",
+     "findings": []
+    }
+   },
+   {
+    "at": "2026-10-13T08:00:00+00:00",
+    "event": "claim_evaluated",
+    "written": true,
+    "details": {
+     "claim_id": "C1_RIVER_CURRENT_LEVEL",
+     "status": "SIMULATED_ONLY",
+     "supporting": [
+      "f3095f5c3f0633d3b4c215269215675ecca800f26e199527a736e336a7d4e5f8"
+     ],
+     "contradicting": [],
+     "explanation": [
+      "Simulated test data: valid only inside the simulation."
+     ]
+    }
+   },
+   {
+    "at": "2026-10-13T08:00:00+00:00",
+    "event": "claim_evaluated",
+    "written": true,
+    "details": {
+     "claim_id": "C2_RIVER_TREND",
+     "status": "SIMULATED_ONLY",
+     "supporting": [
+      "f3095f5c3f0633d3b4c215269215675ecca800f26e199527a736e336a7d4e5f8"
+     ],
+     "contradicting": [],
+     "explanation": [
+      "Derived from the accepted readings in the trend window."
+     ]
+    }
+   },
+   {
+    "at": "2026-10-13T08:00:00+00:00",
+    "event": "claim_evaluated",
+    "written": true,
+    "details": {
+     "claim_id": "C3_RIVER_THRESHOLD_STATUS",
+     "status": "SIMULATED_ONLY",
+     "supporting": [
+      "f3095f5c3f0633d3b4c215269215675ecca800f26e199527a736e336a7d4e5f8"
+     ],
+     "contradicting": [],
+     "explanation": [
+      "Compared with warning 3.0 m / danger 4.0 m.",
+      "Thresholds are prototype/test values, NOT official CWC thresholds.",
+      "Depends on C1 (SIMULATED_ONLY)."
+     ]
+    }
+   },
+   {
+    "at": "2026-10-13T08:00:00+00:00",
+    "event": "claim_evaluated",
+    "written": true,
+    "details": {
+     "claim_id": "C4_MODELLED_RAINFALL_24H",
+     "status": "SIMULATED_ONLY",
+     "supporting": [
+      "ev-888937260b0328453cc8bc99"
+     ],
+     "contradicting": [],
+     "explanation": [
+      "Simulated test data: valid only inside the simulation."
+     ]
+    }
+   },
+   {
+    "at": "2026-10-13T08:00:00+00:00",
+    "event": "claim_evaluated",
+    "written": true,
+    "details": {
+     "claim_id": "C5_FLOOD_RISK_LEVEL",
+     "status": "SIMULATED_ONLY",
+     "supporting": [
+      "f3095f5c3f0633d3b4c215269215675ecca800f26e199527a736e336a7d4e5f8"
+     ],
+     "contradicting": [],
+     "explanation": [
+      "Assessed on simulated evidence.",
+      "Rules fired: R1_RIVER_AT_OR_ABOVE_DANGER, R5_RIVER_RISING, R8_OBSERVED_RAINFALL_24H, R9_FORECAST_RAINFALL"
+     ]
+    }
+   },
+   {
+    "at": "2026-10-13T08:00:00+00:00",
+    "event": "claim_evaluated",
+    "written": true,
+    "details": {
+     "claim_id": "C6_EVIDENCE_SUFFICIENT_FOR_REAL_WORLD_ACTION",
+     "status": "INSUFFICIENT",
+     "supporting": [],
+     "contradicting": [],
+     "explanation": [
+      "Evidence gate: EVIDENCE_SIMULATED, EVIDENCE_NOT_VERIFIED_LIVE.",
+      "C1_RIVER_CURRENT_LEVEL is SIMULATED_ONLY."
+     ]
+    }
+   },
+   {
+    "at": "2026-10-13T08:00:00+00:00",
+    "event": "evidence_layer_completed",
+    "written": true,
+    "details": {
+     "real_world_evidence_sufficient": false,
+     "deny_reasons": [
       "C6_INSUFFICIENT"
-    ],
-    "audit_complete": true,
-    "class_descriptions": {
-      "LIVE_VERIFIED": "Live CWC telemetry, source verified and fresh",
-      "LIVE_STALE": "Verified CWC source, but the reading is old: last known, NOT current",
-      "LIVE_UNVERIFIED": "Live data that failed source verification",
-      "HISTORICAL_NOT_CURRENT": "Historical CWC data: not current conditions",
-      "SIMULATED": "Fabricated test data: never real conditions",
-      "MODEL_ESTIMATE": "Open-Meteo numerical weather model output (not a sensor reading)",
-      "MODEL_STALE": "Open-Meteo model output that is too old",
-      "UNAVAILABLE": "No evidence could be obtained; nothing is substituted",
-      "RECHECK": "A recorded reverification attempt"
-    },
-    "disclaimer": "Evidence traceability for decision support. Validation limits are prototype settings, not official CWC/IMD thresholds. Open-Meteo values are numerical weather model output, not sensor readings. This layer can only deny; it never authorizes or executes an action.",
-    "reverification_attempts": []
-  },
-  "audit": {
-    "events": [
-      {
-        "at": "2026-10-13T08:00:00+00:00",
-        "event": "river_workflow_started",
-        "written": true,
-        "details": {
-          "mode": "simulated",
-          "scenario": "simulated-high-risk",
-          "disaster_state": "ALERT",
-          "capabilities": [
-            "read_river",
-            "request_evidence_reverification",
-            "prepare_advisory",
-            "propose_evacuation_plan",
-            "request_human_emergency_authorization"
-          ],
-          "cross_check_paths": null,
-          "independent_paths": []
-        }
-      },
-      {
-        "at": "2026-10-13T08:00:00+00:00",
-        "event": "capability_authorization",
-        "written": true,
-        "details": {
-          "disaster_state": "ALERT",
-          "capability": "read_river",
-          "agent_id": "river_agent",
-          "allowed": true,
-          "reason": "CAPABILITY_PERMITTED",
-          "capability_class": "READ_ONLY",
-          "evidence_reasons": [],
-          "human_approval_required": false,
-          "evidence_id": null,
-          "eligibility_source": null,
-          "caller_assessment_supplied": true
-        }
-      },
-      {
-        "at": "2026-10-13T08:00:00+00:00",
-        "event": "capability_authorization",
-        "written": true,
-        "details": {
-          "disaster_state": "ALERT",
-          "capability": "request_evidence_reverification",
-          "agent_id": "river_agent",
-          "allowed": true,
-          "reason": "CAPABILITY_PERMITTED",
-          "capability_class": "INTERNAL",
-          "evidence_reasons": [],
-          "human_approval_required": false,
-          "evidence_id": null,
-          "eligibility_source": null,
-          "caller_assessment_supplied": true
-        }
-      },
-      {
-        "at": "2026-10-13T08:00:00+00:00",
-        "event": "capability_authorization",
-        "written": true,
-        "details": {
-          "disaster_state": "ALERT",
-          "capability": "prepare_advisory",
-          "agent_id": "river_agent",
-          "allowed": false,
-          "reason": "EVIDENCE_INSUFFICIENT",
-          "capability_class": "REAL_WORLD",
-          "evidence_reasons": [
-            "EVIDENCE_SIMULATED",
-            "EVIDENCE_NOT_VERIFIED_LIVE",
-            "EVIDENCE_ASSESSMENT_REJECTED"
-          ],
-          "human_approval_required": false,
-          "evidence_id": "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe",
-          "eligibility_source": "COMPUTED_BY_GATE",
-          "caller_assessment_supplied": true
-        }
-      },
-      {
-        "at": "2026-10-13T08:00:00+00:00",
-        "event": "capability_authorization",
-        "written": true,
-        "details": {
-          "disaster_state": "ALERT",
-          "capability": "propose_evacuation_plan",
-          "agent_id": "river_agent",
-          "allowed": false,
-          "reason": "EVIDENCE_INSUFFICIENT",
-          "capability_class": "REAL_WORLD",
-          "evidence_reasons": [
-            "EVIDENCE_SIMULATED",
-            "EVIDENCE_NOT_VERIFIED_LIVE",
-            "EVIDENCE_ASSESSMENT_REJECTED"
-          ],
-          "human_approval_required": false,
-          "evidence_id": "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe",
-          "eligibility_source": "COMPUTED_BY_GATE",
-          "caller_assessment_supplied": true
-        }
-      },
-      {
-        "at": "2026-10-13T08:00:00+00:00",
-        "event": "capability_authorization",
-        "written": true,
-        "details": {
-          "disaster_state": "ALERT",
-          "capability": "request_human_emergency_authorization",
-          "agent_id": "river_agent",
-          "allowed": false,
-          "reason": "CAPABILITY_DENIED",
-          "capability_class": null,
-          "evidence_reasons": [],
-          "human_approval_required": false,
-          "evidence_id": null,
-          "eligibility_source": null,
-          "caller_assessment_supplied": true
-        }
-      },
-      {
-        "at": "2026-10-13T08:00:00+00:00",
-        "event": "risk_assessment_completed",
-        "written": true,
-        "details": {
-          "assessment_id": "cc60ab9605fe03d3db6b7f19a0f39fc75c8e8020422c03dfbfcfb40bbd45a3c9",
-          "risk_level": "CRITICAL",
-          "hazard_indicated": "CRITICAL",
-          "assessment_mode": "simulated",
-          "confidence": "MEDIUM",
-          "rules_fired": [
-            "R1_RIVER_AT_OR_ABOVE_DANGER",
-            "R5_RIVER_RISING",
-            "R8_OBSERVED_RAINFALL_24H",
-            "R9_FORECAST_RAINFALL"
-          ],
-          "requires_human_review": true,
-          "human_review_reasons": [
-            "ELEVATED_RISK"
-          ],
-          "missing_data": [
-            "upstream_reservoir_releases"
-          ],
-          "service_evidence_id": "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe",
-          "weather_retrieved_at": "2026-10-10T12:00:00+00:00",
-          "authorizes_actions": false
-        }
-      },
-      {
-        "at": "2026-10-13T08:00:00+00:00",
-        "event": "evidence_record_acquired",
-        "written": true,
-        "details": {
-          "evidence_id": "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe",
-          "kind": "RIVER_LEVEL",
-          "evidence_class": "SIMULATED",
-          "source_label": "SIMULATED_TEST_DATA",
-          "observed_at": "2026-10-10T11:00:00+00:00",
-          "retrieved_at": null
-        }
-      },
-      {
-        "at": "2026-10-13T08:00:00+00:00",
-        "event": "evidence_validated",
-        "written": true,
-        "details": {
-          "evidence_id": "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe",
-          "status": "VALID",
-          "findings": [
-            "SIMULATED_DATA"
-          ]
-        }
-      },
-      {
-        "at": "2026-10-13T08:00:00+00:00",
-        "event": "evidence_record_acquired",
-        "written": true,
-        "details": {
-          "evidence_id": "ev-6eee3c1b60a7c92950972d39",
-          "kind": "WEATHER_MODEL",
-          "evidence_class": "SIMULATED",
-          "source_label": "SIMULATED_TEST_DATA",
-          "observed_at": "2026-10-10T12:00:00+00:00",
-          "retrieved_at": "2026-10-10T12:00:00+00:00"
-        }
-      },
-      {
-        "at": "2026-10-13T08:00:00+00:00",
-        "event": "evidence_validated",
-        "written": true,
-        "details": {
-          "evidence_id": "ev-6eee3c1b60a7c92950972d39",
-          "status": "VALID",
-          "findings": []
-        }
-      },
-      {
-        "at": "2026-10-13T08:00:00+00:00",
-        "event": "claim_evaluated",
-        "written": true,
-        "details": {
-          "claim_id": "C1_RIVER_CURRENT_LEVEL",
-          "status": "SIMULATED_ONLY",
-          "supporting": [
-            "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe"
-          ],
-          "contradicting": [],
-          "explanation": [
-            "Simulated test data: valid only inside the simulation."
-          ]
-        }
-      },
-      {
-        "at": "2026-10-13T08:00:00+00:00",
-        "event": "claim_evaluated",
-        "written": true,
-        "details": {
-          "claim_id": "C2_RIVER_TREND",
-          "status": "SIMULATED_ONLY",
-          "supporting": [
-            "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe"
-          ],
-          "contradicting": [],
-          "explanation": [
-            "Derived from the accepted readings in the trend window."
-          ]
-        }
-      },
-      {
-        "at": "2026-10-13T08:00:00+00:00",
-        "event": "claim_evaluated",
-        "written": true,
-        "details": {
-          "claim_id": "C3_RIVER_THRESHOLD_STATUS",
-          "status": "SIMULATED_ONLY",
-          "supporting": [
-            "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe"
-          ],
-          "contradicting": [],
-          "explanation": [
-            "Compared with warning 3.0 m / danger 4.0 m.",
-            "Thresholds are prototype/test values, NOT official CWC thresholds.",
-            "Depends on C1 (SIMULATED_ONLY)."
-          ]
-        }
-      },
-      {
-        "at": "2026-10-13T08:00:00+00:00",
-        "event": "claim_evaluated",
-        "written": true,
-        "details": {
-          "claim_id": "C4_MODELLED_RAINFALL_24H",
-          "status": "SIMULATED_ONLY",
-          "supporting": [
-            "ev-6eee3c1b60a7c92950972d39"
-          ],
-          "contradicting": [],
-          "explanation": [
-            "Simulated test data: valid only inside the simulation."
-          ]
-        }
-      },
-      {
-        "at": "2026-10-13T08:00:00+00:00",
-        "event": "claim_evaluated",
-        "written": true,
-        "details": {
-          "claim_id": "C5_FLOOD_RISK_LEVEL",
-          "status": "SIMULATED_ONLY",
-          "supporting": [
-            "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe"
-          ],
-          "contradicting": [],
-          "explanation": [
-            "Assessed on simulated evidence.",
-            "Rules fired: R1_RIVER_AT_OR_ABOVE_DANGER, R5_RIVER_RISING, R8_OBSERVED_RAINFALL_24H, R9_FORECAST_RAINFALL"
-          ]
-        }
-      },
-      {
-        "at": "2026-10-13T08:00:00+00:00",
-        "event": "claim_evaluated",
-        "written": true,
-        "details": {
-          "claim_id": "C6_EVIDENCE_SUFFICIENT_FOR_REAL_WORLD_ACTION",
-          "status": "INSUFFICIENT",
-          "supporting": [],
-          "contradicting": [],
-          "explanation": [
-            "Evidence gate: EVIDENCE_SIMULATED, EVIDENCE_NOT_VERIFIED_LIVE.",
-            "C1_RIVER_CURRENT_LEVEL is SIMULATED_ONLY."
-          ]
-        }
-      },
-      {
-        "at": "2026-10-13T08:00:00+00:00",
-        "event": "evidence_layer_completed",
-        "written": true,
-        "details": {
-          "real_world_evidence_sufficient": false,
-          "deny_reasons": [
-            "C6_INSUFFICIENT"
-          ],
-          "claims": {
-            "INSUFFICIENT": 1,
-            "SIMULATED_ONLY": 5
-          },
-          "records": {
-            "SIMULATED": 2
-          }
-        }
-      },
-      {
-        "at": "2026-10-13T08:00:00+00:00",
-        "event": "disaster_state_unchanged",
-        "written": true,
-        "details": {
-          "outcome": "STATE_UNCHANGED",
-          "scope": "simulated",
-          "current_state": "ALERT",
-          "proposed_state": "EMERGENCY",
-          "resulting_state": "ALERT",
-          "condition": "EMERGENCY",
-          "reason": "ALERT kept: ALERT -> EMERGENCY needs 2 observation(s) over 0.0 h (have 1 over 0.0 h).",
-          "reasons": [
-            "risk CRITICAL (confidence MEDIUM) meets the EMERGENCY condition, with a river factor >= HIGH"
-          ],
-          "evidence_id": "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe",
-          "observed_at": "2026-10-10T11:00:00+00:00",
-          "risk_assessment_id": "cc60ab9605fe03d3db6b7f19a0f39fc75c8e8020422c03dfbfcfb40bbd45a3c9",
-          "supporting_evidence_ids": [
-            "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe"
-          ],
-          "persistence": {
-            "observations": 1,
-            "span_hours": 0.0,
-            "evidence_ids": [
-              "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe"
-            ],
-            "since": "2026-10-10T11:00:00+00:00",
-            "readings_skipped_as_duplicate_or_too_close": 0,
-            "largest_gap_hours": 0.0,
-            "run_broken_by_gap_hours": null,
-            "max_gap_hours": null,
-            "min_spacing_hours": 0.5,
-            "required_observations": 2,
-            "required_hours": 0.0,
-            "satisfied": false
-          },
-          "state_decision_id": "af22a76837eed05d60d0030ffc85aad4b3e0d83918988db56464da12394edee4",
-          "authorizes_actions": false
-        }
-      },
-      {
-        "at": "2026-10-13T08:00:00+00:00",
-        "event": "river_workflow_completed",
-        "written": true,
-        "details": {
-          "scenario": "simulated-high-risk",
-          "mode": "simulated",
-          "decision_id": "ebf9c2da24f2409275d88ca1cd3f2bb44d9478fc26ff0b22d1af0e08293a08ae",
-          "service_evidence_id": "04187be20c6c439641f0948409b647e2a1fdf13a162efd35503bd7038545c4fe",
-          "risk_assessment_id": "cc60ab9605fe03d3db6b7f19a0f39fc75c8e8020422c03dfbfcfb40bbd45a3c9",
-          "risk_level": "CRITICAL",
-          "state_outcome": "STATE_UNCHANGED",
-          "resulting_state": "ALERT",
-          "evidence_reasons": [
-            "EVIDENCE_SIMULATED",
-            "EVIDENCE_NOT_VERIFIED_LIVE"
-          ],
-          "reverification_outcome": "NOT_REQUIRED",
-          "real_world_authorization": "RESTRICTED",
-          "capabilities_allowed": [
-            "read_river",
-            "request_evidence_reverification"
-          ],
-          "capabilities_denied": [
-            "prepare_advisory",
-            "propose_evacuation_plan",
-            "request_human_emergency_authorization"
-          ]
-        }
-      }
-    ],
-    "write_errors": [],
-    "log_file": "dash_audit.jsonl"
-  }
+     ],
+     "claims": {
+      "INSUFFICIENT": 1,
+      "SIMULATED_ONLY": 5
+     },
+     "records": {
+      "SIMULATED": 2
+     }
+    }
+   },
+   {
+    "at": "2026-10-13T08:00:00+00:00",
+    "event": "disaster_state_transition_accepted",
+    "written": true,
+    "details": {
+     "outcome": "TRANSITION_ACCEPTED",
+     "scope": "simulated",
+     "current_state": "NORMAL",
+     "proposed_state": "ALERT",
+     "resulting_state": "ALERT",
+     "condition": "EMERGENCY",
+     "reason": "NORMAL -> ALERT (escalation): EMERGENCY held for 1 observation(s) over 0.0 h.",
+     "reasons": [
+      "risk CRITICAL (confidence MEDIUM) meets the EMERGENCY condition, with a river factor >= HIGH"
+     ],
+     "evidence_id": "f3095f5c3f0633d3b4c215269215675ecca800f26e199527a736e336a7d4e5f8",
+     "observed_at": "2026-10-10T11:00:00+00:00",
+     "risk_assessment_id": "d647e7a80ea3bbb87757e2f28d7e5796abb9cdf84d56ff617f59e944c7ccafc7",
+     "supporting_evidence_ids": [
+      "f3095f5c3f0633d3b4c215269215675ecca800f26e199527a736e336a7d4e5f8"
+     ],
+     "persistence": {
+      "observations": 1,
+      "span_hours": 0.0,
+      "evidence_ids": [
+       "f3095f5c3f0633d3b4c215269215675ecca800f26e199527a736e336a7d4e5f8"
+      ],
+      "since": "2026-10-10T11:00:00+00:00",
+      "readings_skipped_as_duplicate_or_too_close": 0,
+      "largest_gap_hours": 0.0,
+      "run_broken_by_gap_hours": null,
+      "max_gap_hours": null,
+      "min_spacing_hours": 0.5,
+      "required_observations": 1,
+      "required_hours": 0.0,
+      "satisfied": true
+     },
+     "previous_state": "NORMAL",
+     "transition_at": "2026-10-10T11:00:00+00:00",
+     "confidence": "MEDIUM",
+     "evidence_classes": {
+      "river": "SIMULATED",
+      "weather": "SIMULATED",
+      "traffic": "SIMULATED"
+     },
+     "traffic_status": "ROUTE_BLOCKED",
+     "traffic_hold": null,
+     "state_decision_id": "57a99b7a84e88daa0d2f61802c393896876613d51d9728b98fcbd73d858faa2a",
+     "authorizes_actions": false
+    }
+   },
+   {
+    "at": "2026-10-13T08:00:00+00:00",
+    "event": "capabilities_reevaluated_after_transition",
+    "written": true,
+    "details": {
+     "from_state": "NORMAL",
+     "to_state": "ALERT",
+     "state_decision_id": "57a99b7a84e88daa0d2f61802c393896876613d51d9728b98fcbd73d858faa2a"
+    }
+   },
+   {
+    "at": "2026-10-13T08:00:00+00:00",
+    "event": "capability_authorization",
+    "written": true,
+    "details": {
+     "disaster_state": "ALERT",
+     "capability": "read_river",
+     "agent_id": "river_agent",
+     "allowed": true,
+     "reason": "CAPABILITY_PERMITTED",
+     "capability_class": "READ_ONLY",
+     "evidence_reasons": [],
+     "human_approval_required": false,
+     "evidence_id": null,
+     "eligibility_source": null,
+     "caller_assessment_supplied": true
+    }
+   },
+   {
+    "at": "2026-10-13T08:00:00+00:00",
+    "event": "capability_authorization",
+    "written": true,
+    "details": {
+     "disaster_state": "ALERT",
+     "capability": "request_evidence_reverification",
+     "agent_id": "river_agent",
+     "allowed": true,
+     "reason": "CAPABILITY_PERMITTED",
+     "capability_class": "INTERNAL",
+     "evidence_reasons": [],
+     "human_approval_required": false,
+     "evidence_id": null,
+     "eligibility_source": null,
+     "caller_assessment_supplied": true
+    }
+   },
+   {
+    "at": "2026-10-13T08:00:00+00:00",
+    "event": "capability_authorization",
+    "written": true,
+    "details": {
+     "disaster_state": "ALERT",
+     "capability": "prepare_advisory",
+     "agent_id": "river_agent",
+     "allowed": false,
+     "reason": "EVIDENCE_INSUFFICIENT",
+     "capability_class": "REAL_WORLD",
+     "evidence_reasons": [
+      "EVIDENCE_SIMULATED",
+      "EVIDENCE_NOT_VERIFIED_LIVE",
+      "EVIDENCE_ASSESSMENT_REJECTED"
+     ],
+     "human_approval_required": false,
+     "evidence_id": "f3095f5c3f0633d3b4c215269215675ecca800f26e199527a736e336a7d4e5f8",
+     "eligibility_source": "COMPUTED_BY_GATE",
+     "caller_assessment_supplied": true
+    }
+   },
+   {
+    "at": "2026-10-13T08:00:00+00:00",
+    "event": "capability_authorization",
+    "written": true,
+    "details": {
+     "disaster_state": "ALERT",
+     "capability": "propose_evacuation_plan",
+     "agent_id": "river_agent",
+     "allowed": false,
+     "reason": "EVIDENCE_INSUFFICIENT",
+     "capability_class": "REAL_WORLD",
+     "evidence_reasons": [
+      "EVIDENCE_SIMULATED",
+      "EVIDENCE_NOT_VERIFIED_LIVE",
+      "EVIDENCE_ASSESSMENT_REJECTED"
+     ],
+     "human_approval_required": false,
+     "evidence_id": "f3095f5c3f0633d3b4c215269215675ecca800f26e199527a736e336a7d4e5f8",
+     "eligibility_source": "COMPUTED_BY_GATE",
+     "caller_assessment_supplied": true
+    }
+   },
+   {
+    "at": "2026-10-13T08:00:00+00:00",
+    "event": "capability_authorization",
+    "written": true,
+    "details": {
+     "disaster_state": "ALERT",
+     "capability": "request_human_emergency_authorization",
+     "agent_id": "river_agent",
+     "allowed": false,
+     "reason": "CAPABILITY_DENIED",
+     "capability_class": null,
+     "evidence_reasons": [],
+     "human_approval_required": false,
+     "evidence_id": null,
+     "eligibility_source": null,
+     "caller_assessment_supplied": true
+    }
+   },
+   {
+    "at": "2026-10-13T08:00:00+00:00",
+    "event": "river_workflow_completed",
+    "written": true,
+    "details": {
+     "scenario": "simulated-high-risk",
+     "mode": "simulated",
+     "decision_id": "58e7e874591682e2dbcc8b2de70d57a714229cff3756d8aaeed0ec8bee6b8bce",
+     "service_evidence_id": "f3095f5c3f0633d3b4c215269215675ecca800f26e199527a736e336a7d4e5f8",
+     "risk_assessment_id": "d647e7a80ea3bbb87757e2f28d7e5796abb9cdf84d56ff617f59e944c7ccafc7",
+     "risk_level": "CRITICAL",
+     "state_outcome": "TRANSITION_ACCEPTED",
+     "resulting_state": "ALERT",
+     "evidence_reasons": [
+      "EVIDENCE_SIMULATED",
+      "EVIDENCE_NOT_VERIFIED_LIVE"
+     ],
+     "reverification_outcome": "NOT_REQUIRED",
+     "real_world_authorization": "RESTRICTED",
+     "capabilities_allowed": [
+      "read_river",
+      "request_evidence_reverification"
+     ],
+     "capabilities_denied": [
+      "prepare_advisory",
+      "propose_evacuation_plan",
+      "request_human_emergency_authorization"
+     ]
+    }
+   }
+  ],
+  "write_errors": [],
+  "log_file": "dash_audit.jsonl"
+ }
 }

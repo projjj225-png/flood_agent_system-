@@ -25,3 +25,5 @@ outputs/simulated_live/
 
 # Workflow audit logs written to outputs/
 outputs/*_audit.jsonl
+# Continuous demonstration simulation (src/simulation_engine.py): generated (fabricated) readings
+outputs/simulated_demo/

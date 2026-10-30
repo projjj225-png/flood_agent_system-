@@ -106,6 +106,33 @@ AUDIT_EVENTS = {
     FAILED: "disaster_state_evaluation_failed",
 }
 
+# Traffic (TrafficAgent) evidence, as seen by the state manager. Traffic never escalates
+# a state; a rule may REQUIRE it (requires_traffic) before de-escalating.
+THRESHOLD_AT_OR_ABOVE_WARNING = "AT_OR_ABOVE_WARNING"
+THRESHOLD_AT_OR_ABOVE_DANGER = "AT_OR_ABOVE_DANGER"
+THRESHOLD_BELOW_WARNING = "BELOW_WARNING"
+RIVER_THRESHOLD_MINIMUMS = (THRESHOLD_AT_OR_ABOVE_WARNING, THRESHOLD_AT_OR_ABOVE_DANGER)
+_THRESHOLD_RANK = {THRESHOLD_BELOW_WARNING: 0, THRESHOLD_AT_OR_ABOVE_WARNING: 1,
+                   THRESHOLD_AT_OR_ABOVE_DANGER: 2}
+TRAFFIC_ROUTES_USABLE = "ROUTES_USABLE"
+TRAFFIC_ROUTE_BLOCKED = "ROUTE_BLOCKED"
+TRAFFIC_ROUTES_UNCERTAIN = "ROUTES_UNCERTAIN"
+TRAFFIC_UNAVAILABLE = "UNAVAILABLE"
+TRAFFIC_STALE = "STALE"
+TRAFFIC_SCOPE_MISMATCH = "SCOPE_MISMATCH"
+TRAFFIC_REQUIREMENTS = (TRAFFIC_ROUTES_USABLE,)
+TRAFFIC_ROUTE_CONDITIONS = ("FREE_FLOW", "MODERATE", "HEAVY", "SEVERE", "BLOCKED", "UNKNOWN")
+DEFAULT_TRAFFIC_CONFIG = {"max_age_hours": 1.0, "usable_route_conditions": ["FREE_FLOW",
+                                                                            "MODERATE"]}
+TRAFFIC_MAX_CLOCK_SKEW_HOURS = 5 / 60
+SIMULATED_TRAFFIC_SOURCE_TYPE = "SIMULATED_TEST_DATA"  # traffic_agent.SOURCE_TYPE_SIMULATED
+
+# Evidence classes reported per agent (display and audit; decisions use the checks).
+CLASS_VERIFIED_LIVE, CLASS_LIVE_PROVIDER = "VERIFIED_LIVE", "LIVE_PROVIDER_DATA"
+CLASS_HISTORICAL, CLASS_MODEL_ESTIMATE = "HISTORICAL", "MODEL_ESTIMATE"
+CLASS_SIMULATED, CLASS_INSUFFICIENT = "SIMULATED", "INSUFFICIENT"
+CLASS_UNAVAILABLE, CLASS_CONFLICTING = "UNAVAILABLE", "CONFLICTING"
+
 DISCLAIMER = ("Disaster-state classification for decision support. It does not authorize, "
               "execute or trigger any action; capabilities are decided by capability_control "
               "and real-world actions require human approval. Criteria are prototype "
@@ -172,6 +199,11 @@ def validate_state_config(config: Any) -> dict[str, Any]:
             "river_factor_min_level": _level(c.get("river_factor_min_level"),
                                              f"{name}.river_factor_min_level", HAZARD_LEVELS,
                                              optional=True),
+            # The river itself must be at or above this configured threshold (when the
+            # station has thresholds; see classify).
+            "river_threshold_min": _level(c.get("river_threshold_min"),
+                                          f"{name}.river_threshold_min",
+                                          RIVER_THRESHOLD_MINIMUMS, optional=True),
         }
     if clean_conditions[COND_EMERGENCY]["river_factor_min_level"] is None:
         raise ValueError("State config: EMERGENCY needs river_factor_min_level; rainfall "
@@ -189,7 +221,25 @@ def validate_state_config(config: Any) -> dict[str, Any]:
                                             f"{name}.required_rules_all"),
             "forbidden_rules_any": _rule_ids(c.get("forbidden_rules_any", []),
                                              f"{name}.forbidden_rules_any"),
+            # The river must be below the configured recovery level (hysteresis).
+            "below_recovery_level": c.get("below_recovery_level", False),
         }
+        if not isinstance(clean_conditions[name]["below_recovery_level"], bool):
+            raise ValueError(f"State config: conditions.{name}.below_recovery_level must be "
+                             "true or false.")
+    river_cfg = config.get("river_thresholds") or {}
+    margin = river_cfg.get("recovery_margin_m")
+    margin_ok = (not isinstance(margin, bool) and isinstance(margin, (int, float))
+                 and math.isfinite(margin) and margin > 0)
+    if any(clean_conditions[n]["below_recovery_level"] for n in (COND_NORMAL, COND_IMPROVED)) \
+            and not margin_ok:
+        raise ValueError("State config: river_thresholds.recovery_margin_m must be a "
+                         "number > 0 when a condition requires below_recovery_level.")
+    if clean_conditions[COND_ALERT]["river_threshold_min"] == THRESHOLD_AT_OR_ABOVE_DANGER \
+            and clean_conditions[COND_EMERGENCY]["river_threshold_min"] \
+            != THRESHOLD_AT_OR_ABOVE_DANGER:
+        raise ValueError("State config: EMERGENCY cannot require a lower river threshold than "
+                         "ALERT.")
 
     rules = config.get("rules")
     if not isinstance(rules, dict) or set(k for k in rules if not k.startswith("_")) \
@@ -268,17 +318,41 @@ def validate_state_config(config: Any) -> dict[str, Any]:
                 raise ValueError(f"State config: rules.{source}: escalation rules must come "
                                  "before de-escalation rules.")
             seen_de_escalation |= kind == "de-escalation"
+            requires_traffic = rule.get("requires_traffic")
+            if requires_traffic is not None:
+                _level(requires_traffic, f"{where}.requires_traffic", TRAFFIC_REQUIREMENTS)
+                if kind != "de-escalation":
+                    raise ValueError(f"State config: {where}: requires_traffic is only allowed "
+                                     "on de-escalation rules; traffic never holds back an "
+                                     "escalation.")
             clean_rules[source].append({"to": to, "when": list(when), "kind": kind,
                                         "min_observations": obs, "min_hours": float(hours),
                                         "gap_breaks_run": gap,
                                         "min_spacing_hours": float(spacing),
                                         "max_gap_hours": None if max_gap is None
-                                        else float(max_gap)})
+                                        else float(max_gap),
+                                        "requires_traffic": requires_traffic})
     limit = config.get("history_limit", 200)
     if isinstance(limit, bool) or not isinstance(limit, int) or not 10 <= limit <= 10000:
         raise ValueError("State config: history_limit must be an integer 10-10000.")
+    traffic = config.get("traffic", DEFAULT_TRAFFIC_CONFIG)
+    if not isinstance(traffic, dict):
+        raise ValueError("State config: traffic must be an object.")
+    max_age = traffic.get("max_age_hours")
+    usable = traffic.get("usable_route_conditions")
+    if isinstance(max_age, bool) or not isinstance(max_age, (int, float)) \
+            or not math.isfinite(max_age) or max_age <= 0:
+        raise ValueError("State config: traffic.max_age_hours must be a number > 0.")
+    if not isinstance(usable, list) or not usable \
+            or not set(usable) <= {"FREE_FLOW", "MODERATE", "HEAVY"}:
+        raise ValueError("State config: traffic.usable_route_conditions must list route "
+                         "conditions from FREE_FLOW, MODERATE, HEAVY (a BLOCKED, SEVERE or "
+                         "UNKNOWN route is never usable).")
     return {"allowed_transitions": clean_allowed, "conditions": clean_conditions,
             "rules": clean_rules, "history_limit": limit,
+            "river_thresholds": {"recovery_margin_m": float(margin) if margin_ok else None,
+                                 "reference": river_cfg.get("reference")},
+            "traffic": {"max_age_hours": float(max_age), "usable_route_conditions": list(usable)},
             "reference": config.get("reference")}
 
 
@@ -381,36 +455,107 @@ def _rank(value: Any, order: tuple[str, ...]) -> int:
     return order.index(value) if value in order else -1
 
 
-def classify(risk: dict[str, Any], cfg: dict[str, Any]) -> tuple[str, list[str]]:
-    """The first condition the (recomputed) risk assessment meets, with reasons."""
+def river_threshold_view(evidence: Any, cfg: dict[str, Any]) -> dict[str, Any]:
+    """The river reading against its CONFIGURED thresholds (official only if the threshold
+    file says so), plus the recovery level = warning level - recovery margin."""
+    th = evidence.get("threshold_evaluation") if isinstance(evidence, dict) else None
+    th = th if isinstance(th, dict) else {}
+    level, warning, danger = (th.get("compared_level_m"), th.get("warning_level_m"),
+                              th.get("danger_level_m"))
+    numbers = all(isinstance(v, (int, float)) and not isinstance(v, bool)
+                  for v in (level, warning, danger))
+    margin = (cfg.get("river_thresholds") or {}).get("recovery_margin_m")
+    configured = numbers and th.get("status") in _THRESHOLD_RANK
+    recovery = round(warning - margin, 3) if configured and margin else None
+    return {"configured": bool(configured), "status": th.get("status"),
+            "level_m": level if numbers else None,
+            "warning_level_m": warning if numbers else None,
+            "danger_level_m": danger if numbers else None,
+            "recovery_level_m": recovery,
+            "below_recovery_level": (level < recovery) if recovery is not None else None,
+            "official": th.get("threshold_is_official") is True,
+            "label": ("OFFICIAL" if th.get("threshold_is_official") is True
+                      else "TEST / RESEARCH"),
+            "reference": th.get("threshold_reference")}
+
+
+def transition_threshold(to_state: str, river: dict[str, Any]) -> dict[str, Any] | None:
+    """The configured threshold a transition into ``to_state`` is judged against."""
+    if not river.get("configured"):
+        return None
+    name, key = {ALERT: ("warning", "warning_level_m"),
+                 EMERGENCY: ("danger", "danger_level_m"),
+                 RECOVERY: ("recovery", "recovery_level_m"),
+                 NORMAL: ("recovery", "recovery_level_m")}[to_state]
+    return {"name": name, "level_m": river.get(key), "label": river.get("label"),
+            "official": river.get("official") is True}
+
+
+def classify(risk: dict[str, Any], cfg: dict[str, Any],
+             river: dict[str, Any] | None = None) -> tuple[str, list[str]]:
+    """The first condition the (recomputed) risk assessment and the river reading meet.
+
+    Threshold requirements (river_threshold_min, below_recovery_level) apply when the
+    station has configured thresholds. Without them a requirement cannot be checked: the
+    risk-based part of an escalation condition stands alone and the reason says so, and a
+    recovery condition can never be met (NORMAL and IMPROVED also need rule R3, which
+    needs thresholds), so missing thresholds never look like safety.
+    """
+    river = river or {"configured": False}
     level = risk.get("risk_level")
     confidence = (risk.get("evidence_quality") or {}).get("confidence")
     fired = set(risk.get("rules_fired") or [])
     river_levels = [f.get("hazard_level") for f in risk.get("risk_factors") or []
                     if isinstance(f, dict) and f.get("source") == "river"]
     conditions = cfg["conditions"]
+    lv_text = (f"river {river['level_m']:.3f} m" if river.get("level_m") is not None
+               else "river level unknown")
     for name in (COND_EMERGENCY, COND_ALERT):
         c = conditions[name]
         need_river = c["river_factor_min_level"]
+        need_threshold = c.get("river_threshold_min")
+        threshold_ok, threshold_text = True, ""
+        if need_threshold and river.get("configured"):
+            threshold_ok = (_THRESHOLD_RANK.get(river["status"], -1)
+                            >= _THRESHOLD_RANK[need_threshold])
+            which = ("danger" if need_threshold == THRESHOLD_AT_OR_ABOVE_DANGER
+                     else "warning")
+            threshold_text = (f"; {lv_text} is at or above the {river['label'].lower()} "
+                              f"{which} level {river[which + '_level_m']} m")
+        elif need_threshold:
+            threshold_text = "; no configured river thresholds, so the risk-based part applies"
         if (_rank(level, HAZARD_LEVELS) >= _rank(c["min_risk_level"], HAZARD_LEVELS)
                 and _rank(confidence, CONFIDENCE_ORDER) >= _rank(c["min_confidence"],
                                                                 CONFIDENCE_ORDER)
                 and (need_river is None or any(_rank(lv, HAZARD_LEVELS)
                                                >= _rank(need_river, HAZARD_LEVELS)
-                                               for lv in river_levels))):
+                                               for lv in river_levels))
+                and threshold_ok):
             return name, [f"risk {level} (confidence {confidence}) meets the {name} "
                           "condition" + (f", with a river factor >= {need_river}"
-                                         if need_river else "")]
+                                         if need_river else "") + threshold_text]
     for name in (COND_NORMAL, COND_IMPROVED):
         c = conditions[name]
+        below_ok = (not c.get("below_recovery_level")
+                    or river.get("below_recovery_level") is True)
         if (0 <= _rank(level, HAZARD_LEVELS) <= _rank(c["max_risk_level"], HAZARD_LEVELS)
                 and _rank(confidence, CONFIDENCE_ORDER) >= _rank(c["min_confidence"],
                                                                 CONFIDENCE_ORDER)
                 and set(c["required_rules_all"]) <= fired
-                and not set(c["forbidden_rules_any"]) & fired):
+                and not set(c["forbidden_rules_any"]) & fired
+                and below_ok):
             return name, [f"risk {level} with rules {sorted(set(c['required_rules_all']))} "
-                          f"meets the {name} condition"]
-    return COND_ELEVATED, [f"risk {level} meets no transition condition (held by hysteresis)"]
+                          f"meets the {name} condition"
+                          + (f"; {lv_text} is below the recovery level "
+                             f"{river['recovery_level_m']} m" if c.get("below_recovery_level")
+                             else "")]
+    why = f"risk {level} meets no transition condition (held by hysteresis)"
+    if river.get("recovery_level_m") is not None and river.get("level_m") is not None \
+            and river.get("status") == THRESHOLD_BELOW_WARNING \
+            and not river.get("below_recovery_level"):
+        why += (f"; {lv_text} is below the warning level but not yet below the recovery "
+                f"level {river['recovery_level_m']} m")
+    return COND_ELEVATED, [why]
 
 
 def run_statistics(history: list[dict[str, Any]], rule: dict[str, Any]) -> dict[str, Any]:
@@ -461,6 +606,104 @@ def run_statistics(history: list[dict[str, Any]], rule: dict[str, Any]) -> dict[
             "max_gap_hours": max_gap, "min_spacing_hours": min_spacing}
 
 
+def assess_traffic(traffic: Any, scope: str, now: datetime,
+                   cfg: dict[str, Any]) -> dict[str, Any]:
+    """What a TrafficAgent result can tell the state manager, never assumed.
+
+    Missing, malformed, stale or wrong-scope traffic is never read as "roads are
+    fine": it simply cannot satisfy a ``requires_traffic`` rule. A blocked route is
+    reported as such (it conflicts with a river that looks normal). Traffic is
+    never used to escalate.
+    """
+    tcfg = cfg.get("traffic") or DEFAULT_TRAFFIC_CONFIG
+    view: dict[str, Any] = {
+        "provided": traffic is not None, "status": TRAFFIC_UNAVAILABLE,
+        "evidence_class": CLASS_UNAVAILABLE, "is_simulated": None, "source": None,
+        "retrieved_at": None, "age_hours": None, "max_age_hours": tcfg["max_age_hours"],
+        "routes": {}, "blocked_routes": [], "reasons": [],
+        "role": "Required to leave RECOVERY for NORMAL; never used to escalate."}
+    if not isinstance(traffic, dict):
+        view["reasons"].append("TRAFFIC_NOT_PROVIDED" if traffic is None else "TRAFFIC_MALFORMED")
+        return view
+    simulated = traffic.get("is_simulated") is True \
+        or traffic.get("source_type") == SIMULATED_TRAFFIC_SOURCE_TYPE
+    view.update(is_simulated=simulated, source=traffic.get("source"))
+    if scope == MODE_HISTORICAL:
+        view["reasons"].append("TRAFFIC_NOT_AVAILABLE_FOR_HISTORICAL_REPLAY")
+        return view
+    if simulated != (scope == MODE_SIMULATED):
+        view.update(status=TRAFFIC_SCOPE_MISMATCH, evidence_class=CLASS_INSUFFICIENT)
+        view["reasons"].append("SIMULATED_TRAFFIC_FOR_REAL_STATE" if simulated
+                               else "REAL_TRAFFIC_FOR_SIMULATED_STATE")
+        return view
+    retrieved = parse_timestamp(traffic.get("retrieved_at"))
+    routes = traffic.get("routes")
+    if retrieved is None:
+        view["reasons"].append("TRAFFIC_TIME_UNKNOWN")
+        return view
+    age = (now - retrieved).total_seconds() / 3600
+    view.update(retrieved_at=retrieved.isoformat(), age_hours=round(age, 3))
+    if traffic.get("status") == "DATA_UNAVAILABLE" or not isinstance(routes, dict) or not routes:
+        view["reasons"].append("TRAFFIC_DATA_UNAVAILABLE")
+        return view
+    if age > tcfg["max_age_hours"] or age < -TRAFFIC_MAX_CLOCK_SKEW_HOURS:
+        view.update(status=TRAFFIC_STALE, evidence_class=CLASS_INSUFFICIENT)
+        view["reasons"].append("TRAFFIC_STALE")
+        return view
+    conditions = {rid: (r.get("condition") if isinstance(r, dict) else None)
+                  for rid, r in routes.items()}
+    conditions = {rid: c if c in TRAFFIC_ROUTE_CONDITIONS else "UNKNOWN"
+                  for rid, c in conditions.items()}
+    view["routes"] = conditions
+    view["blocked_routes"] = sorted(rid for rid, c in conditions.items() if c == "BLOCKED")
+    view["evidence_class"] = CLASS_SIMULATED if simulated else CLASS_LIVE_PROVIDER
+    if view["blocked_routes"]:
+        view["status"] = TRAFFIC_ROUTE_BLOCKED
+        view["reasons"].append("TRAFFIC_ROUTE_BLOCKED")
+    elif all(c in tcfg["usable_route_conditions"] for c in conditions.values()):
+        view["status"] = TRAFFIC_ROUTES_USABLE
+    else:
+        view["status"] = TRAFFIC_ROUTES_UNCERTAIN
+        view["reasons"].append("TRAFFIC_ROUTES_NOT_CONFIRMED_USABLE")
+    return view
+
+
+def agent_evidence(scope: str, blocking: list[str], risk: dict[str, Any] | None,
+                   traffic_view: dict[str, Any], condition: str | None) -> dict[str, Any]:
+    """The evidence class of each agent's input, for display and audit. A blocked
+    route while the river looks normal or improved is CONFLICTING evidence. Reasons
+    from the risk stage (RISK_*) are not river-evidence problems."""
+    blocking = [r for r in blocking if not r.startswith("RISK_")]
+    if blocking:
+        river_class = CLASS_INSUFFICIENT
+    else:
+        river_class = {MODE_REAL: CLASS_VERIFIED_LIVE, MODE_HISTORICAL: CLASS_HISTORICAL,
+                       MODE_SIMULATED: CLASS_SIMULATED}.get(scope, CLASS_INSUFFICIENT)
+    wx = ((risk or {}).get("supporting_evidence") or {}).get("weather") or {}
+    if not wx or "WEATHER_NOT_PROVIDED" in (wx.get("not_used_reasons") or []):
+        weather_class = CLASS_UNAVAILABLE
+    elif not wx.get("used"):
+        weather_class = CLASS_INSUFFICIENT
+    else:
+        weather_class = CLASS_SIMULATED if wx.get("is_simulated") else CLASS_MODEL_ESTIMATE
+    return {
+        "river": {"agent": "RiverMonitoringAgent", "evidence_class": river_class,
+                  "reasons": list(blocking), "used_for": "classification (primary hazard)"},
+        "weather": {"agent": "WeatherAgent", "evidence_class": weather_class,
+                    "reasons": list(wx.get("not_used_reasons") or []),
+                    "retrieved_at": wx.get("retrieved_at"),
+                    "used_for": "classification, through the risk assessment"},
+        "traffic": {"agent": "TrafficAgent",
+                    "evidence_class": (CLASS_CONFLICTING if traffic_view["status"]
+                                       == TRAFFIC_ROUTE_BLOCKED and condition
+                                       in (COND_NORMAL, COND_IMPROVED) else
+                                       traffic_view["evidence_class"]),
+                    "reasons": list(traffic_view["reasons"]),
+                    "retrieved_at": traffic_view["retrieved_at"],
+                    "used_for": "RECOVERY exit check only"},
+    }
+
+
 # --------------------------------------------------------------------------
 # Evaluation
 # --------------------------------------------------------------------------
@@ -475,6 +718,9 @@ def _base_result(record: Any, now: Any) -> dict[str, Any]:
         "condition": None, "transition_rule": None, "reason": None, "reasons": [],
         "evidence_id": None, "observed_at": None, "risk_assessment_id": None,
         "risk_level": None, "supporting_evidence_ids": [], "persistence": None,
+        "previous_state": None, "transition_at": None, "confidence": None,
+        "evidence_quality": None, "agent_evidence": None, "traffic": None,
+        "traffic_hold": None, "threshold_check": None,
         "evaluated_at": now.isoformat() if isinstance(now, datetime) else None,
         "is_simulated": isinstance(record, dict) and record.get("scope") == MODE_SIMULATED,
         "state_applies_to": None, "authorizes_actions": False, "executes_actions": False,
@@ -490,6 +736,7 @@ def _finish(result: dict[str, Any], outcome: str, reason: str,
     result["reasons"] = list(reasons or [])
     if result["outcome"] != ACCEPTED:
         result["resulting_state"] = result["current_state"]
+    _set_last_transition(result)
     scope = result.get("scope")
     result["state_applies_to"] = ("SIMULATION_ONLY" if scope == MODE_SIMULATED else
                                   "HISTORICAL_REPLAY" if scope == MODE_HISTORICAL else
@@ -498,6 +745,13 @@ def _finish(result: dict[str, Any], outcome: str, reason: str,
     result["state_decision_id"] = hashlib.sha256(json.dumps(
         stable, sort_keys=True, default=str).encode("utf-8")).hexdigest()
     return result
+
+
+def _set_last_transition(result: dict[str, Any]) -> None:
+    """previous_state / transition_at: the record's most recent accepted transition."""
+    last = (result.get("record") or {}).get("last_transition")
+    result["previous_state"] = last.get("from") if isinstance(last, dict) else None
+    result["transition_at"] = last.get("at") if isinstance(last, dict) else None
 
 
 def evaluate_state(
@@ -511,11 +765,13 @@ def evaluate_state(
     weather: Any = None,
     reverification: Any = None,
     requested_state: str | None = None,
+    traffic: Any = None,
 ) -> dict[str, Any]:
-    """Evaluate one step. Never raises; never changes the state except on ACCEPTED."""
+    """Evaluate one step automatically from the agents' evidence (river, weather and
+    traffic). Never raises; never changes the state except on ACCEPTED."""
     try:
         return _evaluate(record, river_evidence, risk_assessment, config, risk_config, now,
-                         weather, reverification, requested_state)
+                         weather, reverification, requested_state, traffic)
     except Exception as exc:  # fail closed: no transition is invented
         result = _base_result(record if isinstance(record, dict) else None, now)
         return _finish(result, FAILED, f"State evaluation failed ({type(exc).__name__}).",
@@ -523,7 +779,7 @@ def evaluate_state(
 
 
 def _evaluate(record, evidence, supplied_risk, cfg, risk_cfg, now, weather, reverification,
-              requested_state) -> dict[str, Any]:
+              requested_state, traffic) -> dict[str, Any]:
     result = _base_result(record, now)
     problems = validate_state_record(record)
     if problems:
@@ -536,7 +792,11 @@ def _evaluate(record, evidence, supplied_risk, cfg, risk_cfg, now, weather, reve
         return _finish(result, REJECTED, "Requested state is not a known disaster state.",
                        ["UNKNOWN_REQUESTED_STATE"])
     current, scope = record["state"], record["scope"]
+    traffic_view = assess_traffic(traffic, scope, now, cfg)
+    result["traffic"] = traffic_view
     if not isinstance(evidence, dict):
+        result["agent_evidence"] = agent_evidence(scope, ["EVIDENCE_MISSING"], None,
+                                                  traffic_view, None)
         return _record_insufficient(result, record, cfg, None, None, ["EVIDENCE_MISSING"])
 
     evidence_scope = assessment_mode_for(evidence)
@@ -552,6 +812,10 @@ def _evaluate(record, evidence, supplied_risk, cfg, risk_cfg, now, weather, reve
                                    clock=lambda: now)
     result["risk_assessment_id"] = recomputed["assessment_id"]
     result["risk_level"] = recomputed["risk_level"]
+    quality = recomputed.get("evidence_quality") or {}
+    result["confidence"] = quality.get("confidence")
+    result["evidence_quality"] = {k: quality.get(k) for k in (
+        "confidence", "confidence_downgrades", "river_evidence_grade", "river_freshness")}
     result["evidence_id"] = evidence.get("evidence_id") if isinstance(
         evidence.get("evidence_id"), str) else None
     observed = parse_timestamp(evidence.get("observed_at"))
@@ -573,6 +837,7 @@ def _evaluate(record, evidence, supplied_risk, cfg, risk_cfg, now, weather, reve
         blocking.append("RISK_INDETERMINATE")
     if observed is None:
         blocking.append("OBSERVATION_TIME_MISSING")
+    result["agent_evidence"] = agent_evidence(scope, blocking, recomputed, traffic_view, None)
     if blocking:
         return _record_insufficient(result, record, cfg, observed, result["evidence_id"],
                                     blocking)
@@ -584,11 +849,16 @@ def _evaluate(record, evidence, supplied_risk, cfg, risk_cfg, now, weather, reve
         return _finish(result, INSUFFICIENT, "Evidence is older than the state history; it "
                        "cannot change the state.", ["EVIDENCE_OLDER_THAN_HISTORY"])
 
-    condition, why = classify(recomputed, cfg)
+    river = river_threshold_view(evidence, cfg)
+    result["threshold_check"] = river
+    condition, why = classify(recomputed, cfg, river)
     result["condition"] = condition
+    result["agent_evidence"] = agent_evidence(scope, blocking, recomputed, traffic_view,
+                                              condition)
     entry = {"observed_at": observed.isoformat(), "condition": condition,
              "evidence_id": result["evidence_id"], "risk_level": recomputed["risk_level"],
              "risk_assessment_id": recomputed["assessment_id"],
+             "river_level_m": river["level_m"],
              "evaluated_at": now.isoformat()}
     new_record = copy.deepcopy(record)
     new_history = new_record["history"]
@@ -603,7 +873,7 @@ def _evaluate(record, evidence, supplied_risk, cfg, risk_cfg, now, weather, reve
     new_history.append(entry)
     del new_history[:-cfg["history_limit"]]
 
-    chosen, pending = None, None
+    chosen, pending, held = None, None, None
     for rule in cfg["rules"][current]:
         if condition not in rule["when"]:
             continue
@@ -612,6 +882,14 @@ def _evaluate(record, evidence, supplied_risk, cfg, risk_cfg, now, weather, reve
                   "required_hours": rule["min_hours"],
                   "satisfied": stats["observations"] >= rule["min_observations"]
                   and stats["span_hours"] >= rule["min_hours"]}
+        if rule.get("requires_traffic"):
+            status.update(traffic_required=rule["requires_traffic"],
+                          traffic_status=traffic_view["status"])
+            if status["satisfied"] and traffic_view["status"] != rule["requires_traffic"]:
+                # Persistence is met, but the recovery exit also needs confirmed routes.
+                status["satisfied"] = False
+                held = held or (rule, status)
+                continue
         if status["satisfied"]:
             chosen = (rule, status)
             break
@@ -636,17 +914,41 @@ def _evaluate(record, evidence, supplied_risk, cfg, risk_cfg, now, weather, reve
         new_record["state"] = rule["to"]
         new_record["entered_at"] = observed.isoformat()
         new_record["origin"] = "STATE_MANAGER_TRANSITION"
-        new_record["last_transition"] = {"from": current, "to": rule["to"],
-                                         "kind": rule["kind"], "at": observed.isoformat(),
-                                         "condition": condition}
+        new_record["last_transition"] = {
+            "from": current, "to": rule["to"], "kind": rule["kind"],
+            "at": observed.isoformat(), "condition": condition,
+            "evaluated_at": now.isoformat(),
+            "evidence_id": result["evidence_id"],
+            "supporting_evidence_ids": list(status["evidence_ids"]),
+            "risk_level": recomputed["risk_level"],
+            "river_level_m": river["level_m"],
+            "threshold": transition_threshold(rule["to"], river),
+            "reason": (f"{condition} held for {status['observations']} observation(s) over "
+                       f"{status['span_hours']} h; " + "; ".join(why))}
         new_record["record_id"] = _record_digest(new_record)
         result.update(proposed_state=rule["to"], resulting_state=rule["to"],
                       transition_rule=rule, persistence=status,
                       supporting_evidence_ids=status["evidence_ids"])
+        if rule.get("requires_traffic"):
+            why = why + [f"traffic: all {len(traffic_view['routes'])} evacuation route(s) "
+                         f"usable ({traffic_view['evidence_class']}, retrieved "
+                         f"{traffic_view['retrieved_at']})"]
         return _finish(result, ACCEPTED, f"{current} -> {rule['to']} ({rule['kind']}): "
                        f"{condition} held for {status['observations']} observation(s) over "
                        f"{status['span_hours']} h.", why)
     new_record["record_id"] = _record_digest(new_record)
+    if held:
+        rule, status = held
+        code = ("CONFLICTING_EVIDENCE_ROUTE_BLOCKED"
+                if traffic_view["status"] == TRAFFIC_ROUTE_BLOCKED
+                else "TRAFFIC_EVIDENCE_INSUFFICIENT")
+        result.update(proposed_state=rule["to"], transition_rule=rule, persistence=status,
+                      supporting_evidence_ids=status["evidence_ids"], traffic_hold=code)
+        return _finish(result, UNCHANGED, f"{current} kept: the {current} -> {rule['to']} "
+                       f"persistence is met ({status['observations']} observation(s) over "
+                       f"{status['span_hours']} h), but traffic evidence does not confirm "
+                       f"usable evacuation routes ({traffic_view['status']}).",
+                       why + [code] + traffic_view["reasons"])
     if pending:
         rule, status = pending
         result.update(proposed_state=rule["to"], transition_rule=rule, persistence=status,
@@ -697,6 +999,13 @@ def audit_and_finalize(result: dict[str, Any], original_record: Any, audit_log: 
             risk_assessment_id=result.get("risk_assessment_id"),
             supporting_evidence_ids=result.get("supporting_evidence_ids"),
             persistence=result.get("persistence"),
+            previous_state=result.get("previous_state"),
+            transition_at=result.get("transition_at"),
+            confidence=result.get("confidence"),
+            evidence_classes={k: v.get("evidence_class") for k, v in
+                              (result.get("agent_evidence") or {}).items()},
+            traffic_status=(result.get("traffic") or {}).get("status"),
+            traffic_hold=result.get("traffic_hold"),
             state_decision_id=result.get("state_decision_id"),
             authorizes_actions=False) is True
     except Exception:
@@ -716,6 +1025,7 @@ def revert_result(result: dict[str, Any], original_record: Any, code: str) -> di
     result["record"] = copy.deepcopy(original_record) if isinstance(original_record,
                                                                     dict) else None
     result["record_changed"] = False
+    _set_last_transition(result)
     if code not in result.get("reasons", []):
         result["reasons"] = list(result.get("reasons", [])) + [code]
     return result
@@ -731,18 +1041,33 @@ SEQUENCES = {
     "flood-cycle": list(range(30, 119, 2)),
     "short-rise": list(range(40, 56, 2)),
 }
+# Fabricated traffic during the cycle (data/simulated/traffic/), from each river hour on:
+# the riverside evacuation route is closed by the flood and reopens two hours after the
+# river has settled, so the RECOVERY exit visibly waits for it.
+CYCLE_TRAFFIC = ((0, "normal_flow"), (46, "flood_road_closure"), (88, "normal_flow"))
+
+
+def cycle_traffic_scenario(hour: int) -> str:
+    return [name for start, name in CYCLE_TRAFFIC if hour >= start][-1]
 
 
 def run_state_sequence(name: str, service: Any, audit_log: Any,
                        record: dict[str, Any] | None = None,
                        hours: list[int] | None = None) -> list[dict[str, Any]]:
     """Run the workflow over the simulated flood cycle, carrying the state record
-    forward explicitly (fabricated data; TEST thresholds; scope simulated)."""
+    forward explicitly (fabricated data; TEST thresholds; scope simulated).
+
+    Each step feeds the three agents' evidence (river, weather, traffic; all
+    SIMULATED) into the same run_river_workflow -> evaluate_state path the real
+    dashboard uses. The runner never sets a state: it only carries forward the
+    record the state manager returned.
+    """
     from datetime import timedelta
 
     from src.risk_assessment import load_simulated_weather
     from src.river_agent_workflow import TEST_THRESHOLDS_PATH, run_river_workflow
     from src.river_service import RiverEvidenceService
+    from src.traffic_agent import run_simulated_at as simulated_traffic
 
     config = json.loads(json.dumps(service.config))
     config["simulated"] = {**(config.get("simulated") or {}),
@@ -758,20 +1083,33 @@ def run_state_sequence(name: str, service: Any, audit_log: Any,
         as_of = start + timedelta(hours=hour)
         weather = load_simulated_weather(service.resolve_path(f"{CYCLE_DIR}/weather.json"),
                                          retrieved_at=as_of)
+        traffic_scenario = cycle_traffic_scenario(hour)
+        traffic = simulated_traffic(traffic_scenario, as_of)
         result = run_river_workflow(cycle_service, audit_log, mode=MODE_SIMULATED,
                                     disaster_state=record["state"], as_of=as_of,
                                     cross_check_paths=[], independent_paths=[],
                                     weather=weather, state_record=record,
-                                    scenario=f"state-sequence:{name}")
+                                    scenario=f"state-sequence:{name}", traffic=traffic)
         state = result["state_evaluation"]
         if state.get("record") is not None and not result["workflow_audit_write_errors"]:
             record = state["record"]
+        changes = result.get("capability_changes") or {}
         steps.append({"hour": hour, "as_of": as_of.isoformat(),
                       "river_level_m": result["simulated_river_level_m"],
                       "risk_level": result["risk_assessment"]["risk_level"],
                       "condition": state["condition"], "outcome": state["outcome"],
                       "state_before": state["current_state"],
-                      "state_after": state["resulting_state"], "reason": state["reason"]})
+                      "state_after": state["resulting_state"], "reason": state["reason"],
+                      "traffic_scenario": traffic_scenario,
+                      "traffic_status": (state.get("traffic") or {}).get("status"),
+                      "traffic_hold": state.get("traffic_hold"),
+                      "evidence_classes": {k: v.get("evidence_class") for k, v in
+                                           (state.get("agent_evidence") or {}).items()},
+                      "capability_state": result.get("capability_state"),
+                      "capabilities_granted": changes.get("allowlist_added", []),
+                      "capabilities_revoked": changes.get("allowlist_revoked", []),
+                      "real_world_authorization": result.get("real_world_authorization"),
+                      "is_simulated": True})
     return steps
 
 
@@ -797,8 +1135,12 @@ def main(argv: list[str] | None = None) -> int:
         for s in steps:
             change = (f"{s['state_before']} -> {s['state_after']}"
                       if s["state_before"] != s["state_after"] else s["state_after"])
+            perms = (f"  +{','.join(s['capabilities_granted']) or '-'}"
+                     f" -{','.join(s['capabilities_revoked']) or '-'}"
+                     if s["state_before"] != s["state_after"] else "")
             print(f"h{s['hour']:>3}  {s['river_level_m']!s:>5} m  risk {s['risk_level']:<13}"
-                  f" {s['condition'] or '-':<12} {s['outcome']:<22} {change}")
+                  f" {s['condition'] or '-':<12} traffic {s['traffic_status'] or '-':<14}"
+                  f" {s['outcome']:<22} {change}{perms}")
     return 0
 
 

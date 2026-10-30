@@ -16,7 +16,7 @@ import requests
 import src.dashboard_service as dashboard_module
 from src.audit_log import AuditLog
 from src.dashboard_service import DashboardService, sanitize
-from src.disaster_state_manager import _record_digest, new_state_record
+from src.disaster_state_manager import _record_digest, load_state_record, new_state_record
 from src.river_agent_workflow import run_risk_scenario, run_river_workflow
 from src.river_api import create_server
 from src.river_monitoring_agent import PROJECT_DIR
@@ -105,7 +105,10 @@ def test_real_mode_verified_fresh(api):
     assert river["series"]["status"] == "AVAILABLE" and len(river["series"]["points"]) == 6
     assert doc["weather"]["is_simulated"] is False
     assert doc["state"]["state_basis"] == "NO_RECORD_NORMAL_ASSUMED"
-    assert doc["state"]["record_saved_by_dashboard"] is False
+    # Verified, fresh, audited evaluation: the real record is saved automatically.
+    assert doc["state"]["label"] == "AUTOMATIC STATE EVALUATION"
+    assert doc["state"]["record_saved_by_dashboard"] is True
+    assert doc["state"]["automatic"]["agent_evidence"]["river"]["evidence_class"] == "VERIFIED_LIVE"
     assert doc["safety"]["executes_actions"] is False
 
 
@@ -151,14 +154,14 @@ def test_real_matches_the_workflow_exactly(tmp_path):
         [d["reason"] for d in direct["capability_decisions"]]
 
 
-# ---- persisted state is read, never written -------------------------------------------------------
+# ---- persisted state: saved automatically in real mode only ---------------------------------------
 
 def _write_record(path, record):
     path.write_text(json.dumps(record), encoding="utf-8")
     return path.read_bytes()
 
 
-def test_persisted_real_record_is_read_only(tmp_path):
+def test_persisted_real_record_is_updated_by_real_mode_only(tmp_path):
     path = tmp_path / "real_state.json"
     before = _write_record(path, new_state_record("ALERT", "real"))
     dash = dashboard(tmp_path, clean_live_session(), state_file=path)
@@ -166,8 +169,12 @@ def test_persisted_real_record_is_read_only(tmp_path):
     assert doc["state"]["persisted"]["state"] == "ALERT"
     assert doc["state"]["state_used_for_capability_checks"] == "ALERT"
     assert doc["state"]["state_basis"] == "PERSISTED_RECORD"
-    dash.get("simulated", "simulated-high-risk", "ALERT")
-    assert path.read_bytes() == before  # neither mode wrote it
+    saved = load_state_record(path)            # valid, with this observation in its history
+    assert path.read_bytes() != before and saved["state"] == "ALERT"
+    assert len(saved["history"]) == 1
+    after_real = path.read_bytes()
+    dash.get("simulated", "simulated-high-risk")
+    assert path.read_bytes() == after_real     # simulated mode never writes it
 
 
 @pytest.mark.parametrize("record,problem", [
@@ -188,13 +195,13 @@ def test_invalid_or_wrong_scope_record_falls_back_to_normal_visibly(tmp_path, re
 
 def test_simulated_mode_is_labelled_and_matches_the_scenario(tmp_path):
     dash = dashboard(tmp_path)
-    doc, _ = dash.get("simulated", "simulated-high-risk", "ALERT")
+    doc, _ = dash.get("simulated", "simulated-high-risk")
     assert doc["data_label"] == "SIMULATED DATA" and doc["is_simulated"] is True
     assert doc["river"]["is_simulated"] and doc["river"]["level"]["role"] == "SIMULATED"
     assert doc["weather"]["is_simulated"] is True
     assert doc["state"]["evaluation"]["state_applies_to"] == "SIMULATION_ONLY"
     direct = run_risk_scenario("simulated-high-risk", make_service(tmp_path),
-                               AuditLog(tmp_path / "d.jsonl"), disaster_state="ALERT")
+                               AuditLog(tmp_path / "d.jsonl"), disaster_state="NORMAL")
     assert doc["risk"]["assessment_id"] == direct["risk_assessment"]["assessment_id"]
     assert doc["safety"]["real_world_authorization"] == "RESTRICTED"
     for d in doc["safety"]["decisions"]:
@@ -248,7 +255,8 @@ def test_sanitize_keeps_urls_routes_and_units():
 def test_audit_events_are_included_and_redacted(tmp_path):
     doc, _ = dashboard(tmp_path, clean_live_session()).get("real")
     events = [e["event"] for e in doc["audit"]["events"]]
-    assert events[0] == "river_workflow_started" and events[-1] == "river_workflow_completed"
+    assert events[0] == "river_workflow_started" and "river_workflow_completed" in events
+    assert events[-1] == "disaster_state_record_saved"  # saved after the audited run
     assert "risk_assessment_completed" in events
     assert any(e.startswith("disaster_state_") for e in events)
     assert all(e["written"] is True for e in doc["audit"]["events"])

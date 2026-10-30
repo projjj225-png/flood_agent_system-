@@ -60,10 +60,11 @@ from src.river_monitoring_agent import (
     validate_thresholds,
 )
 from src.river_service import MODE_SIMULATED, RiverEvidenceService
+from src.traffic_agent import run_simulated_at as run_simulated_traffic_at
 
 DEFAULT_SIM_CONFIG_PATH = PROJECT_DIR / "config" / "river_simulation.json"
 LIVE_LABEL = "SIMULATED LIVE"
-SCENARIOS = ("stable", "slowly-rising", "rapidly-rising", "falling")
+SCENARIOS = ("stable", "slowly-rising", "rapidly-rising", "falling", "flood-wave")
 STATE_SPACING_MINUTES = 30  # catch-up evaluations: the state rules' 0.5 h min_spacing
 MAX_TIMELINE = 120
 _NUMERIC = ("base_m", "amplitude_m", "rate_m_per_hour", "wave_m", "wave_period_hours",
@@ -121,7 +122,31 @@ def validate_simulation_config(config: Any) -> dict[str, Any]:
             raise ValueError(f"Simulation config: {name} noise_m and wave_m must be >= 0.")
         if not isinstance(spec.get("weather"), str):
             raise ValueError(f"Simulation config: {name}.weather must be a file path.")
+        spec = {**spec, "traffic": traffic_plan(spec.get("traffic"), name)}
+        scenarios[name] = spec
     return {**config, "thresholds": thresholds, "scenarios": scenarios}
+
+
+def traffic_plan(value: Any, name: str) -> list[dict[str, Any]]:
+    """A scenario's fabricated traffic: one file, or [{"from_hour", "path"}, ...] by hours
+    since the session started (the first entry must start at hour 0 or before)."""
+    if value is None:
+        return []
+    if isinstance(value, str):
+        return [{"from_hour": 0.0, "path": value}]
+    if not isinstance(value, list) or not value:
+        raise ValueError(f"Simulation config: {name}.traffic must be a file path or a list.")
+    plan = []
+    for item in value:
+        if not isinstance(item, dict) or not isinstance(item.get("path"), str):
+            raise ValueError(f"Simulation config: {name}.traffic entries need a path.")
+        plan.append({"from_hour": _number(item.get("from_hour"), f"{name}.traffic.from_hour"),
+                     "path": item["path"]})
+    hours = [p["from_hour"] for p in plan]
+    if hours != sorted(hours) or len(set(hours)) != len(hours) or hours[0] > 0:
+        raise ValueError(f"Simulation config: {name}.traffic must be in increasing from_hour "
+                         "order, starting at hour 0 or before.")
+    return plan
 
 
 def load_simulation_config(path: str | Path = DEFAULT_SIM_CONFIG_PATH) -> dict[str, Any]:
@@ -322,6 +347,9 @@ class RealtimeRiverSimulation:
         self.csv_path = service.resolve_path(
             f"{self.config['output_dir']}/upper_anicut_sim_{scenario}_{start_state.lower()}.csv")
         self.weather_path = service.resolve_path(self.spec["weather"])
+        # Fabricated TrafficAgent scenario(s), re-timed to each evaluation (SIMULATED).
+        self.traffic_plan = [(p["from_hour"], service.resolve_path(p["path"]))
+                             for p in self.spec.get("traffic") or []]
         sim_config = json.loads(json.dumps(service.config))
         sim_config["simulated"] = {"path": str(self.csv_path), "station_id": self.station_id,
                                    "cross_check_paths": []}
@@ -374,11 +402,13 @@ class RealtimeRiverSimulation:
     def _run(self, audit_log: AuditLog, as_of: datetime | None) -> dict[str, Any]:
         at = as_of or self.clock()
         weather = realtime_weather(self.weather_path, at)
+        path = self.traffic_path_at(at)
+        traffic = run_simulated_traffic_at(path, at) if path else None
         result = run_river_workflow(
             self.service, audit_log, mode=MODE_SIMULATED, disaster_state=self.record["state"],
             as_of=as_of, cross_check_paths=[], independent_paths=[], weather=weather,
             state_record=self.record, scenario=f"realtime-simulation:{self.scenario}",
-            include_evidence=True)
+            include_evidence=True, traffic=traffic)
         state = result["state_evaluation"]
         if state.get("record") is not None and state["outcome"] != "EVALUATION_FAILED" \
                 and not result["workflow_audit_write_errors"]:
@@ -396,11 +426,18 @@ class RealtimeRiverSimulation:
             "condition": state.get("condition"), "outcome": state.get("outcome"),
             "state_before": state.get("current_state"),
             "state_after": state.get("resulting_state"),
+            "traffic_status": (state.get("traffic") or {}).get("status"),
             "real_world_authorization": result.get("real_world_authorization"),
         })
         del self.timeline[:-MAX_TIMELINE]
         self.result = result
         return result
+
+    def traffic_path_at(self, at: datetime) -> Path | None:
+        hours = (at - self.started_at).total_seconds() / 3600
+        chosen = [path for start, path in self.traffic_plan if start <= hours]
+        return chosen[-1] if chosen else (self.traffic_plan[0][1] if self.traffic_plan
+                                          else None)
 
     def info(self) -> dict[str, Any]:
         latest = self.generator.readings[-1] if self.generator.readings else None
@@ -435,7 +472,8 @@ class RealtimeRiverSimulation:
 
 
 class SimulationRegistry:
-    """At most one session per (scenario, start state); created on first use."""
+    """At most one session per scenario; created on first use. Every session starts in
+    NORMAL: the state is never chosen, only evaluated."""
 
     def __init__(self, service: RiverEvidenceService, config: dict[str, Any] | None = None,
                  clock: Callable[[], datetime] | None = None):
@@ -445,13 +483,12 @@ class SimulationRegistry:
         self._sessions: dict[tuple[str, str], RealtimeRiverSimulation] = {}
         self._lock = threading.Lock()
 
-    def session(self, scenario: str, start_state: str) -> RealtimeRiverSimulation:
+    def session(self, scenario: str) -> RealtimeRiverSimulation:
         with self._lock:
-            key = (scenario, start_state)
-            if key not in self._sessions:
-                self._sessions[key] = RealtimeRiverSimulation(
-                    self.service, scenario, start_state, self.config, self.clock)
-            return self._sessions[key]
+            if scenario not in self._sessions:
+                self._sessions[scenario] = RealtimeRiverSimulation(
+                    self.service, scenario, "NORMAL", self.config, self.clock)
+            return self._sessions[scenario]
 
 
 # --------------------------------------------------------------------------

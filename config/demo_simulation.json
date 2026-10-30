@@ -1,0 +1,139 @@
+{
+  "_comment": "Continuous demonstration simulation (src/simulation_engine.py). EVERY reading it produces is FABRICATED and labelled SIMULATED LIVE: it is not a Central Water Commission observation and can never authorize a real-world action. Each tick (every tick_seconds of real time) advances the SIMULATION clock by simulated_minutes_per_tick and produces readings_per_tick new river readings (every 15 simulated minutes by default), one hour of rainfall and a fresh traffic snapshot, all of which go through the normal River Agent validation/QC, Risk Assessment Engine, Evidence Layer, Disaster State Manager and capability control. A scenario sets the physical conditions the generator drives towards (target river level, rainfall), never the disaster state: every session starts in NORMAL and the state changes only through the state manager's own rules. The station UPPER_ANICUT_SIM is a twin of UPPER_ANICUT that reuses the real station's QC rules; the thresholds below are TEST/RESEARCH values, NOT official warning or danger levels. The state record lives in memory with scope 'simulated' and is never written to the real state file.",
+  "station_id": "UPPER_ANICUT_SIM",
+  "twin_of": "UPPER_ANICUT",
+  "qc_from_station": "UPPER_ANICUT",
+  "tick_seconds": 10,
+  "simulated_minutes_per_tick": 60,
+  "readings_per_tick": 4,
+  "wave_period_hours": 12,
+  "speeds": [
+    1,
+    2,
+    5
+  ],
+  "warmup_hours": 24,
+  "history_limit": 240,
+  "activity_limit": 200,
+  "autostart": true,
+  "start_scenario": "FULL_CYCLE",
+  "csv_path": "outputs/simulated_demo/upper_anicut_sim_demo.csv",
+  "audit_path": null,
+  "river_audit_path": "outputs/audit/simulation_demo_river_audit.jsonl",
+  "thresholds": {
+    "UPPER_ANICUT_SIM": {
+      "warning_level_m": 75.0,
+      "danger_level_m": 75.6,
+      "reference": "TEST VALUES - not official; chosen above the 2021-2025 CWC telemetry's usual high-flow band (about 74.8-75.0 m RL) for software testing only"
+    }
+  },
+  "scenarios": {
+    "_comment": "Deterministic profiles. Underlying level: base(t+dt) = base + clamp(response_per_hour x (target_level_m - base) x dt, -max_fall, +max_rise). Reading = base + wave_m x sin(2 pi t / wave_period_hours) + noise (deterministic per session and timestamp, at most noise_m). Rain intensity relaxes towards rain_mm_per_hour at rain_response_per_hour; each hour varies deterministically by up to rain_variability. Traffic entries are hours since the scenario was selected. Target levels are chosen against the TEST thresholds above (warning 75.0 m, danger 75.6 m, recovery level 74.8 m = warning - 0.2 m).",
+    "NORMAL": {
+      "label": "Normal",
+      "description": "Stable river well below the TEST warning level, with small natural fluctuations; light rain.",
+      "target_level_m": 73.45,
+      "response_per_hour": 0.3,
+      "max_rise_m_per_hour": 0.2,
+      "max_fall_m_per_hour": 0.3,
+      "noise_m": 0.012,
+      "rain_mm_per_hour": 0.3,
+      "rain_response_per_hour": 0.5,
+      "rain_variability": 0.5,
+      "forecast_mm_per_hour": 0.3,
+      "traffic": [
+        {
+          "from_hour": 0,
+          "path": "data/simulated/traffic/normal_flow.json"
+        }
+      ],
+      "wave_m": 0.06
+    },
+    "ALERT": {
+      "label": "Alert",
+      "description": "River rising gradually towards and across the TEST warning level (not the danger level), with small fluctuations; heavy rain observed and forecast.",
+      "target_level_m": 75.3,
+      "response_per_hour": 0.3,
+      "max_rise_m_per_hour": 0.3,
+      "max_fall_m_per_hour": 0.3,
+      "noise_m": 0.012,
+      "rain_mm_per_hour": 3.6,
+      "rain_response_per_hour": 0.5,
+      "rain_variability": 0.35,
+      "forecast_mm_per_hour": 4.0,
+      "traffic": [
+        {
+          "from_hour": 0,
+          "path": "data/simulated/traffic/evacuation_congestion.json"
+        }
+      ],
+      "wave_m": 0.04
+    },
+    "EMERGENCY": {
+      "label": "Emergency",
+      "description": "River rising substantially above the TEST danger level to a sustained peak; heavy rain with an extremely heavy forecast; riverside evacuation road closed.",
+      "target_level_m": 76.1,
+      "response_per_hour": 0.35,
+      "max_rise_m_per_hour": 0.35,
+      "max_fall_m_per_hour": 0.3,
+      "noise_m": 0.012,
+      "rain_mm_per_hour": 3.8,
+      "rain_response_per_hour": 0.5,
+      "rain_variability": 0.3,
+      "forecast_mm_per_hour": 9.0,
+      "traffic": [
+        {
+          "from_hour": 0,
+          "path": "data/simulated/traffic/flood_road_closure.json"
+        }
+      ],
+      "wave_m": 0.05
+    },
+    "RECOVERY": {
+      "label": "Recovery",
+      "description": "River declining gradually from an elevated level, with fluctuations; rain easing; the closed road reopens after 4 simulated hours. At an already normal level the river simply stays low.",
+      "target_level_m": 73.5,
+      "response_per_hour": 0.25,
+      "max_rise_m_per_hour": 0.2,
+      "max_fall_m_per_hour": 0.3,
+      "noise_m": 0.012,
+      "rain_mm_per_hour": 0.1,
+      "rain_response_per_hour": 0.5,
+      "rain_variability": 0.5,
+      "forecast_mm_per_hour": 0.2,
+      "traffic": [
+        {
+          "from_hour": 0,
+          "path": "data/simulated/traffic/flood_road_closure.json"
+        },
+        {
+          "from_hour": 4,
+          "path": "data/simulated/traffic/normal_flow.json"
+        }
+      ],
+      "wave_m": 0.04
+    }
+  },
+  "cycle": {
+    "label": "Full flood cycle (automatic)",
+    "description": "Conditions move NORMAL -> ALERT -> EMERGENCY -> RECOVERY on a fixed simulated-hour schedule. The disaster state follows only when the evidence satisfies the state manager's rules.",
+    "schedule": [
+      {
+        "from_hour": 0,
+        "scenario": "NORMAL"
+      },
+      {
+        "from_hour": 3,
+        "scenario": "ALERT"
+      },
+      {
+        "from_hour": 12,
+        "scenario": "EMERGENCY"
+      },
+      {
+        "from_hour": 22,
+        "scenario": "RECOVERY"
+      }
+    ]
+  }
+}

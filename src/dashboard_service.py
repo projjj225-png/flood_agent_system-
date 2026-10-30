@@ -39,10 +39,18 @@ from pathlib import Path
 from typing import Any, Callable
 
 from src.audit_log import AuditLog, redact
-from src.disaster_state_manager import SEQUENCES, STATES, load_state_record, run_state_sequence
+from src.disaster_state_manager import (
+    SEQUENCES,
+    load_state_config,
+    load_state_record,
+    run_state_sequence,
+    save_state_record,
+)
 from src.hydro_analysis import analysis_document, load_analysis_inputs
+from src.insights import build_insights
 from src.river_forecast import MAX_INPUT_AGE_HOURS, MODEL_LABEL, evaluate, forecast_now, public
-from src.risk_assessment import WEATHER_SIMULATED_SOURCE_TYPE
+from src.risk_assessment import WEATHER_SIMULATED_SOURCE_TYPE, load_risk_config
+from src.risk_score import load_scoring_config
 from src.river_agent_workflow import RISK_SCENARIOS, run_risk_scenario, run_river_workflow
 from src.river_monitoring_agent import apply_quality_control, load_observations, parse_timestamp
 from src.river_service import RiverEvidenceService
@@ -60,6 +68,31 @@ REAL_LABEL = "REAL DATA"
 SIMULATED_LIVE_LABEL = LIVE_LABEL  # "SIMULATED LIVE"
 HISTORICAL_LABEL = "HISTORICAL CWC DATA"
 RECENT_MEASUREMENT_HOURS = 72
+SERIES_RANGES: dict[str, int | None] = {"24h": 24, "7d": 168, "30d": 720, "all": None}
+SERIES_MAX_POINTS = 1200
+
+
+def thin_points(readings: list[dict[str, Any]], max_points: int) -> list[dict[str, Any]]:
+    """At most ~max_points actual readings for a chart: each time bucket keeps its lowest and
+    highest reading (so peaks survive), in time order. Nothing is averaged or invented."""
+    def point(o: dict[str, Any]) -> dict[str, Any]:
+        return {"time": o["observed_at"].isoformat(), "level_m": o["river_level_m"]}
+    if len(readings) <= max_points:
+        return [point(o) for o in readings]
+    buckets = max(1, max_points // 2)
+    first, last = readings[0]["observed_at"], readings[-1]["observed_at"]
+    width = (last - first) / buckets
+    chosen: dict[int, list[dict[str, Any]]] = {}
+    for o in readings:
+        index = min(buckets - 1, int((o["observed_at"] - first) / width)) if width else 0
+        chosen.setdefault(index, []).append(o)
+    out = []
+    for index in sorted(chosen):
+        group = chosen[index]
+        low = min(group, key=lambda o: o["river_level_m"])
+        high = max(group, key=lambda o: o["river_level_m"])
+        out.extend(sorted({id(low): low, id(high): high}.values(), key=lambda o: o["observed_at"]))
+    return [point(o) for o in out]
 
 
 def recent_measurements(accepted: list[dict[str, Any]],
@@ -313,14 +346,50 @@ def river_block(result: dict[str, Any], evidence: dict[str, Any],
     }
 
 
+STATE_EVALUATION_LABEL = "AUTOMATIC STATE EVALUATION"
+
+
 def state_block(result: dict[str, Any], persisted: dict[str, Any] | None, basis: str,
-                record_problem: str | None, state_file: str | None) -> dict[str, Any]:
+                record_problem: str | None, state_file: str | None,
+                saved: dict[str, Any] | None = None) -> dict[str, Any]:
     se = _obj(result.get("state_evaluation"))
     record = _obj(se.get("record")) or _obj(persisted)
     history = [{k: e.get(k) for k in ("observed_at", "condition", "risk_level",
                                       "evaluated_at", "reasons")}
                for e in record.get("history") or [] if isinstance(e, dict)]
+    accepted = se.get("resulting_state")
+    proposed = se.get("proposed_state")
     return {
+        # The backend's own automatic evaluation; the page only displays it.
+        "label": STATE_EVALUATION_LABEL,
+        "selection": "AUTOMATIC",
+        "automatic": {
+            "accepted_state": accepted,
+            "previous_state": se.get("previous_state"),
+            "proposed_state": proposed if proposed not in (None, accepted) else None,
+            "outcome": se.get("outcome"),
+            "transition_this_run": se.get("outcome") == "TRANSITION_ACCEPTED",
+            "transition_at": se.get("transition_at"),
+            "reason": se.get("reason"),
+            "reasons": se.get("reasons") or [],
+            "condition": se.get("condition"),
+            "trigger_evidence": {
+                "evidence_id": se.get("evidence_id"),
+                "observed_at": se.get("observed_at"),
+                "risk_assessment_id": se.get("risk_assessment_id"),
+                "risk_level": se.get("risk_level"),
+                "supporting_evidence_ids": se.get("supporting_evidence_ids") or [],
+            },
+            "agent_evidence": se.get("agent_evidence"),
+            "traffic": se.get("traffic"),
+            "traffic_hold": se.get("traffic_hold"),
+            "confidence": se.get("confidence"),
+            "evidence_quality": se.get("evidence_quality"),
+            "capability_state": result.get("capability_state") or result.get("disaster_state"),
+            "capability_changes": result.get("capability_changes"),
+            "record_saved": saved or {"saved": False,
+                                      "reason": "Not a real-scope record; never saved."},
+        },
         "persisted": {
             "available": persisted is not None,
             "state": (persisted or {}).get("state"),
@@ -330,7 +399,9 @@ def state_block(result: dict[str, Any], persisted: dict[str, Any] | None, basis:
             "record_file": Path(state_file).name if state_file else None,
             "problem": record_problem,
         },
-        "state_used_for_capability_checks": result.get("disaster_state"),
+        "state_used_for_capability_checks": (result.get("capability_state")
+                                             or result.get("disaster_state")),
+        "state_at_start_of_run": result.get("disaster_state"),
         "state_basis": basis,
         "evaluation": {k: se.get(k) for k in (
             "outcome", "scope", "current_state", "proposed_state", "resulting_state",
@@ -338,12 +409,14 @@ def state_block(result: dict[str, Any], persisted: dict[str, Any] | None, basis:
             "supporting_evidence_ids", "evidence_id", "observed_at", "evaluated_at",
             "risk_level", "is_simulated", "state_applies_to", "audit_written",
             "record_changed", "state_decision_id", "authorizes_actions",
-            "executes_actions")},
+            "executes_actions", "previous_state", "transition_at", "confidence",
+            "evidence_quality", "agent_evidence", "traffic", "traffic_hold")},
         "history": history[-50:],
-        "record_saved_by_dashboard": False,
-        "note": ("The dashboard never saves a state record. A proposed or accepted next "
-                 "state becomes the persisted state only when the workflow CLI saves it "
-                 "(--state-file) after a fully audited run."),
+        "record_saved_by_dashboard": bool((saved or {}).get("saved")),
+        "note": ("The state is evaluated automatically by the backend from the river, "
+                 "weather and traffic evidence; it cannot be selected. A real-scope record "
+                 "is saved only after a fully audited run; simulated records are never "
+                 "saved to the real state file."),
     }
 
 
@@ -412,8 +485,15 @@ class DashboardService:
                  cache_seconds: float = 300.0,
                  monotonic: Callable[[], float] = time.monotonic,
                  simulation_config: dict[str, Any] | None = None,
-                 analysis_loader: Callable[[], dict[str, Any]] | None = None):
+                 analysis_loader: Callable[[], dict[str, Any]] | None = None,
+                 traffic_fetcher: Callable[[], dict[str, Any]] | None = None,
+                 persist_state: bool = True):
         self.service = service
+        # No fetcher means no traffic evidence (never "roads are fine"). river_api wires
+        # the live TrafficAgent; without a TomTom key it reports DATA_UNAVAILABLE.
+        self.traffic_fetcher = traffic_fetcher
+        # Real mode saves the accepted real-scope record after a fully audited run.
+        self.persist_state = persist_state
         self.state_file = service.resolve_path(state_file) if state_file else None
         self.audit_path = service.resolve_path(audit_path) if audit_path else None
         self.weather_fetcher = weather_fetcher or (lambda: WeatherAgent(past_days=1).run())
@@ -450,16 +530,21 @@ class DashboardService:
                               for k in RISK_SCENARIOS],
                 "sequences": [{"name": k, "description": SEQUENCE_DESCRIPTIONS.get(k, "")}
                               for k in SEQUENCES],
-                "start_states": list(STATES), "data_label": SIMULATED_LABEL,
-                "live_simulation": live}
+                # The disaster state is never selected: every mode starts from its record
+                # (simulations from NORMAL) and changes only by automatic evaluation.
+                "state_selection": "AUTOMATIC", "simulation_start_state": "NORMAL",
+                "data_label": SIMULATED_LABEL, "live_simulation": live}
 
     def get(self, mode: str, scenario: str | None = None,
             state: str | None = None) -> tuple[dict[str, Any], float]:
         """Validated, cached dashboard document. Raises ValueError for bad input."""
         if mode not in MODES:
             raise ValueError(f"mode must be one of {', '.join(MODES)}")
-        if mode == "real" and (scenario or state):
-            raise ValueError("scenario and state apply to simulated mode only")
+        if state is not None:
+            raise ValueError("The disaster state is evaluated automatically from the evidence "
+                             "and cannot be selected.")
+        if mode == "real" and scenario:
+            raise ValueError("scenario applies to simulated modes only")
         if mode == "simulated":
             scenario = scenario or "rising-river-increasing-rain"
             if scenario not in RISK_SCENARIOS:
@@ -468,28 +553,18 @@ class DashboardService:
             scenario = scenario or "stable"
             if scenario not in LIVE_SCENARIOS:
                 raise ValueError(f"scenario must be one of {', '.join(LIVE_SCENARIOS)}")
-        if mode != "real":
-            state = state or "NORMAL"
-            if state not in STATES:
-                raise ValueError(f"state must be one of {', '.join(STATES)}")
         if mode == "simulated_live":
-            return self._simulated_live(scenario, state)
-        return self._cached(("dashboard", mode, scenario, state),
+            return self._simulated_live(scenario)
+        return self._cached(("dashboard", mode, scenario),
                             lambda: self._real() if mode == "real"
-                            else self._simulated(scenario, state))
+                            else self._simulated(scenario))
 
     def analysis(self) -> dict[str, Any]:
         """Historical analysis + forecast validation; freshness judged at the clock now."""
         doc = self._base("analysis", False)
         doc["data_label"] = HISTORICAL_LABEL
         try:
-            with self._analysis_lock:
-                if self._analysis_inputs is None:
-                    inputs = self.analysis_loader()
-                    primary = inputs["primary"]
-                    self._analysis_eval = evaluate(inputs["qc"][primary][0], primary)
-                    self._analysis_inputs = inputs
-            inputs, evaluation = self._analysis_inputs, self._analysis_eval
+            inputs, evaluation = self._load_analysis()
             now = self.service.clock()
             doc["analysis"] = analysis_document(inputs, now)
             accepted = inputs["qc"][inputs["primary"]][0]
@@ -514,6 +589,70 @@ class DashboardService:
             }
         except Exception as exc:  # never crash the server; never invent data
             doc["error"] = f"Historical analysis could not be built ({type(exc).__name__})."
+        return sanitize(doc, self.service.base_dir)
+
+    def _load_analysis(self) -> tuple[dict[str, Any], dict[str, Any]]:
+        """The historical export, QC'd, and the forecast validation: built once per process."""
+        with self._analysis_lock:
+            if self._analysis_inputs is None:
+                inputs = self.analysis_loader()
+                primary = inputs["primary"]
+                self._analysis_eval = evaluate(inputs["qc"][primary][0], primary)
+                self._analysis_inputs = inputs
+        return self._analysis_inputs, self._analysis_eval
+
+    def analysis_series(self, station: str | None, range_name: str | None) -> dict[str, Any]:
+        """QC-accepted MEASURED readings of one historical station for a time range ending at
+        that station's latest accepted reading, with window statistics and data quality.
+
+        Display only (never an input to risk, state or permissions). Every plotted point is
+        an actual reading: long ranges are thinned by keeping each bucket's lowest and
+        highest reading, never an average. The statistics use every reading in the window.
+        """
+        if range_name not in SERIES_RANGES:
+            raise ValueError(f"range must be one of {', '.join(SERIES_RANGES)}")
+        doc = self._base("analysis", False)
+        doc["data_label"] = HISTORICAL_LABEL
+        try:
+            inputs, _ = self._load_analysis()
+        except Exception as exc:  # never crash the server; never invent data
+            doc["error"] = f"Historical data could not be loaded ({type(exc).__name__})."
+            return sanitize(doc, self.service.base_dir)
+        stations = list(inputs["river_ids"])
+        station = station or inputs["primary"]
+        if station not in stations:
+            raise ValueError(f"station must be one of {', '.join(stations)}")
+        accepted, rejected, summary = inputs["qc"][station]
+        doc.update(station_id=station, stations=stations, range=range_name,
+                   source_name=inputs["registry"]["stations"][station]["source_name"],
+                   value_basis="MEASURED", points=[], stats=None)
+        readings = sorted(accepted, key=lambda o: o["observed_at"])
+        if not readings:
+            doc["reason"] = "No QC-accepted readings for this station."
+            return sanitize(doc, self.service.base_dir)
+        end = readings[-1]["observed_at"]
+        hours = SERIES_RANGES[range_name]
+        start = readings[0]["observed_at"] if hours is None else end - timedelta(hours=hours)
+        window = [o for o in readings if o["observed_at"] >= start]
+        rejected_in = [o for o in rejected if start <= o["observed_at"] <= end]
+        levels = [o["river_level_m"] for o in window]
+        by_reason: dict[str, int] = {}
+        for o in rejected_in:
+            code = o.get("qc_code") or "REJECTED"
+            by_reason[code] = by_reason.get(code, 0) + 1
+        checked = len(window) + len(rejected_in)
+        doc.update(
+            window_start=start.isoformat(), window_end=end.isoformat(),
+            latest={"level_m": readings[-1]["river_level_m"], "observed_at": end.isoformat()},
+            stats={"min_m": min(levels), "max_m": max(levels),
+                   "mean_m": round(sum(levels) / len(levels), 3), "readings": len(levels)},
+            quality={"accepted": len(window), "rejected": len(rejected_in),
+                     "accepted_pct": round(100 * len(window) / checked, 1) if checked else None,
+                     "rejected_by_reason": by_reason,
+                     "station_accepted": summary.get("accepted"),
+                     "station_checked": summary.get("checked")},
+            points=thin_points(window, SERIES_MAX_POINTS),
+            thinned=len(window) > SERIES_MAX_POINTS, max_points=SERIES_MAX_POINTS)
         return sanitize(doc, self.service.base_dir)
 
     def sequence(self, name: str) -> tuple[dict[str, Any], float]:
@@ -577,39 +716,84 @@ class DashboardService:
                 weather_error = None
             except Exception as exc:  # weather failure is shown, never hidden
                 weather, weather_error = None, f"{type(exc).__name__}: {exc}"
+            traffic, traffic_error = None, None
+            if self.traffic_fetcher is not None:
+                try:
+                    traffic = self.traffic_fetcher()
+                except Exception as exc:  # missing traffic is reported, never assumed fine
+                    traffic_error = f"{type(exc).__name__}: {exc}"
             audit = self._audit()
             result = run_river_workflow(self.service, audit, mode="live",
                                         disaster_state=state, weather=weather,
-                                        state_record=persisted, include_evidence=True)
-            doc.update(self._assemble(result, audit, persisted, basis, problem))
+                                        state_record=persisted, include_evidence=True,
+                                        traffic=traffic)
+            saved = self._save_real_record(result, audit, problem)
+            doc.update(self._assemble(result, audit, persisted, basis, problem, saved=saved))
             if weather_error:
                 doc["weather"]["fetch_error"] = weather_error
+            if traffic_error:
+                doc["state"]["automatic"]["traffic_fetch_error"] = traffic_error
         except Exception as exc:  # never crash the server; never invent data
             doc["error"] = f"Dashboard could not be assembled ({type(exc).__name__})."
         return sanitize(doc, self.service.base_dir)
 
-    def _simulated(self, scenario: str, state: str) -> dict[str, Any]:
+    def _save_real_record(self, result: dict[str, Any], audit: RecordingAuditLog,
+                          record_problem: str | None) -> dict[str, Any]:
+        """Persist the state manager's real-scope record (the existing atomic save).
+
+        Only a fully audited evaluation is saved, and an invalid record on disk is
+        never overwritten (it stays for inspection; NORMAL is used meanwhile).
+        """
+        se = _obj(result.get("state_evaluation"))
+        record = se.get("record")
+        reason = None
+        if not self.persist_state or not self.state_file:
+            reason = "State persistence is switched off for this service."
+        elif record_problem:
+            reason = "The record on disk is invalid; it is kept for inspection, not overwritten."
+        elif not isinstance(record, dict) or record.get("scope") != "real":
+            reason = "Only a real-scope record is saved."
+        elif not se.get("record_changed"):
+            reason = "Nothing changed in the record."
+        elif se.get("audit_written") is not True or result.get("workflow_audit_write_errors"):
+            reason = "The evaluation could not be fully audited; nothing is saved."
+        if reason:
+            return {"saved": False, "reason": reason}
+        try:
+            save_state_record(record, self.state_file)
+        except (OSError, ValueError) as exc:
+            audit.log(result.get("run_id"), "disaster_state_record_save_failed",
+                      error=f"{type(exc).__name__}: {exc}")
+            return {"saved": False, "reason": f"Saving failed ({type(exc).__name__})."}
+        audit.log(result.get("run_id"), "disaster_state_record_saved",
+                  state=record.get("state"), record_id=record.get("record_id"),
+                  outcome=se.get("outcome"), state_decision_id=se.get("state_decision_id"))
+        return {"saved": True, "state": record.get("state"), "record_id": record.get("record_id"),
+                "record_file": self.state_file.name}
+
+    def _simulated(self, scenario: str) -> dict[str, Any]:
         doc = self._base("simulated", True)
         doc.update(scenario=scenario, scenario_description=SCENARIO_DESCRIPTIONS.get(scenario),
-                   start_state=state)
+                   start_state="NORMAL")
         try:
             audit = self._audit()
-            result = run_risk_scenario(scenario, self.service, audit, disaster_state=state,
+            result = run_risk_scenario(scenario, self.service, audit, disaster_state="NORMAL",
                                        include_evidence=True)
             doc.update(self._assemble(result, audit, None, "SCENARIO_START_STATE", None))
         except Exception as exc:
             doc["error"] = f"Simulation could not be run ({type(exc).__name__})."
         return sanitize(doc, self.service.base_dir)
 
-    def _simulated_live(self, scenario: str, state: str) -> tuple[dict[str, Any], float]:
+    def _simulated_live(self, scenario: str) -> tuple[dict[str, Any], float]:
         """The running session's latest result. Recomputed only when a new 5-minute
-        reading is due, so polling never re-evaluates the same observation."""
-        key = (scenario, state)
+        reading is due, so polling never re-evaluates the same observation. Every
+        session starts in NORMAL; its state changes only by automatic evaluation."""
+        key = (scenario,)
         with self._lock:
             doc = self._base("simulated_live", True)
-            doc.update(scenario=scenario, start_state=state)
+            doc.update(scenario=scenario, start_state="NORMAL")
             try:
-                session = self._registry().session(scenario, state)
+                session = self._registry().session(scenario)
                 audit = self._audit()
                 result, recomputed = session.tick(audit)
                 cached = self._live_docs.get(key)
@@ -640,9 +824,16 @@ class DashboardService:
                   persisted: dict[str, Any] | None, basis: str,
                   record_problem: str | None,
                   river_service: RiverEvidenceService | None = None,
-                  extra_roots: list[Path] | None = None) -> dict[str, Any]:
+                  extra_roots: list[Path] | None = None,
+                  saved: dict[str, Any] | None = None) -> dict[str, Any]:
         evidence = _obj(result.get("evidence"))
+        try:
+            insights = build_insights(result, load_scoring_config(), load_risk_config(),
+                                      load_state_config())
+        except Exception as exc:  # presentation only: the decisions above stand regardless
+            insights = {"error": f"Insights could not be built ({type(exc).__name__})."}
         return {
+            "insights": insights,
             "run_id": result.get("run_id"),
             "decision_id": result.get("decision_id"),
             "weather": weather_block(result.get("weather_evidence")),
@@ -650,7 +841,7 @@ class DashboardService:
                                  extra_roots),
             "risk": result.get("risk_assessment"),
             "state": state_block(result, persisted, basis, record_problem,
-                                 str(self.state_file) if self.state_file else None),
+                                 str(self.state_file) if self.state_file else None, saved),
             "safety": safety_block(result),
             "evidence_layer": evidence_block(result),
             "audit": {"events": audit.entries[-MAX_AUDIT_EVENTS:],

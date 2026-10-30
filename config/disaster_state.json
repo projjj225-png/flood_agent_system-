@@ -8,23 +8,31 @@
     "RECOVERY": ["EMERGENCY", "ALERT", "NORMAL"]
   },
   "conditions": {
-    "_comment": "Each evaluation is classified into the FIRST condition it meets, in this order: EMERGENCY, ALERT, NORMAL, IMPROVED; otherwise ELEVATED. Invalid, stale, conflicting or indeterminate evidence is INSUFFICIENT and never meets any condition.",
+    "_comment": "Each evaluation is classified into the FIRST condition it meets, in this order: EMERGENCY, ALERT, NORMAL, IMPROVED; otherwise ELEVATED. Invalid, stale, conflicting or indeterminate evidence is INSUFFICIENT and never meets any condition. river_threshold_min: the river reading itself must be at or above that CONFIGURED threshold (station threshold file: TEST values for the simulated station, never presented as official); when a station has no configured thresholds the requirement cannot be checked and the risk-based part applies alone. below_recovery_level: the river must be below the recovery level (warning level - river_thresholds.recovery_margin_m), so a level hovering just under the warning level is held by hysteresis instead of de-escalating.",
     "EMERGENCY": {"min_risk_level": "CRITICAL", "min_confidence": "MEDIUM",
-                  "river_factor_min_level": "HIGH"},
+                  "river_factor_min_level": "HIGH",
+                  "river_threshold_min": "AT_OR_ABOVE_DANGER"},
     "ALERT": {"min_risk_level": "HIGH", "min_confidence": "LOW",
-              "river_factor_min_level": null},
+              "river_factor_min_level": null,
+              "river_threshold_min": "AT_OR_ABOVE_WARNING"},
     "NORMAL": {"max_risk_level": "LOW", "min_confidence": "LOW",
                "required_rules_all": ["R3_RIVER_BELOW_WARNING", "R6_RIVER_STEADY_OR_FALLING"],
-               "forbidden_rules_any": []},
+               "forbidden_rules_any": [], "below_recovery_level": true},
     "IMPROVED": {"max_risk_level": "MODERATE", "min_confidence": "LOW",
                  "required_rules_all": ["R3_RIVER_BELOW_WARNING"],
-                 "forbidden_rules_any": ["R4_RIVER_RAPID_RISE", "R5_RIVER_RISING"]}
+                 "forbidden_rules_any": ["R4_RIVER_RAPID_RISE", "R5_RIVER_RISING"],
+                 "below_recovery_level": true}
+  },
+  "river_thresholds": {
+    "_comment": "Recovery level = configured warning level - recovery_margin_m. PROTOTYPE research/test value (hysteresis band), not an official CWC criterion.",
+    "recovery_margin_m": 0.2,
+    "reference": "Prototype hysteresis margin (not approved by any authority)."
   },
   "rules": {
     "_comment": "Per current state, rules are tried in order; the first whose condition holds AND whose persistence is met is the transition. Persistence counts DISTINCT observations (observed_at), never repeated evaluations of the same one. Escalation rules come first and ignore evaluation gaps; de-escalation rules require an unbroken run (gap_breaks_run). Sampling: an observation counts only if it is at least min_spacing_hours after the previously counted one (0.5 h, about half the hourly telemetry interval), and a de-escalation run ends where consecutive observations are more than max_gap_hours apart (3 h, the same as the river evidence's freshness limit max_age_hours). Escalation rules use max_gap_hours null so a worsening is never held back.",
     "NORMAL": [
       {"to": "ALERT", "when": ["ALERT", "EMERGENCY"], "kind": "escalation",
-       "min_observations": 1, "min_hours": 0, "gap_breaks_run": false,
+       "min_observations": 2, "min_hours": 0, "gap_breaks_run": false,
        "min_spacing_hours": 0.5, "max_gap_hours": null}
     ],
     "ALERT": [
@@ -45,12 +53,18 @@
        "min_observations": 2, "min_hours": 0, "gap_breaks_run": false,
        "min_spacing_hours": 0.5, "max_gap_hours": null},
       {"to": "ALERT", "when": ["ALERT", "EMERGENCY"], "kind": "escalation",
-       "min_observations": 1, "min_hours": 0, "gap_breaks_run": false,
+       "min_observations": 2, "min_hours": 0, "gap_breaks_run": false,
        "min_spacing_hours": 0.5, "max_gap_hours": null},
       {"to": "NORMAL", "when": ["NORMAL"], "kind": "de-escalation",
        "min_observations": 4, "min_hours": 12, "gap_breaks_run": true,
-       "min_spacing_hours": 0.5, "max_gap_hours": 3.0}
+       "min_spacing_hours": 0.5, "max_gap_hours": 3.0,
+       "requires_traffic": "ROUTES_USABLE"}
     ]
+  },
+  "traffic": {
+    "_comment": "PROTOTYPE recovery-exit requirement from the Traffic Agent (config/traffic_agent.json routes). Traffic NEVER escalates a state and never holds back an escalation. A rule with requires_traffic ROUTES_USABLE (only RECOVERY -> NORMAL here) is taken only when the latest TrafficAgent result has the same scope as the state record (simulated traffic can never change a real state), is at most max_age_hours old, and every configured evacuation route is in usable_route_conditions. Missing, stale, partial or wrong-scope traffic never counts as 'roads are fine': the state stays in RECOVERY. A BLOCKED route while the river looks normal is reported as CONFLICTING evidence. Without a TomTom key the live Traffic Agent returns DATA_UNAVAILABLE, so a real record cannot leave RECOVERY automatically.",
+    "max_age_hours": 1.0,
+    "usable_route_conditions": ["FREE_FLOW", "MODERATE"]
   },
   "history_limit": 200
 }

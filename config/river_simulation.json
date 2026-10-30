@@ -1,5 +1,5 @@
 {
-  "_comment": "Real-Time River Simulation (src/river_simulation.py). Every reading it produces is FABRICATED and labelled SIMULATED LIVE: it is not a CWC observation and can never authorize a real-world action. The simulated station UPPER_ANICUT_SIM is a twin of UPPER_ANICUT: it reuses the real station's QC rules (qc_from_station) so generated readings face exactly the same validation, but it has its own id so no fabricated reading can be attributed to the real station. Thresholds and scenario curves are TEST values, NOT official warning or danger levels.",
+  "_comment": "Real-Time River Simulation (src/river_simulation.py). Every reading it produces is FABRICATED and labelled SIMULATED LIVE: it is not a CWC observation and can never authorize a real-world action. Each scenario also names a FABRICATED Traffic Agent scenario (data/simulated/traffic/), re-timed to every evaluation, so the state manager sees all three agents. Every session starts in NORMAL; the state changes only by automatic evaluation. The simulated station UPPER_ANICUT_SIM is a twin of UPPER_ANICUT: it reuses the real station's QC rules (qc_from_station) so generated readings face exactly the same validation, but it has its own id so no fabricated reading can be attributed to the real station. Thresholds and scenario curves are TEST values, NOT official warning or danger levels.",
   "station_id": "UPPER_ANICUT_SIM",
   "twin_of": "UPPER_ANICUT",
   "qc_from_station": "UPPER_ANICUT",
@@ -21,25 +21,40 @@
       "description": "Steady river well below the TEST warning level; light fabricated rain.",
       "base_m": 73.4, "amplitude_m": 1.0, "rate_m_per_hour": 0.0,
       "wave_m": 0.012, "wave_period_hours": 6, "noise_m": 0.003,
-      "weather": "data/simulated/weather/light_rain.json"
+      "weather": "data/simulated/weather/light_rain.json",
+      "traffic": "data/simulated/traffic/normal_flow.json"
     },
     "slowly-rising": {
       "description": "River rising about 0.12 m/h below the TEST warning level; heavy, intensifying fabricated rain.",
       "base_m": 73.7, "amplitude_m": 1.2, "rate_m_per_hour": 0.12,
       "wave_m": 0.0, "wave_period_hours": 6, "noise_m": 0.003,
-      "weather": "data/simulated/weather/heavy_rain_intensifying.json"
+      "weather": "data/simulated/weather/heavy_rain_intensifying.json",
+      "traffic": "data/simulated/traffic/normal_flow.json"
     },
     "rapidly-rising": {
       "description": "River rising about 0.4 m/h through the TEST warning level towards the TEST danger level; extreme fabricated rain.",
       "base_m": 75.1, "amplitude_m": 1.2, "rate_m_per_hour": 0.4,
       "wave_m": 0.0, "wave_period_hours": 6, "noise_m": 0.003,
-      "weather": "data/simulated/weather/extreme_rain.json"
+      "weather": "data/simulated/weather/extreme_rain.json",
+      "traffic": "data/simulated/traffic/flood_road_closure.json"
     },
     "falling": {
       "description": "River receding from above the TEST warning level; rain easing after the event.",
       "base_m": 74.6, "amplitude_m": 0.9, "rate_m_per_hour": -0.25,
       "wave_m": 0.0, "wave_period_hours": 6, "noise_m": 0.003,
-      "weather": "data/simulated/weather/easing_after_event.json"
+      "weather": "data/simulated/weather/easing_after_event.json",
+      "traffic": "data/simulated/traffic/normal_flow.json"
+    },
+    "flood-wave": {
+      "description": "A fabricated flood wave: the river rises through the TEST warning and danger levels, peaks about 12 h after the start and recedes below the warning level after about 21 h; the riverside evacuation road is closed from hour 6 to hour 26. Run long enough, the state manager takes it NORMAL -> ALERT -> EMERGENCY -> RECOVERY -> NORMAL on its own.",
+      "base_m": 74.6, "amplitude_m": 1.0, "rate_m_per_hour": 0.0,
+      "wave_m": 1.2, "wave_period_hours": 48, "noise_m": 0.003,
+      "weather": "data/simulated/weather/easing_after_event.json",
+      "traffic": [
+        {"from_hour": 0, "path": "data/simulated/traffic/normal_flow.json"},
+        {"from_hour": 6, "path": "data/simulated/traffic/flood_road_closure.json"},
+        {"from_hour": 26, "path": "data/simulated/traffic/normal_flow.json"}
+      ]
     }
   }
 }
