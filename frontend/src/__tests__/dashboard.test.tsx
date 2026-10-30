@@ -11,6 +11,7 @@ import realStale from "./fixtures/real_stale.json";
 import realOutage from "./fixtures/real_outage.json";
 import simulated from "./fixtures/simulated_high_risk.json";
 import sequence from "./fixtures/sequence_flood_cycle.json";
+import simulatedLive from "./fixtures/simulated_live_recovery.json";
 
 const clone = <T,>(x: T): T => JSON.parse(JSON.stringify(x));
 const render = (doc: unknown) => {
@@ -168,10 +169,10 @@ describe("missing fields", () => {
 
 describe("no real-world actions", () => {
   it("has only read-only controls", () => {
-    const html = renderToStaticMarkup(<App />) + render(realStale) + render(simulated);
+    const html = renderToStaticMarkup(<App />) + render(realStale) + render(simulated) + render(simulatedLive);
     const buttons = [...html.matchAll(/<button[^>]*>([\s\S]*?)<\/button>/g)].map((m) => text(m[1]).trim());
     // Mode switch and a read-only reload (shown as "Loading…" before the first fetch).
-    expect(buttons.sort()).toEqual(["Loading…", "Real data", "Simulated demo"]);
+    expect(buttons.sort()).toEqual(["Loading…", "Real CWC Data", "Real-Time River Simulation", "Simulated demo"]);
     expect(html).not.toMatch(/<form|method="post"|type="submit"|<a\s/i);
     // No control is labelled as an action. (The page's own safety notice mentions
     // evacuation and dispatch as things it cannot do, so only labels are checked.)
@@ -239,5 +240,64 @@ describe("evidence layer", () => {
     const doc = clone(realStale) as Record<string, any>;
     delete doc.evidence_layer;
     expect(text(render(doc))).toContain("No evidence layer in this response.");
+  });
+});
+
+describe("real-time river simulation", () => {
+  const html = render(simulatedLive);
+  const t = text(html);
+
+  it("accepts the backend's simulated-live document", () => {
+    expect(parseDashboard(simulatedLive).ok).toBe(true);
+  });
+
+  it("labels every generated reading SIMULATED LIVE and never as CWC data", () => {
+    expect(t).toContain("SIMULATED LIVE");
+    expect(t).toContain("NOT Central Water Commission observations");
+    expect(t).toContain("Not CWC data");
+    expect(t).toContain("UPPER_ANICUT_SIM (simulated twin of UPPER_ANICUT)");
+    expect(t).not.toContain("Current, verified live reading");
+  });
+
+  it("shows level, timestamp, freshness, trend, quality, risk and state from the backend", () => {
+    const doc = simulatedLive as Record<string, any>;
+    expect(t).toContain(fmtNum(doc.river.level.value_m, "m", 3));
+    expect(t).toContain(fmtTime(doc.river.level.observed_at));
+    expect(t).toContain(doc.river.freshness.status);
+    expect(t).toContain(doc.river.trend.direction);
+    expect(t).toContain(doc.river.recent_quality.status);
+    expect(t).toContain(doc.risk.risk_level);
+    expect(t).toContain("RECOVERY");
+    expect(t).toContain("Recent evaluations");
+  });
+
+  it("shows emergency capabilities revoked in RECOVERY and nothing authorized", () => {
+    expect(t).toContain("Simulated evidence never authorizes real-world actions");
+    expect(t).toContain("RESTRICTED");
+    expect(t).not.toContain("PERMITTED PENDING HUMAN APPROVAL");
+    const doc = simulatedLive as Record<string, any>;
+    const denied = doc.safety.decisions.filter((d: any) =>
+      ["request_human_emergency_authorization", "propose_evacuation_plan"].includes(d.capability));
+    expect(denied.length).toBe(2);
+    for (const d of denied) expect(d).toMatchObject({ allowed: false, reason: "CAPABILITY_DENIED", state: "RECOVERY" });
+  });
+
+  it("rejects a simulated-live response that is mislabelled or claims authority", () => {
+    expect(parseDashboard({ ...clone(simulatedLive), data_label: "REAL DATA" }).ok).toBe(false);
+    expect(parseDashboard({ ...clone(simulatedLive), is_simulated: false }).ok).toBe(false);
+    expect(parseDashboard({ ...clone(simulatedLive), simulation: undefined }).ok).toBe(false);
+    const authority = clone(simulatedLive) as Record<string, any>;
+    authority.simulation.authorizes_real_world_actions = true;
+    expect(parseDashboard(authority).ok).toBe(false);
+    const pending = clone(simulatedLive) as Record<string, any>;
+    pending.safety.pending_human_approval = ["prepare_advisory"];
+    expect(parseDashboard(pending).ok).toBe(false);
+    const granted = clone(simulatedLive) as Record<string, any>;
+    granted.safety.real_world_authorization = "HUMAN_AUTHORIZATION_REQUIRED";
+    expect(parseDashboard(granted).ok).toBe(false);
+  });
+
+  it("is never accepted as real data", () => {
+    expect(parseDashboard({ ...clone(simulatedLive), mode: "real" }).ok).toBe(false);
   });
 });

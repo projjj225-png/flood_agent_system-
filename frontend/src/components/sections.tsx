@@ -86,6 +86,7 @@ export function KpiCards({ doc }: { doc: DashboardDoc }) {
         <p className="kpi-note">
           {persisted?.available ? "Persisted state" :
             state?.state_basis === "SCENARIO_START_STATE" ? "Scenario start state (simulated)" :
+            state?.state_basis === "SIMULATION_SESSION_RECORD" ? "Simulation session state (in memory, never saved)" :
               "No persisted record — NORMAL assumed for checks"}
           {state?.evaluation?.proposed_state && state.evaluation.proposed_state !== state.evaluation.current_state &&
             <> · proposed next: <strong>{state.evaluation.proposed_state}</strong></>}
@@ -188,7 +189,7 @@ export function RiverSection({ doc }: { doc: DashboardDoc }) {
         <Badge tone={fresh === "FRESH" ? "ok" : "warn"}>Freshness: {fresh ?? "UNKNOWN"}</Badge>
         <Badge tone={r?.is_verified_live ? "ok" : "neutral"}>{r?.evidence_grade ?? "No grade"}</Badge>
       </>}>
-      {r?.is_simulated && <SimulatedBanner text="These river readings are fabricated test values for station UPPER_ANICUT_TEST. They are not measurements of the Cauvery." />}
+      {r?.is_simulated && <SimulatedBanner text={`These river readings are fabricated test values for station ${r.station_id ?? "UPPER_ANICUT_TEST"}. They are not measurements of the Cauvery.`} />}
       <div className="grid-2">
         <dl className="fields">
           <Field label="Latest reading">
@@ -339,6 +340,8 @@ export function StateSection({ doc }: { doc: DashboardDoc }) {
             : <Unavailable>
                 {s?.state_basis === "SCENARIO_START_STATE"
                   ? <>Simulated scenario: no persisted record. It starts from <strong>{s?.state_used_for_capability_checks}</strong>.</>
+                  : s?.state_basis === "SIMULATION_SESSION_RECORD"
+                  ? <>Real-time simulation: the session carries its own simulated-scope record in memory. It is never written to the real state record. This tick was checked in <strong>{s?.state_used_for_capability_checks}</strong>.</>
                   : <>No valid persisted real-state record{p?.problem ? <> ({p.problem})</> : ""}. Capability checks use <strong>NORMAL</strong>, the most restrictive state.</>}
               </Unavailable>}
           <p className="small">State used for this run's capability checks: <strong>{s?.state_used_for_capability_checks ?? "—"}</strong> ({humanize(s?.state_basis)})</p>

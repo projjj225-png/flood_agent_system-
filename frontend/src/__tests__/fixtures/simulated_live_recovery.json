@@ -1,0 +1,2849 @@
+{
+ "schema_version": "1.0",
+ "generated_at": "2026-10-30T08:12:30+00:00",
+ "mode": "simulated_live",
+ "is_simulated": true,
+ "data_label": "SIMULATED LIVE",
+ "timezone": "Asia/Kolkata",
+ "location": {
+  "description": "Cauvery River near Upper Anicut, Tamil Nadu, India",
+  "latitude": 10.888611,
+  "longitude": 78.58
+ },
+ "cache_seconds": 300.0,
+ "scenario": "falling",
+ "start_state": "EMERGENCY",
+ "scenario_description": "River receding from above the TEST warning level; rain easing after the event.",
+ "simulation": {
+  "label": "SIMULATED LIVE",
+  "session_id": "f2cf2b06257c",
+  "scenario": "falling",
+  "scenario_description": "River receding from above the TEST warning level; rain easing after the event.",
+  "start_state": "EMERGENCY",
+  "current_state": "RECOVERY",
+  "started_at": "2026-10-30T06:02:30+00:00",
+  "station_id": "UPPER_ANICUT_SIM",
+  "twin_of": "UPPER_ANICUT",
+  "qc_rules_from": "UPPER_ANICUT",
+  "interval_minutes": 5,
+  "readings_held": 99,
+  "readings_generated": 99,
+  "latest_generated_at": "2026-10-30T08:10:00+00:00",
+  "next_reading_due": "2026-10-30T08:15:00+00:00",
+  "evaluations": 27,
+  "thresholds": {
+   "warning_level_m": 75.0,
+   "danger_level_m": 75.6,
+   "reference": "TEST VALUES - not official; chosen above the 2021-2025 CWC telemetry's usual high-flow band (about 74.8-75.0 m RL) for software testing only",
+   "official": false,
+   "datum": null
+  },
+  "timeline": [
+   {
+    "evaluated_at": "2026-10-30T06:02:30+00:00",
+    "catch_up": false,
+    "observed_at": "2026-10-30T06:00:00+00:00",
+    "river_level_m": 74.61,
+    "freshness": "FRESH",
+    "trend": "FALLING",
+    "risk_level": "MODERATE",
+    "condition": "IMPROVED",
+    "outcome": "STATE_UNCHANGED",
+    "state_before": "EMERGENCY",
+    "state_after": "EMERGENCY",
+    "real_world_authorization": "RESTRICTED"
+   },
+   {
+    "evaluated_at": "2026-10-30T06:07:30+00:00",
+    "catch_up": false,
+    "observed_at": "2026-10-30T06:05:00+00:00",
+    "river_level_m": 74.589,
+    "freshness": "FRESH",
+    "trend": "FALLING",
+    "risk_level": "MODERATE",
+    "condition": "IMPROVED",
+    "outcome": "STATE_UNCHANGED",
+    "state_before": "EMERGENCY",
+    "state_after": "EMERGENCY",
+    "real_world_authorization": "RESTRICTED"
+   },
+   {
+    "evaluated_at": "2026-10-30T06:12:30+00:00",
+    "catch_up": false,
+    "observed_at": "2026-10-30T06:10:00+00:00",
+    "river_level_m": 74.57,
+    "freshness": "FRESH",
+    "trend": "FALLING",
+    "risk_level": "MODERATE",
+    "condition": "IMPROVED",
+    "outcome": "STATE_UNCHANGED",
+    "state_before": "EMERGENCY",
+    "state_after": "EMERGENCY",
+    "real_world_authorization": "RESTRICTED"
+   },
+   {
+    "evaluated_at": "2026-10-30T06:17:30+00:00",
+    "catch_up": false,
+    "observed_at": "2026-10-30T06:15:00+00:00",
+    "river_level_m": 74.549,
+    "freshness": "FRESH",
+    "trend": "FALLING",
+    "risk_level": "MODERATE",
+    "condition": "IMPROVED",
+    "outcome": "STATE_UNCHANGED",
+    "state_before": "EMERGENCY",
+    "state_after": "EMERGENCY",
+    "real_world_authorization": "RESTRICTED"
+   },
+   {
+    "evaluated_at": "2026-10-30T06:22:30+00:00",
+    "catch_up": false,
+    "observed_at": "2026-10-30T06:20:00+00:00",
+    "river_level_m": 74.527,
+    "freshness": "FRESH",
+    "trend": "FALLING",
+    "risk_level": "MODERATE",
+    "condition": "IMPROVED",
+    "outcome": "STATE_UNCHANGED",
+    "state_before": "EMERGENCY",
+    "state_after": "EMERGENCY",
+    "real_world_authorization": "RESTRICTED"
+   },
+   {
+    "evaluated_at": "2026-10-30T06:27:30+00:00",
+    "catch_up": false,
+    "observed_at": "2026-10-30T06:25:00+00:00",
+    "river_level_m": 74.508,
+    "freshness": "FRESH",
+    "trend": "FALLING",
+    "risk_level": "MODERATE",
+    "condition": "IMPROVED",
+    "outcome": "STATE_UNCHANGED",
+    "state_before": "EMERGENCY",
+    "state_after": "EMERGENCY",
+    "real_world_authorization": "RESTRICTED"
+   },
+   {
+    "evaluated_at": "2026-10-30T06:32:30+00:00",
+    "catch_up": false,
+    "observed_at": "2026-10-30T06:30:00+00:00",
+    "river_level_m": 74.484,
+    "freshness": "FRESH",
+    "trend": "FALLING",
+    "risk_level": "MODERATE",
+    "condition": "IMPROVED",
+    "outcome": "STATE_UNCHANGED",
+    "state_before": "EMERGENCY",
+    "state_after": "EMERGENCY",
+    "real_world_authorization": "RESTRICTED"
+   },
+   {
+    "evaluated_at": "2026-10-30T06:37:30+00:00",
+    "catch_up": false,
+    "observed_at": "2026-10-30T06:35:00+00:00",
+    "river_level_m": 74.464,
+    "freshness": "FRESH",
+    "trend": "FALLING",
+    "risk_level": "MODERATE",
+    "condition": "IMPROVED",
+    "outcome": "STATE_UNCHANGED",
+    "state_before": "EMERGENCY",
+    "state_after": "EMERGENCY",
+    "real_world_authorization": "RESTRICTED"
+   },
+   {
+    "evaluated_at": "2026-10-30T06:42:30+00:00",
+    "catch_up": false,
+    "observed_at": "2026-10-30T06:40:00+00:00",
+    "river_level_m": 74.443,
+    "freshness": "FRESH",
+    "trend": "FALLING",
+    "risk_level": "MODERATE",
+    "condition": "IMPROVED",
+    "outcome": "STATE_UNCHANGED",
+    "state_before": "EMERGENCY",
+    "state_after": "EMERGENCY",
+    "real_world_authorization": "RESTRICTED"
+   },
+   {
+    "evaluated_at": "2026-10-30T06:47:30+00:00",
+    "catch_up": false,
+    "observed_at": "2026-10-30T06:45:00+00:00",
+    "river_level_m": 74.428,
+    "freshness": "FRESH",
+    "trend": "FALLING",
+    "risk_level": "MODERATE",
+    "condition": "IMPROVED",
+    "outcome": "STATE_UNCHANGED",
+    "state_before": "EMERGENCY",
+    "state_after": "EMERGENCY",
+    "real_world_authorization": "RESTRICTED"
+   },
+   {
+    "evaluated_at": "2026-10-30T06:52:30+00:00",
+    "catch_up": false,
+    "observed_at": "2026-10-30T06:50:00+00:00",
+    "river_level_m": 74.407,
+    "freshness": "FRESH",
+    "trend": "FALLING",
+    "risk_level": "MODERATE",
+    "condition": "IMPROVED",
+    "outcome": "STATE_UNCHANGED",
+    "state_before": "EMERGENCY",
+    "state_after": "EMERGENCY",
+    "real_world_authorization": "RESTRICTED"
+   },
+   {
+    "evaluated_at": "2026-10-30T06:57:30+00:00",
+    "catch_up": false,
+    "observed_at": "2026-10-30T06:55:00+00:00",
+    "river_level_m": 74.387,
+    "freshness": "FRESH",
+    "trend": "FALLING",
+    "risk_level": "MODERATE",
+    "condition": "IMPROVED",
+    "outcome": "STATE_UNCHANGED",
+    "state_before": "EMERGENCY",
+    "state_after": "EMERGENCY",
+    "real_world_authorization": "RESTRICTED"
+   },
+   {
+    "evaluated_at": "2026-10-30T07:02:30+00:00",
+    "catch_up": false,
+    "observed_at": "2026-10-30T07:00:00+00:00",
+    "river_level_m": 74.364,
+    "freshness": "FRESH",
+    "trend": "FALLING",
+    "risk_level": "MODERATE",
+    "condition": "IMPROVED",
+    "outcome": "STATE_UNCHANGED",
+    "state_before": "EMERGENCY",
+    "state_after": "EMERGENCY",
+    "real_world_authorization": "RESTRICTED"
+   },
+   {
+    "evaluated_at": "2026-10-30T07:07:30+00:00",
+    "catch_up": false,
+    "observed_at": "2026-10-30T07:05:00+00:00",
+    "river_level_m": 74.345,
+    "freshness": "FRESH",
+    "trend": "FALLING",
+    "risk_level": "MODERATE",
+    "condition": "IMPROVED",
+    "outcome": "STATE_UNCHANGED",
+    "state_before": "EMERGENCY",
+    "state_after": "EMERGENCY",
+    "real_world_authorization": "RESTRICTED"
+   },
+   {
+    "evaluated_at": "2026-10-30T07:12:30+00:00",
+    "catch_up": false,
+    "observed_at": "2026-10-30T07:10:00+00:00",
+    "river_level_m": 74.329,
+    "freshness": "FRESH",
+    "trend": "FALLING",
+    "risk_level": "MODERATE",
+    "condition": "IMPROVED",
+    "outcome": "STATE_UNCHANGED",
+    "state_before": "EMERGENCY",
+    "state_after": "EMERGENCY",
+    "real_world_authorization": "RESTRICTED"
+   },
+   {
+    "evaluated_at": "2026-10-30T07:17:30+00:00",
+    "catch_up": false,
+    "observed_at": "2026-10-30T07:15:00+00:00",
+    "river_level_m": 74.306,
+    "freshness": "FRESH",
+    "trend": "FALLING",
+    "risk_level": "MODERATE",
+    "condition": "IMPROVED",
+    "outcome": "STATE_UNCHANGED",
+    "state_before": "EMERGENCY",
+    "state_after": "EMERGENCY",
+    "real_world_authorization": "RESTRICTED"
+   },
+   {
+    "evaluated_at": "2026-10-30T07:22:30+00:00",
+    "catch_up": false,
+    "observed_at": "2026-10-30T07:20:00+00:00",
+    "river_level_m": 74.29,
+    "freshness": "FRESH",
+    "trend": "FALLING",
+    "risk_level": "LOW",
+    "condition": "NORMAL",
+    "outcome": "STATE_UNCHANGED",
+    "state_before": "EMERGENCY",
+    "state_after": "EMERGENCY",
+    "real_world_authorization": "RESTRICTED"
+   },
+   {
+    "evaluated_at": "2026-10-30T07:27:30+00:00",
+    "catch_up": false,
+    "observed_at": "2026-10-30T07:25:00+00:00",
+    "river_level_m": 74.275,
+    "freshness": "FRESH",
+    "trend": "FALLING",
+    "risk_level": "LOW",
+    "condition": "NORMAL",
+    "outcome": "STATE_UNCHANGED",
+    "state_before": "EMERGENCY",
+    "state_after": "EMERGENCY",
+    "real_world_authorization": "RESTRICTED"
+   },
+   {
+    "evaluated_at": "2026-10-30T07:32:30+00:00",
+    "catch_up": false,
+    "observed_at": "2026-10-30T07:30:00+00:00",
+    "river_level_m": 74.257,
+    "freshness": "FRESH",
+    "trend": "FALLING",
+    "risk_level": "LOW",
+    "condition": "NORMAL",
+    "outcome": "STATE_UNCHANGED",
+    "state_before": "EMERGENCY",
+    "state_after": "EMERGENCY",
+    "real_world_authorization": "RESTRICTED"
+   },
+   {
+    "evaluated_at": "2026-10-30T07:37:30+00:00",
+    "catch_up": false,
+    "observed_at": "2026-10-30T07:35:00+00:00",
+    "river_level_m": 74.238,
+    "freshness": "FRESH",
+    "trend": "FALLING",
+    "risk_level": "LOW",
+    "condition": "NORMAL",
+    "outcome": "STATE_UNCHANGED",
+    "state_before": "EMERGENCY",
+    "state_after": "EMERGENCY",
+    "real_world_authorization": "RESTRICTED"
+   },
+   {
+    "evaluated_at": "2026-10-30T07:42:30+00:00",
+    "catch_up": false,
+    "observed_at": "2026-10-30T07:40:00+00:00",
+    "river_level_m": 74.219,
+    "freshness": "FRESH",
+    "trend": "FALLING",
+    "risk_level": "LOW",
+    "condition": "NORMAL",
+    "outcome": "STATE_UNCHANGED",
+    "state_before": "EMERGENCY",
+    "state_after": "EMERGENCY",
+    "real_world_authorization": "RESTRICTED"
+   },
+   {
+    "evaluated_at": "2026-10-30T07:47:30+00:00",
+    "catch_up": false,
+    "observed_at": "2026-10-30T07:45:00+00:00",
+    "river_level_m": 74.205,
+    "freshness": "FRESH",
+    "trend": "FALLING",
+    "risk_level": "LOW",
+    "condition": "NORMAL",
+    "outcome": "STATE_UNCHANGED",
+    "state_before": "EMERGENCY",
+    "state_after": "EMERGENCY",
+    "real_world_authorization": "RESTRICTED"
+   },
+   {
+    "evaluated_at": "2026-10-30T07:52:30+00:00",
+    "catch_up": false,
+    "observed_at": "2026-10-30T07:50:00+00:00",
+    "river_level_m": 74.187,
+    "freshness": "FRESH",
+    "trend": "FALLING",
+    "risk_level": "LOW",
+    "condition": "NORMAL",
+    "outcome": "STATE_UNCHANGED",
+    "state_before": "EMERGENCY",
+    "state_after": "EMERGENCY",
+    "real_world_authorization": "RESTRICTED"
+   },
+   {
+    "evaluated_at": "2026-10-30T07:57:30+00:00",
+    "catch_up": false,
+    "observed_at": "2026-10-30T07:55:00+00:00",
+    "river_level_m": 74.171,
+    "freshness": "FRESH",
+    "trend": "FALLING",
+    "risk_level": "LOW",
+    "condition": "NORMAL",
+    "outcome": "STATE_UNCHANGED",
+    "state_before": "EMERGENCY",
+    "state_after": "EMERGENCY",
+    "real_world_authorization": "RESTRICTED"
+   },
+   {
+    "evaluated_at": "2026-10-30T08:02:30+00:00",
+    "catch_up": false,
+    "observed_at": "2026-10-30T08:00:00+00:00",
+    "river_level_m": 74.153,
+    "freshness": "FRESH",
+    "trend": "FALLING",
+    "risk_level": "LOW",
+    "condition": "NORMAL",
+    "outcome": "TRANSITION_ACCEPTED",
+    "state_before": "EMERGENCY",
+    "state_after": "RECOVERY",
+    "real_world_authorization": "RESTRICTED"
+   },
+   {
+    "evaluated_at": "2026-10-30T08:07:30+00:00",
+    "catch_up": false,
+    "observed_at": "2026-10-30T08:05:00+00:00",
+    "river_level_m": 74.138,
+    "freshness": "FRESH",
+    "trend": "FALLING",
+    "risk_level": "LOW",
+    "condition": "NORMAL",
+    "outcome": "STATE_UNCHANGED",
+    "state_before": "RECOVERY",
+    "state_after": "RECOVERY",
+    "real_world_authorization": "RESTRICTED"
+   },
+   {
+    "evaluated_at": "2026-10-30T08:12:30+00:00",
+    "catch_up": false,
+    "observed_at": "2026-10-30T08:10:00+00:00",
+    "river_level_m": 74.12,
+    "freshness": "FRESH",
+    "trend": "FALLING",
+    "risk_level": "LOW",
+    "condition": "NORMAL",
+    "outcome": "STATE_UNCHANGED",
+    "state_before": "RECOVERY",
+    "state_after": "RECOVERY",
+    "real_world_authorization": "RESTRICTED"
+   }
+  ],
+  "state_record_scope": "simulated",
+  "state_record_persisted": false,
+  "authorizes_real_world_actions": false,
+  "disclaimer": "SIMULATED LIVE: fabricated readings generated by this system every 5 minutes. They are NOT Central Water Commission observations, use TEST thresholds, and can never authorize a real-world action."
+ },
+ "run_id": "35391319cfea4a86b1bf3d59a13cc24a",
+ "decision_id": "bdd53e834e74282903d4e4c58ffcc3864cc8510b2536f3e41200226d222992bf",
+ "weather": {
+  "status": "OK",
+  "source": "SIMULATED LIVE weather (fabricated; easing_after_event.json re-timed to the present)",
+  "source_type": "SIMULATED_TEST_DATA",
+  "is_simulated": true,
+  "retrieved_at": "2026-10-30T08:12:30+00:00",
+  "timezone": {
+   "requested": "Asia/Kolkata",
+   "returned": "Asia/Kolkata",
+   "abbreviation": "GMT+5:30",
+   "utc_offset_seconds": 19800
+  },
+  "requested_location": {
+   "latitude": 10.888611,
+   "longitude": 78.58,
+   "description": "Cauvery River near Upper Anicut, Tamil Nadu, India"
+  },
+  "grid_location": {
+   "latitude": 10.86116,
+   "longitude": 78.61063,
+   "elevation_m": 73.0,
+   "reason": null
+  },
+  "current": {
+   "status": "AVAILABLE",
+   "time": "2026-10-30T13:30:00+05:30",
+   "interval_seconds": 900,
+   "values": {
+    "temperature_2m": 27.0,
+    "relative_humidity_2m": 85.0,
+    "precipitation": 0.0,
+    "rain": 0.0,
+    "wind_speed_10m": 10.0,
+    "wind_direction_10m": 90.0,
+    "wind_gusts_10m": 20.0
+   },
+   "missing": {}
+  },
+  "units": {
+   "current": {
+    "temperature_2m": "°C",
+    "relative_humidity_2m": "%",
+    "precipitation": "mm",
+    "rain": "mm",
+    "wind_speed_10m": "km/h",
+    "wind_direction_10m": "°",
+    "wind_gusts_10m": "km/h"
+   },
+   "hourly": {
+    "precipitation": "mm",
+    "rain": "mm",
+    "wind_gusts_10m": "km/h",
+    "wind_speed_10m": "km/h",
+    "precipitation_probability": "%",
+    "temperature_2m": "°C",
+    "relative_humidity_2m": "%"
+   }
+  },
+  "rainfall": {
+   "3h": {
+    "period_start": "2026-10-30T10:00:00+05:30",
+    "period_end": "2026-10-30T13:00:00+05:30",
+    "precipitation": {
+     "status": "AVAILABLE",
+     "total": 0.0,
+     "reason": null
+    },
+    "rain": {
+     "status": "AVAILABLE",
+     "total": 0.0,
+     "reason": null
+    }
+   },
+   "6h": {
+    "period_start": "2026-10-30T07:00:00+05:30",
+    "period_end": "2026-10-30T13:00:00+05:30",
+    "precipitation": {
+     "status": "AVAILABLE",
+     "total": 0.0,
+     "reason": null
+    },
+    "rain": {
+     "status": "AVAILABLE",
+     "total": 0.0,
+     "reason": null
+    }
+   },
+   "24h": {
+    "period_start": "2026-10-29T13:00:00+05:30",
+    "period_end": "2026-10-30T13:00:00+05:30",
+    "precipitation": {
+     "status": "AVAILABLE",
+     "total": 12.0,
+     "reason": null
+    },
+    "rain": {
+     "status": "AVAILABLE",
+     "total": 12.0,
+     "reason": null
+    }
+   }
+  },
+  "hourly": [
+   {
+    "time": "2026-10-29T14:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-29T15:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-29T16:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-29T17:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-29T18:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-29T19:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-29T20:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-29T21:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-29T22:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-29T23:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-30T00:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-30T01:00:00+05:30",
+    "precipitation_mm": 1.0,
+    "rain_mm": 1.0,
+    "precipitation_probability_pct": 90.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-30T02:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-30T03:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-30T04:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-30T05:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-30T06:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-30T07:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-30T08:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-30T09:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-30T10:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-30T11:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-30T12:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-30T13:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "MODEL_ESTIMATE_PAST"
+   },
+   {
+    "time": "2026-10-30T14:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-30T15:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-30T16:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-30T17:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-30T18:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-30T19:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-30T20:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-30T21:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-30T22:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-30T23:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-31T00:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-31T01:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-31T02:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-31T03:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-31T04:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-31T05:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-31T06:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-31T07:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-31T08:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-31T09:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-31T10:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-31T11:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-31T12:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-31T13:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-31T14:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-31T15:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-31T16:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-31T17:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-31T18:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-31T19:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-31T20:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-31T21:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-31T22:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-10-31T23:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-11-01T00:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-11-01T01:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-11-01T02:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-11-01T03:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-11-01T04:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-11-01T05:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-11-01T06:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-11-01T07:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-11-01T08:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-11-01T09:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-11-01T10:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-11-01T11:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-11-01T12:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-11-01T13:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-11-01T14:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-11-01T15:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-11-01T16:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-11-01T17:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-11-01T18:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   },
+   {
+    "time": "2026-11-01T19:00:00+05:30",
+    "precipitation_mm": 0.0,
+    "rain_mm": 0.0,
+    "precipitation_probability_pct": 10.0,
+    "temperature_c": 27.0,
+    "kind": "FORECAST"
+   }
+  ],
+  "errors": [],
+  "data_notes": [
+   "FABRICATED test weather; not an observation or forecast of the Cauvery basin.",
+   "Values are numerical weather model output (current conditions and forecasts), not guaranteed physical weather-station observations.",
+   "Coordinates are snapped by the provider to the nearest model grid cell; see returned_grid_location.",
+   "Hourly precipitation/rain values are sums over the preceding hour."
+  ]
+ },
+ "river": {
+  "station_id": "UPPER_ANICUT_SIM",
+  "status": "OK",
+  "source_label": "SIMULATED_TEST_DATA",
+  "source": "CSV file (historical or simulated observations): outputs/simulated_live_fixture_tmp/upper_anicut_sim_falling_emergency.csv",
+  "is_simulated": true,
+  "evidence_id": "d344f9b453dcbba75cc4db56458ce9732f3d009b152d501308ddb50dddf61851",
+  "level": {
+   "value_m": 74.12,
+   "role": "SIMULATED",
+   "observed_at": "2026-10-30T08:10:00+00:00",
+   "datum": null
+  },
+  "freshness": {
+   "status": "FRESH",
+   "reference_time": "2026-10-30T08:12:30+00:00",
+   "max_age_hours": 3.0,
+   "age_minutes": 2.5,
+   "age_hours": 0.0417,
+   "retrieval_time_available": false,
+   "retrieval_lag_minutes": null,
+   "reason": null,
+   "reference_mode": "CURRENT_CLOCK"
+  },
+  "evidence_grade": "SIMULATED",
+  "is_verified_live": false,
+  "source_verification": {
+   "status": "NOT_APPLICABLE",
+   "failed_checks": [],
+   "reason": "No live-source verification was supplied (CSV input)."
+  },
+  "recent_quality": {
+   "status": "ACCEPTABLE",
+   "window_hours": 24.0,
+   "window_start": "2026-10-29T08:12:30+00:00",
+   "window_end": "2026-10-30T08:12:30+00:00",
+   "readings_in_window": 99,
+   "rejected_in_window": 0,
+   "rejected_fraction": 0.0,
+   "suspect_fraction_limit": 0.2,
+   "reason": null
+  },
+  "qc": {
+   "configured": true,
+   "valid_min_m": 70.0,
+   "valid_max_m": 80.0,
+   "max_jump_m": 1.0,
+   "invalid_values_m": [
+    72.0
+   ],
+   "reference": "Prototype QC derived from rwl_tel_hr_cwc_009_2021_2025.csv (not official). Smooth, physically plausible runs stay within 71.0-75.2 m; values outside 70-80 m (e.g. 1-3 m in early 2021, 100-1070 m spikes) are telemetry errors. 72.0 m repeats exactly 4059 times, in runs up to 1084 h and between 73.0x m readings, so it is treated as a fill value. Corrupted readings typically jump by whole metres, hence max_jump_m 1.0.",
+   "checked": 99,
+   "accepted": 99,
+   "rejected_negative": 0,
+   "rejected_placeholder": 0,
+   "rejected_out_of_range": 0,
+   "rejected_spike": 0,
+   "spike_check_skipped": 3
+  },
+  "counts": {
+   "rows_read": 99,
+   "valid_rows": 99,
+   "rejected_rows": 0,
+   "duplicate_rows_removed": 0,
+   "station_observations_used": 99
+  },
+  "trend": {
+   "status": "AVAILABLE",
+   "method": "Latest observation compared with the earliest observation within the preceding 3.0 h window.",
+   "window_hours": 3.0,
+   "baseline_observed_at": "2026-10-30T05:10:00+00:00",
+   "baseline_level_m": 74.815,
+   "latest_observed_at": "2026-10-30T08:10:00+00:00",
+   "latest_level_m": 74.12,
+   "duration_hours": 3.0,
+   "level_change_m": -0.695,
+   "rate_of_change_m_per_hour": -0.2317,
+   "direction": "FALLING",
+   "observations_in_window": 37,
+   "reason": null
+  },
+  "thresholds": {
+   "status": "BELOW_WARNING",
+   "warning_level_m": 75.0,
+   "danger_level_m": 75.6,
+   "threshold_reference": "TEST VALUES - not official; chosen above the 2021-2025 CWC telemetry's usual high-flow band (about 74.8-75.0 m RL) for software testing only",
+   "threshold_is_official": false,
+   "threshold_datum": null,
+   "data_datum": null,
+   "compared_level_m": 74.12,
+   "based_on_stale_data": false,
+   "reason": null
+  },
+  "cross_source_check": {
+   "status": "NOT_CHECKED",
+   "compared_with": null,
+   "conflicts": null,
+   "conflicts_affecting_current_evidence": null,
+   "tolerance_m": null,
+   "examples": null
+  },
+  "reverification": {
+   "status": "NOT_REQUIRED",
+   "outcome": "NOT_REQUIRED",
+   "reason": null,
+   "conflicts_remaining": null
+  },
+  "fallback": {
+   "used": false,
+   "reason": null
+  },
+  "live_fetch": {
+   "attempted": false,
+   "status": null,
+   "verification_status": null,
+   "failed_checks": null,
+   "error": null,
+   "retrieved_at": null
+  },
+  "reasons_not_usable": [
+   "Not verified live evidence (grade SIMULATED, source SIMULATED_TEST_DATA)."
+  ],
+  "warnings": [
+   {
+    "code": "SIMULATED_DATA",
+    "severity": "warning",
+    "field": "source_type",
+    "message": "Observations include simulated (fabricated) values; they are not real river measurements."
+   },
+   {
+    "code": "THRESHOLDS_NOT_OFFICIAL",
+    "severity": "warning",
+    "field": "threshold_evaluation",
+    "message": "Configured thresholds are not marked official; treat the threshold status as indicative only."
+   }
+  ],
+  "errors": [],
+  "series": {
+   "points": [
+    {
+     "time": "2026-10-30T00:00:00+00:00",
+     "level_m": 75.442
+    },
+    {
+     "time": "2026-10-30T00:05:00+00:00",
+     "level_m": 75.435
+    },
+    {
+     "time": "2026-10-30T00:10:00+00:00",
+     "level_m": 75.434
+    },
+    {
+     "time": "2026-10-30T00:15:00+00:00",
+     "level_m": 75.433
+    },
+    {
+     "time": "2026-10-30T00:20:00+00:00",
+     "level_m": 75.426
+    },
+    {
+     "time": "2026-10-30T00:25:00+00:00",
+     "level_m": 75.425
+    },
+    {
+     "time": "2026-10-30T00:30:00+00:00",
+     "level_m": 75.418
+    },
+    {
+     "time": "2026-10-30T00:35:00+00:00",
+     "level_m": 75.417
+    },
+    {
+     "time": "2026-10-30T00:40:00+00:00",
+     "level_m": 75.412
+    },
+    {
+     "time": "2026-10-30T00:45:00+00:00",
+     "level_m": 75.411
+    },
+    {
+     "time": "2026-10-30T00:50:00+00:00",
+     "level_m": 75.403
+    },
+    {
+     "time": "2026-10-30T00:55:00+00:00",
+     "level_m": 75.399
+    },
+    {
+     "time": "2026-10-30T01:00:00+00:00",
+     "level_m": 75.398
+    },
+    {
+     "time": "2026-10-30T01:05:00+00:00",
+     "level_m": 75.392
+    },
+    {
+     "time": "2026-10-30T01:10:00+00:00",
+     "level_m": 75.387
+    },
+    {
+     "time": "2026-10-30T01:15:00+00:00",
+     "level_m": 75.384
+    },
+    {
+     "time": "2026-10-30T01:20:00+00:00",
+     "level_m": 75.378
+    },
+    {
+     "time": "2026-10-30T01:25:00+00:00",
+     "level_m": 75.373
+    },
+    {
+     "time": "2026-10-30T01:30:00+00:00",
+     "level_m": 75.368
+    },
+    {
+     "time": "2026-10-30T01:35:00+00:00",
+     "level_m": 75.363
+    },
+    {
+     "time": "2026-10-30T01:40:00+00:00",
+     "level_m": 75.352
+    },
+    {
+     "time": "2026-10-30T01:45:00+00:00",
+     "level_m": 75.349
+    },
+    {
+     "time": "2026-10-30T01:50:00+00:00",
+     "level_m": 75.341
+    },
+    {
+     "time": "2026-10-30T01:55:00+00:00",
+     "level_m": 75.333
+    },
+    {
+     "time": "2026-10-30T02:00:00+00:00",
+     "level_m": 75.329
+    },
+    {
+     "time": "2026-10-30T02:05:00+00:00",
+     "level_m": 75.318
+    },
+    {
+     "time": "2026-10-30T02:10:00+00:00",
+     "level_m": 75.311
+    },
+    {
+     "time": "2026-10-30T02:15:00+00:00",
+     "level_m": 75.305
+    },
+    {
+     "time": "2026-10-30T02:20:00+00:00",
+     "level_m": 75.294
+    },
+    {
+     "time": "2026-10-30T02:25:00+00:00",
+     "level_m": 75.288
+    },
+    {
+     "time": "2026-10-30T02:30:00+00:00",
+     "level_m": 75.277
+    },
+    {
+     "time": "2026-10-30T02:35:00+00:00",
+     "level_m": 75.271
+    },
+    {
+     "time": "2026-10-30T02:40:00+00:00",
+     "level_m": 75.26
+    },
+    {
+     "time": "2026-10-30T02:45:00+00:00",
+     "level_m": 75.252
+    },
+    {
+     "time": "2026-10-30T02:50:00+00:00",
+     "level_m": 75.239
+    },
+    {
+     "time": "2026-10-30T02:55:00+00:00",
+     "level_m": 75.228
+    },
+    {
+     "time": "2026-10-30T03:00:00+00:00",
+     "level_m": 75.221
+    },
+    {
+     "time": "2026-10-30T03:05:00+00:00",
+     "level_m": 75.207
+    },
+    {
+     "time": "2026-10-30T03:10:00+00:00",
+     "level_m": 75.2
+    },
+    {
+     "time": "2026-10-30T03:15:00+00:00",
+     "level_m": 75.182
+    },
+    {
+     "time": "2026-10-30T03:20:00+00:00",
+     "level_m": 75.174
+    },
+    {
+     "time": "2026-10-30T03:25:00+00:00",
+     "level_m": 75.162
+    },
+    {
+     "time": "2026-10-30T03:30:00+00:00",
+     "level_m": 75.146
+    },
+    {
+     "time": "2026-10-30T03:35:00+00:00",
+     "level_m": 75.132
+    },
+    {
+     "time": "2026-10-30T03:40:00+00:00",
+     "level_m": 75.118
+    },
+    {
+     "time": "2026-10-30T03:45:00+00:00",
+     "level_m": 75.104
+    },
+    {
+     "time": "2026-10-30T03:50:00+00:00",
+     "level_m": 75.091
+    },
+    {
+     "time": "2026-10-30T03:55:00+00:00",
+     "level_m": 75.078
+    },
+    {
+     "time": "2026-10-30T04:00:00+00:00",
+     "level_m": 75.061
+    },
+    {
+     "time": "2026-10-30T04:05:00+00:00",
+     "level_m": 75.045
+    },
+    {
+     "time": "2026-10-30T04:10:00+00:00",
+     "level_m": 75.029
+    },
+    {
+     "time": "2026-10-30T04:15:00+00:00",
+     "level_m": 75.016
+    },
+    {
+     "time": "2026-10-30T04:20:00+00:00",
+     "level_m": 74.998
+    },
+    {
+     "time": "2026-10-30T04:25:00+00:00",
+     "level_m": 74.983
+    },
+    {
+     "time": "2026-10-30T04:30:00+00:00",
+     "level_m": 74.965
+    },
+    {
+     "time": "2026-10-30T04:35:00+00:00",
+     "level_m": 74.945
+    },
+    {
+     "time": "2026-10-30T04:40:00+00:00",
+     "level_m": 74.931
+    },
+    {
+     "time": "2026-10-30T04:45:00+00:00",
+     "level_m": 74.911
+    },
+    {
+     "time": "2026-10-30T04:50:00+00:00",
+     "level_m": 74.893
+    },
+    {
+     "time": "2026-10-30T04:55:00+00:00",
+     "level_m": 74.873
+    },
+    {
+     "time": "2026-10-30T05:00:00+00:00",
+     "level_m": 74.855
+    },
+    {
+     "time": "2026-10-30T05:05:00+00:00",
+     "level_m": 74.836
+    },
+    {
+     "time": "2026-10-30T05:10:00+00:00",
+     "level_m": 74.815
+    },
+    {
+     "time": "2026-10-30T05:15:00+00:00",
+     "level_m": 74.794
+    },
+    {
+     "time": "2026-10-30T05:20:00+00:00",
+     "level_m": 74.772
+    },
+    {
+     "time": "2026-10-30T05:25:00+00:00",
+     "level_m": 74.756
+    },
+    {
+     "time": "2026-10-30T05:30:00+00:00",
+     "level_m": 74.735
+    },
+    {
+     "time": "2026-10-30T05:35:00+00:00",
+     "level_m": 74.716
+    },
+    {
+     "time": "2026-10-30T05:40:00+00:00",
+     "level_m": 74.693
+    },
+    {
+     "time": "2026-10-30T05:45:00+00:00",
+     "level_m": 74.672
+    },
+    {
+     "time": "2026-10-30T05:50:00+00:00",
+     "level_m": 74.649
+    },
+    {
+     "time": "2026-10-30T05:55:00+00:00",
+     "level_m": 74.631
+    },
+    {
+     "time": "2026-10-30T06:00:00+00:00",
+     "level_m": 74.61
+    },
+    {
+     "time": "2026-10-30T06:05:00+00:00",
+     "level_m": 74.589
+    },
+    {
+     "time": "2026-10-30T06:10:00+00:00",
+     "level_m": 74.57
+    },
+    {
+     "time": "2026-10-30T06:15:00+00:00",
+     "level_m": 74.549
+    },
+    {
+     "time": "2026-10-30T06:20:00+00:00",
+     "level_m": 74.527
+    },
+    {
+     "time": "2026-10-30T06:25:00+00:00",
+     "level_m": 74.508
+    },
+    {
+     "time": "2026-10-30T06:30:00+00:00",
+     "level_m": 74.484
+    },
+    {
+     "time": "2026-10-30T06:35:00+00:00",
+     "level_m": 74.464
+    },
+    {
+     "time": "2026-10-30T06:40:00+00:00",
+     "level_m": 74.443
+    },
+    {
+     "time": "2026-10-30T06:45:00+00:00",
+     "level_m": 74.428
+    },
+    {
+     "time": "2026-10-30T06:50:00+00:00",
+     "level_m": 74.407
+    },
+    {
+     "time": "2026-10-30T06:55:00+00:00",
+     "level_m": 74.387
+    },
+    {
+     "time": "2026-10-30T07:00:00+00:00",
+     "level_m": 74.364
+    },
+    {
+     "time": "2026-10-30T07:05:00+00:00",
+     "level_m": 74.345
+    },
+    {
+     "time": "2026-10-30T07:10:00+00:00",
+     "level_m": 74.329
+    },
+    {
+     "time": "2026-10-30T07:15:00+00:00",
+     "level_m": 74.306
+    },
+    {
+     "time": "2026-10-30T07:20:00+00:00",
+     "level_m": 74.29
+    },
+    {
+     "time": "2026-10-30T07:25:00+00:00",
+     "level_m": 74.275
+    },
+    {
+     "time": "2026-10-30T07:30:00+00:00",
+     "level_m": 74.257
+    },
+    {
+     "time": "2026-10-30T07:35:00+00:00",
+     "level_m": 74.238
+    },
+    {
+     "time": "2026-10-30T07:40:00+00:00",
+     "level_m": 74.219
+    },
+    {
+     "time": "2026-10-30T07:45:00+00:00",
+     "level_m": 74.205
+    },
+    {
+     "time": "2026-10-30T07:50:00+00:00",
+     "level_m": 74.187
+    },
+    {
+     "time": "2026-10-30T07:55:00+00:00",
+     "level_m": 74.171
+    },
+    {
+     "time": "2026-10-30T08:00:00+00:00",
+     "level_m": 74.153
+    },
+    {
+     "time": "2026-10-30T08:05:00+00:00",
+     "level_m": 74.138
+    },
+    {
+     "time": "2026-10-30T08:10:00+00:00",
+     "level_m": 74.12
+    }
+   ],
+   "rejected": [],
+   "hours": 48,
+   "status": "AVAILABLE",
+   "reason": null,
+   "window_start": "2026-10-28T08:10:00+00:00",
+   "window_end": "2026-10-30T08:10:00+00:00"
+  }
+ },
+ "risk": {
+  "schema_version": "1.0",
+  "engine": "RiskAssessmentEngine",
+  "assessment_timestamp": "2026-10-30T08:12:30+00:00",
+  "reference_time": "2026-10-30T08:12:30+00:00",
+  "assessment_mode": "simulated",
+  "is_simulated": true,
+  "risk_level": "LOW",
+  "risk_level_meaning": "Usable river evidence below the configured warning level, no notable rise, and no heavy observed or forecast rainfall. Not a guarantee of safety.",
+  "hazard_indicated": "LOW",
+  "risk_factors": [
+   {
+    "rule_id": "R3_RIVER_BELOW_WARNING",
+    "factor": "river_level_vs_threshold",
+    "hazard_level": "LOW",
+    "source": "river",
+    "description": "Level 74.12 m is below the configured TEST/prototype (not official) warning level 75.0 m.",
+    "evidence": {
+     "level_m": 74.12,
+     "warning_level_m": 75.0,
+     "threshold_reference": "TEST VALUES - not official; chosen above the 2021-2025 CWC telemetry's usual high-flow band (about 74.8-75.0 m RL) for software testing only"
+    }
+   },
+   {
+    "rule_id": "R6_RIVER_STEADY_OR_FALLING",
+    "factor": "river_trend",
+    "hazard_level": "LOW",
+    "source": "river",
+    "description": "River trend FALLING at -0.2317 m/h (below the prototype rise rate 0.1 m/h).",
+    "evidence": {
+     "rate_m_per_hour": -0.2317
+    }
+   },
+   {
+    "rule_id": "R8_OBSERVED_RAINFALL_24H",
+    "factor": "observed_rainfall",
+    "hazard_level": "LOW",
+    "source": "weather",
+    "description": "12.0 mm in the past 24 h (model analysis); prototype breakpoints {'MODERATE': 64.5, 'HIGH': 115.6} mm.",
+    "evidence": {
+     "total_mm": 12.0,
+     "period_start": "2026-10-29T13:00:00+05:30",
+     "period_end": "2026-10-30T13:00:00+05:30"
+    }
+   },
+   {
+    "rule_id": "R9_FORECAST_RAINFALL",
+    "factor": "forecast_rainfall",
+    "hazard_level": "LOW",
+    "source": "weather",
+    "description": "0.0 mm forecast for the next 24 h; prototype breakpoints {'MODERATE': 64.5, 'HIGH': 204.5} mm.",
+    "evidence": {
+     "total_mm": 0.0,
+     "period_start": "2026-10-30T13:00:00+05:30",
+     "period_end": "2026-10-31T13:00:00+05:30"
+    }
+   }
+  ],
+  "rules_fired": [
+   "R3_RIVER_BELOW_WARNING",
+   "R6_RIVER_STEADY_OR_FALLING",
+   "R8_OBSERVED_RAINFALL_24H",
+   "R9_FORECAST_RAINFALL"
+  ],
+  "decision_trace": [
+   "River evidence usable (grade SIMULATED, freshness FRESH, recent quality ACCEPTABLE).",
+   "Weather evidence used (SIMULATED_TEST_DATA, retrieved 2026-10-30T08:12:30+00:00).",
+   "Risk level LOW from the highest hazard indicator."
+  ],
+  "supporting_evidence": {
+   "river": {
+    "evidence_id": "d344f9b453dcbba75cc4db56458ce9732f3d009b152d501308ddb50dddf61851",
+    "source_label": "SIMULATED_TEST_DATA",
+    "evidence_grade": "SIMULATED",
+    "status": "OK",
+    "freshness": "FRESH",
+    "age_hours": 0.0417,
+    "recent_quality": "ACCEPTABLE",
+    "observed_at": "2026-10-30T08:10:00+00:00",
+    "trend_direction": "FALLING",
+    "rate_of_change_m_per_hour": -0.2317,
+    "threshold_status": "BELOW_WARNING",
+    "threshold_is_official": false,
+    "threshold_reference": "TEST VALUES - not official; chosen above the 2021-2025 CWC telemetry's usual high-flow band (about 74.8-75.0 m RL) for software testing only",
+    "cross_source_status": "NOT_CHECKED",
+    "conflicts_affecting_current_evidence": 0,
+    "reverification_outcome": "NOT_REQUIRED",
+    "used_for_hazard": true,
+    "simulated_level_m": 74.12
+   },
+   "weather": {
+    "source": "SIMULATED LIVE weather (fabricated; easing_after_event.json re-timed to the present)",
+    "source_type": "SIMULATED_TEST_DATA",
+    "status": "OK",
+    "retrieved_at": "2026-10-30T08:12:30+00:00",
+    "is_simulated": true,
+    "used": true,
+    "not_used_reasons": [],
+    "observed_24h_mm": 12.0,
+    "observed_6h_mm": 0.0,
+    "forecast_mm": 0.0,
+    "forecast_hours": 24
+   }
+  },
+  "evidence_quality": {
+   "confidence": "MEDIUM",
+   "confidence_downgrades": [
+    "THRESHOLDS_NOT_OFFICIAL"
+   ],
+   "confidence_applies_to": "SIMULATION_ONLY",
+   "river_evidence_grade": "SIMULATED",
+   "river_freshness": "FRESH",
+   "river_recent_quality": "ACCEPTABLE",
+   "river_usable_for_hazard": true,
+   "river_blocking_reasons": [],
+   "real_world_evidence_gate": {
+    "eligible": false,
+    "reasons": [
+     "EVIDENCE_SIMULATED",
+     "EVIDENCE_NOT_VERIFIED_LIVE"
+    ]
+   },
+   "weather_used": true,
+   "weather_not_used_reasons": []
+  },
+  "uncertainties": [
+   {
+    "code": "THRESHOLDS_NOT_OFFICIAL",
+    "description": "Thresholds are configured TEST/prototype (not official): TEST VALUES - not official; chosen above the 2021-2025 CWC telemetry's usual high-flow band (about 74.8-75.0 m RL) for software testing only."
+   },
+   {
+    "code": "SIMULATED_DATA",
+    "description": "All inputs are FABRICATED test data. This assessment describes a simulation, not the actual river."
+   },
+   {
+    "code": "NO_CALIBRATED_PROBABILITY",
+    "description": "No validated flood model exists for this site, so no flood probability is given."
+   }
+  ],
+  "missing_data": [
+   {
+    "item": "upstream_reservoir_releases",
+    "reason": "Releases from upstream reservoirs (e.g. Mettur) are not ingested, although they often dominate flows at Upper Anicut."
+   }
+  ],
+  "recommended_monitoring_actions": [
+   {
+    "code": "CONTINUE_ROUTINE_MONITORING",
+    "description": "Continue routine monitoring."
+   }
+  ],
+  "requires_human_review": false,
+  "human_review_reasons": [],
+  "calibrated_probability": null,
+  "authorizes_actions": false,
+  "assigns_disaster_state": false,
+  "disclaimer": "Decision support only. Categories and breakpoints are configurable prototype values, not official flood warning levels, and no calibrated flood probability is produced. This assessment does not assign a disaster state and does not authorize evacuation, emergency response or any other real-world action.",
+  "assessment_id": "ee0b8b72823befbb5e6cf47f5aedef47f2e6c29911f74bf5f99ddba357a32a05",
+  "audit_written": true
+ },
+ "state": {
+  "persisted": {
+   "available": false,
+   "state": null,
+   "scope": null,
+   "entered_at": null,
+   "last_transition": null,
+   "record_file": "none.json",
+   "problem": null
+  },
+  "state_used_for_capability_checks": "RECOVERY",
+  "state_basis": "SIMULATION_SESSION_RECORD",
+  "evaluation": {
+   "outcome": "STATE_UNCHANGED",
+   "scope": "simulated",
+   "current_state": "RECOVERY",
+   "proposed_state": "NORMAL",
+   "resulting_state": "RECOVERY",
+   "condition": "NORMAL",
+   "reason": "RECOVERY kept: RECOVERY -> NORMAL needs 4 observation(s) over 12.0 h (have 2 over 0.5 h).",
+   "reasons": [
+    "risk LOW with rules ['R3_RIVER_BELOW_WARNING', 'R6_RIVER_STEADY_OR_FALLING'] meets the NORMAL condition"
+   ],
+   "persistence": {
+    "observations": 2,
+    "span_hours": 0.5,
+    "evidence_ids": [
+     "6e90650cd658951b2c3912bf7c7ef963a1fdefc6d1336534db84f0081625e25a",
+     "d344f9b453dcbba75cc4db56458ce9732f3d009b152d501308ddb50dddf61851"
+    ],
+    "since": "2026-10-30T07:40:00+00:00",
+    "readings_skipped_as_duplicate_or_too_close": 9,
+    "largest_gap_hours": 0.083,
+    "run_broken_by_gap_hours": null,
+    "max_gap_hours": 3.0,
+    "min_spacing_hours": 0.5,
+    "required_observations": 4,
+    "required_hours": 12.0,
+    "satisfied": false
+   },
+   "transition_rule": {
+    "to": "NORMAL",
+    "when": [
+     "NORMAL"
+    ],
+    "kind": "de-escalation",
+    "min_observations": 4,
+    "min_hours": 12.0,
+    "gap_breaks_run": true,
+    "min_spacing_hours": 0.5,
+    "max_gap_hours": 3.0
+   },
+   "supporting_evidence_ids": [
+    "6e90650cd658951b2c3912bf7c7ef963a1fdefc6d1336534db84f0081625e25a",
+    "d344f9b453dcbba75cc4db56458ce9732f3d009b152d501308ddb50dddf61851"
+   ],
+   "evidence_id": "d344f9b453dcbba75cc4db56458ce9732f3d009b152d501308ddb50dddf61851",
+   "observed_at": "2026-10-30T08:10:00+00:00",
+   "evaluated_at": "2026-10-30T08:12:30+00:00",
+   "risk_level": "LOW",
+   "is_simulated": true,
+   "state_applies_to": "SIMULATION_ONLY",
+   "audit_written": true,
+   "record_changed": true,
+   "state_decision_id": "0616fce38d2d6145a2bc901177fd86ce5629ecd7e03bd2e43614d451c98acaf1",
+   "authorizes_actions": false,
+   "executes_actions": false
+  },
+  "history": [
+   {
+    "observed_at": "2026-10-30T06:00:00+00:00",
+    "condition": "IMPROVED",
+    "risk_level": "MODERATE",
+    "evaluated_at": "2026-10-30T06:02:30+00:00",
+    "reasons": null
+   },
+   {
+    "observed_at": "2026-10-30T06:05:00+00:00",
+    "condition": "IMPROVED",
+    "risk_level": "MODERATE",
+    "evaluated_at": "2026-10-30T06:07:30+00:00",
+    "reasons": null
+   },
+   {
+    "observed_at": "2026-10-30T06:10:00+00:00",
+    "condition": "IMPROVED",
+    "risk_level": "MODERATE",
+    "evaluated_at": "2026-10-30T06:12:30+00:00",
+    "reasons": null
+   },
+   {
+    "observed_at": "2026-10-30T06:15:00+00:00",
+    "condition": "IMPROVED",
+    "risk_level": "MODERATE",
+    "evaluated_at": "2026-10-30T06:17:30+00:00",
+    "reasons": null
+   },
+   {
+    "observed_at": "2026-10-30T06:20:00+00:00",
+    "condition": "IMPROVED",
+    "risk_level": "MODERATE",
+    "evaluated_at": "2026-10-30T06:22:30+00:00",
+    "reasons": null
+   },
+   {
+    "observed_at": "2026-10-30T06:25:00+00:00",
+    "condition": "IMPROVED",
+    "risk_level": "MODERATE",
+    "evaluated_at": "2026-10-30T06:27:30+00:00",
+    "reasons": null
+   },
+   {
+    "observed_at": "2026-10-30T06:30:00+00:00",
+    "condition": "IMPROVED",
+    "risk_level": "MODERATE",
+    "evaluated_at": "2026-10-30T06:32:30+00:00",
+    "reasons": null
+   },
+   {
+    "observed_at": "2026-10-30T06:35:00+00:00",
+    "condition": "IMPROVED",
+    "risk_level": "MODERATE",
+    "evaluated_at": "2026-10-30T06:37:30+00:00",
+    "reasons": null
+   },
+   {
+    "observed_at": "2026-10-30T06:40:00+00:00",
+    "condition": "IMPROVED",
+    "risk_level": "MODERATE",
+    "evaluated_at": "2026-10-30T06:42:30+00:00",
+    "reasons": null
+   },
+   {
+    "observed_at": "2026-10-30T06:45:00+00:00",
+    "condition": "IMPROVED",
+    "risk_level": "MODERATE",
+    "evaluated_at": "2026-10-30T06:47:30+00:00",
+    "reasons": null
+   },
+   {
+    "observed_at": "2026-10-30T06:50:00+00:00",
+    "condition": "IMPROVED",
+    "risk_level": "MODERATE",
+    "evaluated_at": "2026-10-30T06:52:30+00:00",
+    "reasons": null
+   },
+   {
+    "observed_at": "2026-10-30T06:55:00+00:00",
+    "condition": "IMPROVED",
+    "risk_level": "MODERATE",
+    "evaluated_at": "2026-10-30T06:57:30+00:00",
+    "reasons": null
+   },
+   {
+    "observed_at": "2026-10-30T07:00:00+00:00",
+    "condition": "IMPROVED",
+    "risk_level": "MODERATE",
+    "evaluated_at": "2026-10-30T07:02:30+00:00",
+    "reasons": null
+   },
+   {
+    "observed_at": "2026-10-30T07:05:00+00:00",
+    "condition": "IMPROVED",
+    "risk_level": "MODERATE",
+    "evaluated_at": "2026-10-30T07:07:30+00:00",
+    "reasons": null
+   },
+   {
+    "observed_at": "2026-10-30T07:10:00+00:00",
+    "condition": "IMPROVED",
+    "risk_level": "MODERATE",
+    "evaluated_at": "2026-10-30T07:12:30+00:00",
+    "reasons": null
+   },
+   {
+    "observed_at": "2026-10-30T07:15:00+00:00",
+    "condition": "IMPROVED",
+    "risk_level": "MODERATE",
+    "evaluated_at": "2026-10-30T07:17:30+00:00",
+    "reasons": null
+   },
+   {
+    "observed_at": "2026-10-30T07:20:00+00:00",
+    "condition": "NORMAL",
+    "risk_level": "LOW",
+    "evaluated_at": "2026-10-30T07:22:30+00:00",
+    "reasons": null
+   },
+   {
+    "observed_at": "2026-10-30T07:25:00+00:00",
+    "condition": "NORMAL",
+    "risk_level": "LOW",
+    "evaluated_at": "2026-10-30T07:27:30+00:00",
+    "reasons": null
+   },
+   {
+    "observed_at": "2026-10-30T07:30:00+00:00",
+    "condition": "NORMAL",
+    "risk_level": "LOW",
+    "evaluated_at": "2026-10-30T07:32:30+00:00",
+    "reasons": null
+   },
+   {
+    "observed_at": "2026-10-30T07:35:00+00:00",
+    "condition": "NORMAL",
+    "risk_level": "LOW",
+    "evaluated_at": "2026-10-30T07:37:30+00:00",
+    "reasons": null
+   },
+   {
+    "observed_at": "2026-10-30T07:40:00+00:00",
+    "condition": "NORMAL",
+    "risk_level": "LOW",
+    "evaluated_at": "2026-10-30T07:42:30+00:00",
+    "reasons": null
+   },
+   {
+    "observed_at": "2026-10-30T07:45:00+00:00",
+    "condition": "NORMAL",
+    "risk_level": "LOW",
+    "evaluated_at": "2026-10-30T07:47:30+00:00",
+    "reasons": null
+   },
+   {
+    "observed_at": "2026-10-30T07:50:00+00:00",
+    "condition": "NORMAL",
+    "risk_level": "LOW",
+    "evaluated_at": "2026-10-30T07:52:30+00:00",
+    "reasons": null
+   },
+   {
+    "observed_at": "2026-10-30T07:55:00+00:00",
+    "condition": "NORMAL",
+    "risk_level": "LOW",
+    "evaluated_at": "2026-10-30T07:57:30+00:00",
+    "reasons": null
+   },
+   {
+    "observed_at": "2026-10-30T08:00:00+00:00",
+    "condition": "NORMAL",
+    "risk_level": "LOW",
+    "evaluated_at": "2026-10-30T08:02:30+00:00",
+    "reasons": null
+   },
+   {
+    "observed_at": "2026-10-30T08:05:00+00:00",
+    "condition": "NORMAL",
+    "risk_level": "LOW",
+    "evaluated_at": "2026-10-30T08:07:30+00:00",
+    "reasons": null
+   },
+   {
+    "observed_at": "2026-10-30T08:10:00+00:00",
+    "condition": "NORMAL",
+    "risk_level": "LOW",
+    "evaluated_at": "2026-10-30T08:12:30+00:00",
+    "reasons": null
+   }
+  ],
+  "record_saved_by_dashboard": false,
+  "note": "The dashboard never saves a state record. A proposed or accepted next state becomes the persisted state only when the workflow CLI saves it (--state-file) after a fully audited run."
+ },
+ "safety": {
+  "real_world_authorization": "RESTRICTED",
+  "pending_human_approval": [],
+  "decisions": [
+   {
+    "capability": "read_river",
+    "capability_class": "READ_ONLY",
+    "allowed": true,
+    "reason": "CAPABILITY_PERMITTED",
+    "evidence_reasons": [],
+    "human_approval_required": false,
+    "state": "RECOVERY"
+   },
+   {
+    "capability": "request_evidence_reverification",
+    "capability_class": "INTERNAL",
+    "allowed": true,
+    "reason": "CAPABILITY_PERMITTED",
+    "evidence_reasons": [],
+    "human_approval_required": false,
+    "state": "RECOVERY"
+   },
+   {
+    "capability": "prepare_advisory",
+    "capability_class": "REAL_WORLD",
+    "allowed": false,
+    "reason": "EVIDENCE_INSUFFICIENT",
+    "evidence_reasons": [
+     "EVIDENCE_SIMULATED",
+     "EVIDENCE_NOT_VERIFIED_LIVE",
+     "EVIDENCE_ASSESSMENT_REJECTED"
+    ],
+    "human_approval_required": false,
+    "state": "RECOVERY"
+   },
+   {
+    "capability": "propose_evacuation_plan",
+    "capability_class": null,
+    "allowed": false,
+    "reason": "CAPABILITY_DENIED",
+    "evidence_reasons": [],
+    "human_approval_required": false,
+    "state": "RECOVERY"
+   },
+   {
+    "capability": "request_human_emergency_authorization",
+    "capability_class": null,
+    "allowed": false,
+    "reason": "CAPABILITY_DENIED",
+    "evidence_reasons": [],
+    "human_approval_required": false,
+    "state": "RECOVERY"
+   }
+  ],
+  "evidence_assessment": {
+   "eligible": false,
+   "reasons": [
+    "EVIDENCE_SIMULATED",
+    "EVIDENCE_NOT_VERIFIED_LIVE"
+   ],
+   "input_problems": []
+  },
+  "reason": "Simulated evidence passed simulation checks; it never authorizes real-world action.",
+  "executes_actions": false,
+  "note": "Read-only view of the workflow's own decisions. Nothing here can execute an action; real-world capabilities can at most be put to a human."
+ },
+ "evidence_layer": {
+  "available": true,
+  "error": null,
+  "reference_time": "2026-10-30T08:12:30+00:00",
+  "records": [
+   {
+    "evidence_id": "d344f9b453dcbba75cc4db56458ce9732f3d009b152d501308ddb50dddf61851",
+    "kind": "RIVER_LEVEL",
+    "evidence_class": "SIMULATED",
+    "measurement_basis": "FABRICATED_TEST_DATA",
+    "source": {
+     "label": "SIMULATED_TEST_DATA",
+     "name": "CSV file (historical or simulated observations): outputs/simulated_live_fixture_tmp/upper_anicut_sim_falling_emergency.csv",
+     "provider": null,
+     "reference": "upper_anicut_sim_falling_emergency.csv",
+     "content_sha256": "50cc59ecb8592bf0b032fe40cff4cd25c174fc6df1d49124e0fb136281a7b2e5",
+     "independence": "PRIMARY_SOURCE"
+    },
+    "observed_at": "2026-10-30T08:10:00+00:00",
+    "retrieved_at": null,
+    "retrieval_note": "File source: no retrieval time; read for this decision.",
+    "location": {
+     "station_id": "UPPER_ANICUT_SIM",
+     "latitude": null,
+     "longitude": null,
+     "basis": "simulated test station (no real coordinates)"
+    },
+    "value": {
+     "river_level_m": 74.12,
+     "unit": "m",
+     "datum": "reduced_level",
+     "trend_direction": "FALLING",
+     "rate_of_change_m_per_hour": -0.2317,
+     "trend_status": "AVAILABLE"
+    },
+    "verification": {
+     "status": "NOT_APPLICABLE",
+     "is_verified_live": false,
+     "failed_checks": []
+    },
+    "freshness": {
+     "status": "FRESH",
+     "age_hours": 0.0417,
+     "max_age_hours": 3.0,
+     "reference_time": "2026-10-30T08:12:30+00:00"
+    },
+    "quality": {
+     "evidence_grade": "SIMULATED",
+     "recent_quality": "ACCEPTABLE",
+     "completeness": null,
+     "qc_accepted": 99,
+     "qc_checked": 99
+    },
+    "uncertainty": [
+     "Provider timestamps carry no timezone; IST (+05:30) is assumed.",
+     "Datum assumed to be reduced level; not stated by the provider.",
+     "QC bounds are prototype values derived from one data file.",
+     "Trend: Latest observation compared with the earliest observation within the preceding 3.0 h window."
+    ],
+    "limitations": [
+     "Fabricated test data: demonstrates logic only, never real conditions."
+    ],
+    "validation": {
+     "status": "VALID",
+     "findings": [
+      {
+       "code": "SIMULATED_DATA",
+       "severity": "info",
+       "detail": "Fabricated test data; never real conditions."
+      }
+     ],
+     "error_codes": []
+    }
+   },
+   {
+    "evidence_id": "ev-8e6fc4ae17532eea605d50c9",
+    "kind": "WEATHER_MODEL",
+    "evidence_class": "SIMULATED",
+    "measurement_basis": "FABRICATED_TEST_DATA",
+    "source": {
+     "label": "SIMULATED_TEST_DATA",
+     "name": "SIMULATED LIVE weather (fabricated; easing_after_event.json re-timed to the present)",
+     "reference": null,
+     "independence": "SEPARATE_PROVIDER"
+    },
+    "observed_at": "2026-10-30T08:00:00+00:00",
+    "retrieved_at": "2026-10-30T08:12:30+00:00",
+    "location": {
+     "requested": {
+      "latitude": 10.888611,
+      "longitude": 78.58,
+      "description": "Cauvery River near Upper Anicut, Tamil Nadu, India"
+     },
+     "model_grid": {
+      "latitude": 10.86116,
+      "longitude": 78.61063
+     },
+     "distance_to_station_km": 4.53
+    },
+    "value": {
+     "rainfall_mm": {
+      "3h": {
+       "status": "AVAILABLE",
+       "total_mm": 0.0,
+       "reason": null
+      },
+      "6h": {
+       "status": "AVAILABLE",
+       "total_mm": 0.0,
+       "reason": null
+      },
+      "24h": {
+       "status": "AVAILABLE",
+       "total_mm": 12.0,
+       "reason": null
+      }
+     },
+     "current_values": {
+      "temperature_2m": 27.0,
+      "relative_humidity_2m": 85.0,
+      "precipitation": 0.0,
+      "rain": 0.0,
+      "wind_speed_10m": 10.0,
+      "wind_direction_10m": 90.0,
+      "wind_gusts_10m": 20.0
+     }
+    },
+    "verification": {
+     "status": "NOT_VERIFIABLE",
+     "detail": "Model output cannot be verified as a measurement."
+    },
+    "freshness": {
+     "status": "FRESH",
+     "age_hours": 0.208,
+     "max_age_hours": 3.0
+    },
+    "quality": {
+     "status": "OK",
+     "errors": []
+    },
+    "uncertainty": [
+     "Numerical weather model output; may differ from rain on the ground.",
+     "Model grid cell, not the station location."
+    ],
+    "limitations": [
+     "Local modelled rain is a weak indicator at Upper Anicut, where upstream rain and dam releases dominate."
+    ],
+    "validation": {
+     "status": "VALID",
+     "findings": [],
+     "error_codes": []
+    }
+   }
+  ],
+  "claims": [
+   {
+    "claim_id": "C1_RIVER_CURRENT_LEVEL",
+    "statement": "The current river level at the station is 74.12 m (reading observed 2026-10-30T08:10:00+00:00).",
+    "status": "SIMULATED_ONLY",
+    "value": 74.12,
+    "safety_critical": true,
+    "supporting_evidence_ids": [
+     "d344f9b453dcbba75cc4db56458ce9732f3d009b152d501308ddb50dddf61851"
+    ],
+    "contradicting_evidence_ids": [],
+    "explanation": [
+     "Simulated test data: valid only inside the simulation."
+    ]
+   },
+   {
+    "claim_id": "C2_RIVER_TREND",
+    "statement": "The river is FALLING at -0.2317 m/h.",
+    "status": "SIMULATED_ONLY",
+    "value": "FALLING",
+    "safety_critical": true,
+    "supporting_evidence_ids": [
+     "d344f9b453dcbba75cc4db56458ce9732f3d009b152d501308ddb50dddf61851"
+    ],
+    "contradicting_evidence_ids": [],
+    "explanation": [
+     "Derived from the accepted readings in the trend window."
+    ]
+   },
+   {
+    "claim_id": "C3_RIVER_THRESHOLD_STATUS",
+    "statement": "The river level is BELOW_WARNING relative to the configured thresholds.",
+    "status": "SIMULATED_ONLY",
+    "value": "BELOW_WARNING",
+    "safety_critical": true,
+    "supporting_evidence_ids": [
+     "d344f9b453dcbba75cc4db56458ce9732f3d009b152d501308ddb50dddf61851"
+    ],
+    "contradicting_evidence_ids": [],
+    "explanation": [
+     "Compared with warning 75.0 m / danger 75.6 m.",
+     "Thresholds are prototype/test values, NOT official CWC thresholds.",
+     "Depends on C1 (SIMULATED_ONLY)."
+    ]
+   },
+   {
+    "claim_id": "C4_MODELLED_RAINFALL_24H",
+    "statement": "Modelled rainfall over the last 24 h is 12.0 mm (numerical weather model, not a sensor reading).",
+    "status": "SIMULATED_ONLY",
+    "value": 12.0,
+    "safety_critical": true,
+    "supporting_evidence_ids": [
+     "ev-8e6fc4ae17532eea605d50c9"
+    ],
+    "contradicting_evidence_ids": [],
+    "explanation": [
+     "Simulated test data: valid only inside the simulation."
+    ]
+   },
+   {
+    "claim_id": "C5_FLOOD_RISK_LEVEL",
+    "statement": "The assessed flood risk is LOW.",
+    "status": "SIMULATED_ONLY",
+    "value": "LOW",
+    "safety_critical": true,
+    "supporting_evidence_ids": [
+     "d344f9b453dcbba75cc4db56458ce9732f3d009b152d501308ddb50dddf61851"
+    ],
+    "contradicting_evidence_ids": [],
+    "explanation": [
+     "Assessed on simulated evidence.",
+     "Rules fired: R3_RIVER_BELOW_WARNING, R6_RIVER_STEADY_OR_FALLING, R8_OBSERVED_RAINFALL_24H, R9_FORECAST_RAINFALL"
+    ]
+   },
+   {
+    "claim_id": "C6_EVIDENCE_SUFFICIENT_FOR_REAL_WORLD_ACTION",
+    "statement": "The evidence is sufficient to put real-world capabilities to a human for approval.",
+    "status": "INSUFFICIENT",
+    "value": false,
+    "safety_critical": true,
+    "supporting_evidence_ids": [],
+    "contradicting_evidence_ids": [],
+    "explanation": [
+     "Evidence gate: EVIDENCE_SIMULATED, EVIDENCE_NOT_VERIFIED_LIVE.",
+     "C1_RIVER_CURRENT_LEVEL is SIMULATED_ONLY."
+    ]
+   }
+  ],
+  "summary": {
+   "records_by_class": {
+    "SIMULATED": 2
+   },
+   "invalid_records": [],
+   "claims_by_status": {
+    "INSUFFICIENT": 1,
+    "SIMULATED_ONLY": 5
+   }
+  },
+  "real_world_evidence_sufficient": false,
+  "deny_reasons": [
+   "C6_INSUFFICIENT"
+  ],
+  "audit_complete": true,
+  "class_descriptions": {
+   "LIVE_VERIFIED": "Live CWC telemetry, source verified and fresh",
+   "LIVE_STALE": "Verified CWC source, but the reading is old: last known, NOT current",
+   "LIVE_UNVERIFIED": "Live data that failed source verification",
+   "HISTORICAL_NOT_CURRENT": "Historical CWC data: not current conditions",
+   "SIMULATED": "Fabricated test data: never real conditions",
+   "MODEL_ESTIMATE": "Open-Meteo numerical weather model output (not a sensor reading)",
+   "MODEL_STALE": "Open-Meteo model output that is too old",
+   "UNAVAILABLE": "No evidence could be obtained; nothing is substituted",
+   "RECHECK": "A recorded reverification attempt"
+  },
+  "disclaimer": "Evidence traceability for decision support. Validation limits are prototype settings, not official CWC/IMD thresholds. Open-Meteo values are numerical weather model output, not sensor readings. This layer can only deny; it never authorizes or executes an action.",
+  "reverification_attempts": []
+ },
+ "audit": {
+  "events": [
+   {
+    "at": "2026-10-30T08:12:30+00:00",
+    "event": "river_workflow_started",
+    "written": true,
+    "details": {
+     "mode": "simulated",
+     "scenario": "realtime-simulation:falling",
+     "disaster_state": "RECOVERY",
+     "capabilities": [
+      "read_river",
+      "request_evidence_reverification",
+      "prepare_advisory",
+      "propose_evacuation_plan",
+      "request_human_emergency_authorization"
+     ],
+     "cross_check_paths": [],
+     "independent_paths": []
+    }
+   },
+   {
+    "at": "2026-10-30T08:12:30+00:00",
+    "event": "capability_authorization",
+    "written": true,
+    "details": {
+     "disaster_state": "RECOVERY",
+     "capability": "read_river",
+     "agent_id": "river_agent",
+     "allowed": true,
+     "reason": "CAPABILITY_PERMITTED",
+     "capability_class": "READ_ONLY",
+     "evidence_reasons": [],
+     "human_approval_required": false,
+     "evidence_id": null,
+     "eligibility_source": null,
+     "caller_assessment_supplied": true
+    }
+   },
+   {
+    "at": "2026-10-30T08:12:30+00:00",
+    "event": "capability_authorization",
+    "written": true,
+    "details": {
+     "disaster_state": "RECOVERY",
+     "capability": "request_evidence_reverification",
+     "agent_id": "river_agent",
+     "allowed": true,
+     "reason": "CAPABILITY_PERMITTED",
+     "capability_class": "INTERNAL",
+     "evidence_reasons": [],
+     "human_approval_required": false,
+     "evidence_id": null,
+     "eligibility_source": null,
+     "caller_assessment_supplied": true
+    }
+   },
+   {
+    "at": "2026-10-30T08:12:30+00:00",
+    "event": "capability_authorization",
+    "written": true,
+    "details": {
+     "disaster_state": "RECOVERY",
+     "capability": "prepare_advisory",
+     "agent_id": "river_agent",
+     "allowed": false,
+     "reason": "EVIDENCE_INSUFFICIENT",
+     "capability_class": "REAL_WORLD",
+     "evidence_reasons": [
+      "EVIDENCE_SIMULATED",
+      "EVIDENCE_NOT_VERIFIED_LIVE",
+      "EVIDENCE_ASSESSMENT_REJECTED"
+     ],
+     "human_approval_required": false,
+     "evidence_id": "d344f9b453dcbba75cc4db56458ce9732f3d009b152d501308ddb50dddf61851",
+     "eligibility_source": "COMPUTED_BY_GATE",
+     "caller_assessment_supplied": true
+    }
+   },
+   {
+    "at": "2026-10-30T08:12:30+00:00",
+    "event": "capability_authorization",
+    "written": true,
+    "details": {
+     "disaster_state": "RECOVERY",
+     "capability": "propose_evacuation_plan",
+     "agent_id": "river_agent",
+     "allowed": false,
+     "reason": "CAPABILITY_DENIED",
+     "capability_class": null,
+     "evidence_reasons": [],
+     "human_approval_required": false,
+     "evidence_id": null,
+     "eligibility_source": null,
+     "caller_assessment_supplied": true
+    }
+   },
+   {
+    "at": "2026-10-30T08:12:30+00:00",
+    "event": "capability_authorization",
+    "written": true,
+    "details": {
+     "disaster_state": "RECOVERY",
+     "capability": "request_human_emergency_authorization",
+     "agent_id": "river_agent",
+     "allowed": false,
+     "reason": "CAPABILITY_DENIED",
+     "capability_class": null,
+     "evidence_reasons": [],
+     "human_approval_required": false,
+     "evidence_id": null,
+     "eligibility_source": null,
+     "caller_assessment_supplied": true
+    }
+   },
+   {
+    "at": "2026-10-30T08:12:30+00:00",
+    "event": "risk_assessment_completed",
+    "written": true,
+    "details": {
+     "assessment_id": "ee0b8b72823befbb5e6cf47f5aedef47f2e6c29911f74bf5f99ddba357a32a05",
+     "risk_level": "LOW",
+     "hazard_indicated": "LOW",
+     "assessment_mode": "simulated",
+     "confidence": "MEDIUM",
+     "rules_fired": [
+      "R3_RIVER_BELOW_WARNING",
+      "R6_RIVER_STEADY_OR_FALLING",
+      "R8_OBSERVED_RAINFALL_24H",
+      "R9_FORECAST_RAINFALL"
+     ],
+     "requires_human_review": false,
+     "human_review_reasons": [],
+     "missing_data": [
+      "upstream_reservoir_releases"
+     ],
+     "service_evidence_id": "d344f9b453dcbba75cc4db56458ce9732f3d009b152d501308ddb50dddf61851",
+     "weather_retrieved_at": "2026-10-30T08:12:30+00:00",
+     "authorizes_actions": false
+    }
+   },
+   {
+    "at": "2026-10-30T08:12:30+00:00",
+    "event": "evidence_record_acquired",
+    "written": true,
+    "details": {
+     "evidence_id": "d344f9b453dcbba75cc4db56458ce9732f3d009b152d501308ddb50dddf61851",
+     "kind": "RIVER_LEVEL",
+     "evidence_class": "SIMULATED",
+     "source_label": "SIMULATED_TEST_DATA",
+     "observed_at": "2026-10-30T08:10:00+00:00",
+     "retrieved_at": null
+    }
+   },
+   {
+    "at": "2026-10-30T08:12:30+00:00",
+    "event": "evidence_validated",
+    "written": true,
+    "details": {
+     "evidence_id": "d344f9b453dcbba75cc4db56458ce9732f3d009b152d501308ddb50dddf61851",
+     "status": "VALID",
+     "findings": [
+      "SIMULATED_DATA"
+     ]
+    }
+   },
+   {
+    "at": "2026-10-30T08:12:30+00:00",
+    "event": "evidence_record_acquired",
+    "written": true,
+    "details": {
+     "evidence_id": "ev-8e6fc4ae17532eea605d50c9",
+     "kind": "WEATHER_MODEL",
+     "evidence_class": "SIMULATED",
+     "source_label": "SIMULATED_TEST_DATA",
+     "observed_at": "2026-10-30T08:00:00+00:00",
+     "retrieved_at": "2026-10-30T08:12:30+00:00"
+    }
+   },
+   {
+    "at": "2026-10-30T08:12:30+00:00",
+    "event": "evidence_validated",
+    "written": true,
+    "details": {
+     "evidence_id": "ev-8e6fc4ae17532eea605d50c9",
+     "status": "VALID",
+     "findings": []
+    }
+   },
+   {
+    "at": "2026-10-30T08:12:30+00:00",
+    "event": "claim_evaluated",
+    "written": true,
+    "details": {
+     "claim_id": "C1_RIVER_CURRENT_LEVEL",
+     "status": "SIMULATED_ONLY",
+     "supporting": [
+      "d344f9b453dcbba75cc4db56458ce9732f3d009b152d501308ddb50dddf61851"
+     ],
+     "contradicting": [],
+     "explanation": [
+      "Simulated test data: valid only inside the simulation."
+     ]
+    }
+   },
+   {
+    "at": "2026-10-30T08:12:30+00:00",
+    "event": "claim_evaluated",
+    "written": true,
+    "details": {
+     "claim_id": "C2_RIVER_TREND",
+     "status": "SIMULATED_ONLY",
+     "supporting": [
+      "d344f9b453dcbba75cc4db56458ce9732f3d009b152d501308ddb50dddf61851"
+     ],
+     "contradicting": [],
+     "explanation": [
+      "Derived from the accepted readings in the trend window."
+     ]
+    }
+   },
+   {
+    "at": "2026-10-30T08:12:30+00:00",
+    "event": "claim_evaluated",
+    "written": true,
+    "details": {
+     "claim_id": "C3_RIVER_THRESHOLD_STATUS",
+     "status": "SIMULATED_ONLY",
+     "supporting": [
+      "d344f9b453dcbba75cc4db56458ce9732f3d009b152d501308ddb50dddf61851"
+     ],
+     "contradicting": [],
+     "explanation": [
+      "Compared with warning 75.0 m / danger 75.6 m.",
+      "Thresholds are prototype/test values, NOT official CWC thresholds.",
+      "Depends on C1 (SIMULATED_ONLY)."
+     ]
+    }
+   },
+   {
+    "at": "2026-10-30T08:12:30+00:00",
+    "event": "claim_evaluated",
+    "written": true,
+    "details": {
+     "claim_id": "C4_MODELLED_RAINFALL_24H",
+     "status": "SIMULATED_ONLY",
+     "supporting": [
+      "ev-8e6fc4ae17532eea605d50c9"
+     ],
+     "contradicting": [],
+     "explanation": [
+      "Simulated test data: valid only inside the simulation."
+     ]
+    }
+   },
+   {
+    "at": "2026-10-30T08:12:30+00:00",
+    "event": "claim_evaluated",
+    "written": true,
+    "details": {
+     "claim_id": "C5_FLOOD_RISK_LEVEL",
+     "status": "SIMULATED_ONLY",
+     "supporting": [
+      "d344f9b453dcbba75cc4db56458ce9732f3d009b152d501308ddb50dddf61851"
+     ],
+     "contradicting": [],
+     "explanation": [
+      "Assessed on simulated evidence.",
+      "Rules fired: R3_RIVER_BELOW_WARNING, R6_RIVER_STEADY_OR_FALLING, R8_OBSERVED_RAINFALL_24H, R9_FORECAST_RAINFALL"
+     ]
+    }
+   },
+   {
+    "at": "2026-10-30T08:12:30+00:00",
+    "event": "claim_evaluated",
+    "written": true,
+    "details": {
+     "claim_id": "C6_EVIDENCE_SUFFICIENT_FOR_REAL_WORLD_ACTION",
+     "status": "INSUFFICIENT",
+     "supporting": [],
+     "contradicting": [],
+     "explanation": [
+      "Evidence gate: EVIDENCE_SIMULATED, EVIDENCE_NOT_VERIFIED_LIVE.",
+      "C1_RIVER_CURRENT_LEVEL is SIMULATED_ONLY."
+     ]
+    }
+   },
+   {
+    "at": "2026-10-30T08:12:30+00:00",
+    "event": "evidence_layer_completed",
+    "written": true,
+    "details": {
+     "real_world_evidence_sufficient": false,
+     "deny_reasons": [
+      "C6_INSUFFICIENT"
+     ],
+     "claims": {
+      "INSUFFICIENT": 1,
+      "SIMULATED_ONLY": 5
+     },
+     "records": {
+      "SIMULATED": 2
+     }
+    }
+   },
+   {
+    "at": "2026-10-30T08:12:30+00:00",
+    "event": "disaster_state_unchanged",
+    "written": true,
+    "details": {
+     "outcome": "STATE_UNCHANGED",
+     "scope": "simulated",
+     "current_state": "RECOVERY",
+     "proposed_state": "NORMAL",
+     "resulting_state": "RECOVERY",
+     "condition": "NORMAL",
+     "reason": "RECOVERY kept: RECOVERY -> NORMAL needs 4 observation(s) over 12.0 h (have 2 over 0.5 h).",
+     "reasons": [
+      "risk LOW with rules ['R3_RIVER_BELOW_WARNING', 'R6_RIVER_STEADY_OR_FALLING'] meets the NORMAL condition"
+     ],
+     "evidence_id": "d344f9b453dcbba75cc4db56458ce9732f3d009b152d501308ddb50dddf61851",
+     "observed_at": "2026-10-30T08:10:00+00:00",
+     "risk_assessment_id": "ee0b8b72823befbb5e6cf47f5aedef47f2e6c29911f74bf5f99ddba357a32a05",
+     "supporting_evidence_ids": [
+      "6e90650cd658951b2c3912bf7c7ef963a1fdefc6d1336534db84f0081625e25a",
+      "d344f9b453dcbba75cc4db56458ce9732f3d009b152d501308ddb50dddf61851"
+     ],
+     "persistence": {
+      "observations": 2,
+      "span_hours": 0.5,
+      "evidence_ids": [
+       "6e90650cd658951b2c3912bf7c7ef963a1fdefc6d1336534db84f0081625e25a",
+       "d344f9b453dcbba75cc4db56458ce9732f3d009b152d501308ddb50dddf61851"
+      ],
+      "since": "2026-10-30T07:40:00+00:00",
+      "readings_skipped_as_duplicate_or_too_close": 9,
+      "largest_gap_hours": 0.083,
+      "run_broken_by_gap_hours": null,
+      "max_gap_hours": 3.0,
+      "min_spacing_hours": 0.5,
+      "required_observations": 4,
+      "required_hours": 12.0,
+      "satisfied": false
+     },
+     "state_decision_id": "0616fce38d2d6145a2bc901177fd86ce5629ecd7e03bd2e43614d451c98acaf1",
+     "authorizes_actions": false
+    }
+   },
+   {
+    "at": "2026-10-30T08:12:30+00:00",
+    "event": "river_workflow_completed",
+    "written": true,
+    "details": {
+     "scenario": "realtime-simulation:falling",
+     "mode": "simulated",
+     "decision_id": "bdd53e834e74282903d4e4c58ffcc3864cc8510b2536f3e41200226d222992bf",
+     "service_evidence_id": "d344f9b453dcbba75cc4db56458ce9732f3d009b152d501308ddb50dddf61851",
+     "risk_assessment_id": "ee0b8b72823befbb5e6cf47f5aedef47f2e6c29911f74bf5f99ddba357a32a05",
+     "risk_level": "LOW",
+     "state_outcome": "STATE_UNCHANGED",
+     "resulting_state": "RECOVERY",
+     "evidence_reasons": [
+      "EVIDENCE_SIMULATED",
+      "EVIDENCE_NOT_VERIFIED_LIVE"
+     ],
+     "reverification_outcome": "NOT_REQUIRED",
+     "real_world_authorization": "RESTRICTED",
+     "capabilities_allowed": [
+      "read_river",
+      "request_evidence_reverification"
+     ],
+     "capabilities_denied": [
+      "prepare_advisory",
+      "propose_evacuation_plan",
+      "request_human_emergency_authorization"
+     ]
+    }
+   }
+  ],
+  "write_errors": [],
+  "log_file": "dash.jsonl"
+ }
+}

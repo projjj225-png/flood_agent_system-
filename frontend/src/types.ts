@@ -2,7 +2,8 @@
 // optional or nullable on purpose: the UI must cope with missing data and must
 // never fill a gap with a made-up value.
 
-export type Mode = "real" | "simulated";
+// "simulated_live": the Real-Time River Simulation (fabricated readings every 5 min).
+export type Mode = "real" | "simulated" | "simulated_live";
 export type RiskLevel = "LOW" | "MODERATE" | "HIGH" | "CRITICAL" | "INDETERMINATE";
 export type DisasterState = "NORMAL" | "ALERT" | "EMERGENCY" | "RECOVERY";
 
@@ -272,6 +273,48 @@ export interface DashboardDoc {
   safety?: SafetyBlock;
   evidence_layer?: EvidenceLayerBlock;
   audit?: { events?: AuditEvent[]; write_errors?: string[]; log_file?: string | null };
+  simulation?: SimulationInfo;
+}
+
+/** One evaluation of the real-time simulation session (all values from the backend). */
+export interface SimulationTick {
+  evaluated_at?: string;
+  catch_up?: boolean;
+  observed_at?: string | null;
+  river_level_m?: number | null;
+  freshness?: string | null;
+  trend?: string | null;
+  risk_level?: string;
+  condition?: string | null;
+  outcome?: string;
+  state_before?: string | null;
+  state_after?: string | null;
+  real_world_authorization?: string;
+}
+
+export interface SimulationInfo {
+  label: string;
+  session_id?: string;
+  scenario?: string;
+  scenario_description?: string;
+  start_state?: string;
+  current_state?: string;
+  started_at?: string;
+  station_id?: string;
+  twin_of?: string | null;
+  qc_rules_from?: string;
+  interval_minutes?: number;
+  readings_held?: number;
+  readings_generated?: number;
+  latest_generated_at?: string | null;
+  next_reading_due?: string | null;
+  evaluations?: number;
+  thresholds?: { warning_level_m?: number; danger_level_m?: number; reference?: string; official?: boolean };
+  timeline?: SimulationTick[];
+  state_record_scope?: string;
+  state_record_persisted?: boolean;
+  authorizes_real_world_actions: boolean;
+  disclaimer?: string;
 }
 
 export interface SequenceStep {
@@ -298,4 +341,11 @@ export interface ScenarioList {
   scenarios: { name: string; description: string }[];
   sequences: { name: string; description: string }[];
   start_states: string[];
+  live_simulation?: {
+    available?: boolean;
+    reason?: string;
+    scenarios?: { name: string; description: string }[];
+    interval_minutes?: number;
+    data_label?: string;
+  };
 }

@@ -71,6 +71,8 @@ ENDPOINTS = [
     "GET /river/summary?mode=...",
     "GET /dashboard?mode=real",
     "GET /dashboard?mode=simulated&scenario=NAME&state=NORMAL|ALERT|EMERGENCY|RECOVERY",
+    "GET /dashboard?mode=simulated_live&scenario=stable|slowly-rising|rapidly-rising|falling"
+    "&state=NORMAL|ALERT|EMERGENCY|RECOVERY",
     "GET /dashboard/scenarios",
     "GET /dashboard/sequence?name=flood-cycle|short-rise",
 ]

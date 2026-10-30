@@ -52,10 +52,10 @@ export function CodeList({ items, tone = "neutral", empty = "None" }: {
   );
 }
 
-export function SimulatedBanner({ text }: { text: string }) {
+export function SimulatedBanner({ text, label = "SIMULATED DATA" }: { text: string; label?: string }) {
   return (
     <div className="sim-banner" role="note">
-      <strong>SIMULATED DATA</strong> <span>{text}</span>
+      <strong>{label}</strong> <span>{text}</span>
     </div>
   );
 }

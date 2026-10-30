@@ -11,6 +11,10 @@ Real mode:      live river evidence (mode "live", no historical fallback), live
 Simulated mode: the existing fabricated scenarios (run_risk_scenario) and the
                 flood-cycle sequence (run_state_sequence). Always labelled
                 SIMULATED DATA; never touches the real state record.
+Simulated-live: the Real-Time River Simulation (src.river_simulation): fabricated
+                readings every 5 minutes at current timestamps, run through the
+                same workflow. Always labelled SIMULATED LIVE; its state record is
+                in memory, scope "simulated", never the real one.
 
 Safety:
 - The dashboard NEVER saves a state record and exposes no write operation.
@@ -37,16 +41,18 @@ from src.risk_assessment import WEATHER_SIMULATED_SOURCE_TYPE
 from src.river_agent_workflow import RISK_SCENARIOS, run_risk_scenario, run_river_workflow
 from src.river_monitoring_agent import apply_quality_control, load_observations, parse_timestamp
 from src.river_service import RiverEvidenceService
+from src.river_simulation import LIVE_LABEL, SCENARIOS as LIVE_SCENARIOS, SimulationRegistry
 from src.weather_agent import LOCATION_DESCRIPTION, LATITUDE, LONGITUDE, TIMEZONE, WeatherAgent
 
 SCHEMA_VERSION = "1.0"
-MODES = ("real", "simulated")
+MODES = ("real", "simulated", "simulated_live")
 DEFAULT_STATE_FILE = "outputs/state/real_state.json"
 DEFAULT_AUDIT_PATH = "outputs/audit/dashboard_audit.jsonl"
 SERIES_HOURS = 48
 MAX_AUDIT_EVENTS = 100
 SIMULATED_LABEL = "SIMULATED DATA"
 REAL_LABEL = "REAL DATA"
+SIMULATED_LIVE_LABEL = LIVE_LABEL  # "SIMULATED LIVE"
 
 SCENARIO_DESCRIPTIONS = {
     "low-rain-valid-river": "Steady river below the TEST warning level, light rain.",
@@ -182,7 +188,8 @@ def weather_block(weather: Any) -> dict[str, Any]:
     }
 
 
-def river_series(evidence: dict[str, Any], service: RiverEvidenceService) -> dict[str, Any]:
+def river_series(evidence: dict[str, Any], service: RiverEvidenceService,
+                 extra_roots: list[Path] | None = None) -> dict[str, Any]:
     """Accepted and QC-rejected readings for the SERIES_HOURS before the latest
     reading, read from the file the evidence itself came from (server-side path)."""
     out: dict[str, Any] = {"points": [], "rejected": [], "hours": SERIES_HOURS,
@@ -198,6 +205,7 @@ def river_series(evidence: dict[str, Any], service: RiverEvidenceService) -> dic
     snapshot_dir = service.resolve_path(_obj(service.config.get("outputs")).get("snapshot_dir"))
     if snapshot_dir:
         roots.append(snapshot_dir.resolve())
+    roots += [Path(r).resolve() for r in extra_roots or []]
     if not any(path.is_relative_to(root) for root in roots):
         out["reason"] = "Source file is outside the configured data folders; not read."
         return out
@@ -226,7 +234,8 @@ def river_series(evidence: dict[str, Any], service: RiverEvidenceService) -> dic
 
 
 def river_block(result: dict[str, Any], evidence: dict[str, Any],
-                service: RiverEvidenceService) -> dict[str, Any]:
+                service: RiverEvidenceService,
+                extra_roots: list[Path] | None = None) -> dict[str, Any]:
     quality = _obj(evidence.get("data_quality"))
     ds = _obj(evidence.get("decision_support"))
     simulated = bool(result.get("simulated_river_level_m") is not None
@@ -277,7 +286,7 @@ def river_block(result: dict[str, Any], evidence: dict[str, Any],
         "reasons_not_usable": ds.get("reasons_not_usable", []),
         "warnings": evidence.get("warnings") or [],
         "errors": evidence.get("errors") or [],
-        "series": river_series(evidence, service) if evidence else
+        "series": river_series(evidence, service, extra_roots) if evidence else
         {"points": [], "rejected": [], "status": "UNAVAILABLE",
          "reason": result.get("evidence_error") or "No river evidence."},
     }
@@ -380,7 +389,8 @@ class DashboardService:
                  audit_path: str | Path | None = DEFAULT_AUDIT_PATH,
                  weather_fetcher: Callable[[], dict[str, Any]] | None = None,
                  cache_seconds: float = 300.0,
-                 monotonic: Callable[[], float] = time.monotonic):
+                 monotonic: Callable[[], float] = time.monotonic,
+                 simulation_config: dict[str, Any] | None = None):
         self.service = service
         self.state_file = service.resolve_path(state_file) if state_file else None
         self.audit_path = service.resolve_path(audit_path) if audit_path else None
@@ -389,17 +399,30 @@ class DashboardService:
         self.monotonic = monotonic
         self._cache: dict[tuple, tuple[float, dict[str, Any]]] = {}
         self._lock = threading.Lock()  # one computation at a time: no duplicate fetches
+        self.simulation_config = simulation_config
+        self._simulations: SimulationRegistry | None = None  # created on first use
+        self._live_docs: dict[tuple, tuple[float, dict[str, Any]]] = {}
 
     # ---- public ------------------------------------------------------------
 
-    @staticmethod
-    def scenarios() -> dict[str, Any]:
+    def scenarios(self) -> dict[str, Any]:
+        try:
+            config = self._registry().config
+            live = {"scenarios": [{"name": k, "description":
+                                   config["scenarios"][k].get("description", "")}
+                                  for k in LIVE_SCENARIOS],
+                    "interval_minutes": config["interval_minutes"],
+                    "data_label": SIMULATED_LIVE_LABEL, "available": True}
+        except (ValueError, OSError) as exc:  # a broken simulation config never hides real mode
+            live = {"scenarios": [], "available": False, "reason": str(exc),
+                    "data_label": SIMULATED_LIVE_LABEL}
         return {"modes": list(MODES), "default_mode": "real",
                 "scenarios": [{"name": k, "description": SCENARIO_DESCRIPTIONS.get(k, "")}
                               for k in RISK_SCENARIOS],
                 "sequences": [{"name": k, "description": SEQUENCE_DESCRIPTIONS.get(k, "")}
                               for k in SEQUENCES],
-                "start_states": list(STATES), "data_label": SIMULATED_LABEL}
+                "start_states": list(STATES), "data_label": SIMULATED_LABEL,
+                "live_simulation": live}
 
     def get(self, mode: str, scenario: str | None = None,
             state: str | None = None) -> tuple[dict[str, Any], float]:
@@ -412,9 +435,16 @@ class DashboardService:
             scenario = scenario or "rising-river-increasing-rain"
             if scenario not in RISK_SCENARIOS:
                 raise ValueError(f"scenario must be one of {', '.join(RISK_SCENARIOS)}")
+        if mode == "simulated_live":
+            scenario = scenario or "stable"
+            if scenario not in LIVE_SCENARIOS:
+                raise ValueError(f"scenario must be one of {', '.join(LIVE_SCENARIOS)}")
+        if mode != "real":
             state = state or "NORMAL"
             if state not in STATES:
                 raise ValueError(f"state must be one of {', '.join(STATES)}")
+        if mode == "simulated_live":
+            return self._simulated_live(scenario, state)
         return self._cached(("dashboard", mode, scenario, state),
                             lambda: self._real() if mode == "real"
                             else self._simulated(scenario, state))
@@ -437,6 +467,11 @@ class DashboardService:
                 self._cache[key] = (self.monotonic(), doc)
             return doc, 0.0
 
+    def _registry(self) -> SimulationRegistry:
+        if self._simulations is None:
+            self._simulations = SimulationRegistry(self.service, self.simulation_config)
+        return self._simulations
+
     def _audit(self) -> RecordingAuditLog:
         return RecordingAuditLog(self.audit_path, clock=self.service.clock,
                                  component="dashboard")
@@ -445,7 +480,8 @@ class DashboardService:
         return {"schema_version": SCHEMA_VERSION,
                 "generated_at": self.service.clock().astimezone(timezone.utc).isoformat(),
                 "mode": mode, "is_simulated": simulated,
-                "data_label": SIMULATED_LABEL if simulated else REAL_LABEL,
+                "data_label": (SIMULATED_LIVE_LABEL if mode == "simulated_live" else
+                               SIMULATED_LABEL if simulated else REAL_LABEL),
                 "timezone": TIMEZONE,
                 "location": {"description": LOCATION_DESCRIPTION, "latitude": LATITUDE,
                              "longitude": LONGITUDE},
@@ -498,6 +534,32 @@ class DashboardService:
             doc["error"] = f"Simulation could not be run ({type(exc).__name__})."
         return sanitize(doc, self.service.base_dir)
 
+    def _simulated_live(self, scenario: str, state: str) -> tuple[dict[str, Any], float]:
+        """The running session's latest result. Recomputed only when a new 5-minute
+        reading is due, so polling never re-evaluates the same observation."""
+        key = (scenario, state)
+        with self._lock:
+            doc = self._base("simulated_live", True)
+            doc.update(scenario=scenario, start_state=state)
+            try:
+                session = self._registry().session(scenario, state)
+                audit = self._audit()
+                result, recomputed = session.tick(audit)
+                cached = self._live_docs.get(key)
+                if not recomputed and cached is not None:
+                    return cached[1], self.monotonic() - cached[0]
+                doc.update(scenario_description=session.spec.get("description"),
+                           simulation=session.info())
+                doc.update(self._assemble(result, audit, None, "SIMULATION_SESSION_RECORD",
+                                          None, river_service=session.service,
+                                          extra_roots=[session.csv_path.parent]))
+            except Exception as exc:  # never crash the server; never invent data
+                doc["error"] = f"Real-time simulation could not be run ({type(exc).__name__})."
+                return sanitize(doc, self.service.base_dir), 0.0
+            doc = sanitize(doc, self.service.base_dir)
+            self._live_docs[key] = (self.monotonic(), doc)
+            return doc, 0.0
+
     def _sequence(self, name: str) -> dict[str, Any]:
         doc = self._base("simulated", True)
         doc.update(sequence=name, description=SEQUENCE_DESCRIPTIONS.get(name))
@@ -509,13 +571,16 @@ class DashboardService:
 
     def _assemble(self, result: dict[str, Any], audit: RecordingAuditLog,
                   persisted: dict[str, Any] | None, basis: str,
-                  record_problem: str | None) -> dict[str, Any]:
+                  record_problem: str | None,
+                  river_service: RiverEvidenceService | None = None,
+                  extra_roots: list[Path] | None = None) -> dict[str, Any]:
         evidence = _obj(result.get("evidence"))
         return {
             "run_id": result.get("run_id"),
             "decision_id": result.get("decision_id"),
             "weather": weather_block(result.get("weather_evidence")),
-            "river": river_block(result, evidence, self.service),
+            "river": river_block(result, evidence, river_service or self.service,
+                                 extra_roots),
             "risk": result.get("risk_assessment"),
             "state": state_block(result, persisted, basis, record_problem,
                                  str(self.state_file) if self.state_file else None),

@@ -9,6 +9,8 @@ export const POLL_SECONDS: number = Number.isFinite(pollEnv) ? Math.max(30, poll
 
 export type Result<T> = { ok: true; value: T } | { ok: false; error: string; status?: number };
 
+export const SIMULATED_LIVE_LABEL = "SIMULATED LIVE";
+
 const isObj = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);
 
@@ -18,7 +20,7 @@ export function parseDashboard(json: unknown): Result<DashboardDoc> {
   if (typeof json.error === "string") return { ok: false, error: json.error };
   if (json.schema_version !== "1.0")
     return { ok: false, error: `Unsupported schema_version ${String(json.schema_version)}.` };
-  if (json.mode !== "real" && json.mode !== "simulated")
+  if (json.mode !== "real" && json.mode !== "simulated" && json.mode !== "simulated_live")
     return { ok: false, error: "Response has no valid mode." };
   if (typeof json.is_simulated !== "boolean" || typeof json.generated_at !== "string")
     return { ok: false, error: "Response is missing is_simulated or generated_at." };
@@ -42,6 +44,18 @@ export function parseDashboard(json: unknown): Result<DashboardDoc> {
     return { ok: false, error: "Real-mode response contains simulated evidence records; not shown." };
   if (json.mode === "simulated" && !json.is_simulated)
     return { ok: false, error: "Simulated-mode response is not labelled simulated; not shown." };
+  if (json.mode === "simulated_live") {
+    // Generated readings must be labelled as such and can never carry a real-world permission.
+    const sim = json.simulation;
+    if (json.is_simulated !== true || json.data_label !== SIMULATED_LIVE_LABEL
+        || !isObj(sim) || sim.label !== SIMULATED_LIVE_LABEL)
+      return { ok: false, error: "Real-time simulation response is not labelled SIMULATED LIVE; not shown." };
+    const safety = isObj(json.safety) ? json.safety : {};
+    const pending = Array.isArray(safety.pending_human_approval) ? safety.pending_human_approval : [];
+    if (sim.authorizes_real_world_actions !== false || pending.length > 0
+        || (safety.real_world_authorization !== undefined && safety.real_world_authorization !== "RESTRICTED"))
+      return { ok: false, error: "Simulated response claims real-world authority; not shown." };
+  }
   return { ok: true, value: json as unknown as DashboardDoc };
 }
 
@@ -88,7 +102,7 @@ export async function fetchDashboard(
   mode: Mode, scenario: string | null, state: string | null, signal?: AbortSignal,
 ): Promise<Result<DashboardDoc>> {
   const params = new URLSearchParams({ mode });
-  if (mode === "simulated") {
+  if (mode !== "real") {
     if (scenario) params.set("scenario", scenario);
     if (state) params.set("state", state);
   }

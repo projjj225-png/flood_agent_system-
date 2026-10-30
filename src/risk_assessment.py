@@ -196,13 +196,21 @@ def load_simulated_weather(path: str | Path,
     overrides the file's simulated retrieval time (for replay scenarios).
     """
     doc = load_json_file(path, "Simulated weather")
+    return simulated_weather_from_doc(doc, f"SIMULATED weather file (fabricated): "
+                                           f"{Path(path).as_posix()}", retrieved_at, str(path))
+
+
+def simulated_weather_from_doc(doc: Any, source: str, retrieved_at: datetime | None = None,
+                               name: str = "Simulated weather") -> dict[str, Any]:
+    """load_simulated_weather for an already-loaded document (e.g. one re-timed to
+    the present by src.river_simulation). Same checks, parser and labels."""
     if not isinstance(doc, dict) or doc.get("simulated") is not True:
-        raise ValueError(f"{path}: simulated weather files must declare \"simulated\": true.")
+        raise ValueError(f"{name}: simulated weather files must declare \"simulated\": true.")
     moment = retrieved_at or parse_timestamp(doc.get("retrieved_at"))
     if moment is None:
-        raise ValueError(f"{path}: retrieved_at must be a timezone-aware ISO 8601 time.")
+        raise ValueError(f"{name}: retrieved_at must be a timezone-aware ISO 8601 time.")
     result = WeatherAgent().parse_response(doc.get("payload"), moment)
-    result["source"] = f"SIMULATED weather file (fabricated): {Path(path).as_posix()}"
+    result["source"] = source
     result["source_url"] = None
     result["source_type"] = WEATHER_SIMULATED_SOURCE_TYPE
     result["data_notes"] = ["FABRICATED test weather; not an observation or forecast of the "

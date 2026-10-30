@@ -11,6 +11,7 @@ Prototype location: **Cauvery River near Upper Anicut, Tamil Nadu, India**
 - the **Risk Assessment Engine**: deterministic, explainable and audited. See [Risk Assessment Engine](#risk-assessment-engine).
 - the **Disaster State Manager**: NORMAL/ALERT/EMERGENCY/RECOVERY with configurable rules, hysteresis and persistence. It proposes the *next* state and never authorizes anything. See [Disaster State Manager](#disaster-state-manager).
 - the **dashboard**: a read-only React web interface (`frontend/`) over a read-only `/dashboard` API, with real and clearly labelled simulated modes. See [Dashboard](#dashboard).
+- the **Real-Time River Simulation**: fabricated UPPER_ANICUT-like readings every 5 minutes at current timestamps, labelled `SIMULATED LIVE` and run through the existing validation, risk and state pipeline. It never authorizes anything. See [Real-Time River Simulation](#real-time-river-simulation-simulated-live).
 
 Data sources: the National Water Data Portal's CWC telemetry API (verified, but its latest Upper Anicut data
 is months old), real historical CWC telemetry 2021–2025, and simulated test data.
@@ -30,6 +31,7 @@ flood_agent_system/
 │   ├── river_sources.py            # Live NWDP/CWC API connector: retries + verification
 │   ├── river_service.py            # Entry point: modes, fallback, conflicts, audit, envelope
 │   ├── river_api.py                # Read-only local HTTP API (incl. /dashboard routes)
+│   ├── river_simulation.py         # Real-Time River Simulation (SIMULATED LIVE, 5-minute readings)
 │   ├── dashboard_service.py        # Read-only dashboard adapter over the workflow
 │   ├── audit_log.py                # Append-only JSONL audit log
 │   ├── capability_control.py       # State allowlists + evidence gate (never executes actions)
@@ -53,6 +55,7 @@ flood_agent_system/
 │   ├── test_disaster_state_manager.py   # State transitions, persistence, safety rules, integration
 │   ├── test_dashboard_api.py            # Dashboard adapter and /dashboard routes
 │   ├── test_evidence_layer.py           # Evidence layer: records, validation, claims, reverification, audit
+│   ├── test_river_simulation.py         # Real-time simulation: generator, QC pipeline, all four states
 │   └── nwdp_fixtures.py                 # API-shaped fixtures (provenance in the file)
 ├── data/
 │   ├── raw/                        # Put rwl_tel_hr_cwc_009_2021_2025.csv here (gitignored, 103 MB)
@@ -67,6 +70,7 @@ flood_agent_system/
 │   ├── risk_assessment.json           # Prototype risk categories and breakpoints (NOT official)
 │   ├── disaster_state.json            # Prototype state-transition rules (NOT official)
 │   ├── evidence_layer.json            # Prototype validation limits for the evidence layer (NOT official)
+│   ├── river_simulation.json          # Real-time simulation: scenarios + TEST thresholds (NOT official)
 │   └── river_thresholds.example.json  # TEST thresholds only, not official levels
 ├── frontend/                 # React + TypeScript + Vite dashboard (see Dashboard)
 ├── outputs/                  # Weather samples, river_evidence.json; live/, audit/, state/ (gitignored)
@@ -1008,6 +1012,37 @@ Real and simulated data are never mixed:
 - The page never switches to demo mode by itself. If real evidence is unavailable, it says so.
 
 Demo mode also shows the **flood-cycle state timeline**: the fabricated cycle run through the real workflow (`/dashboard/sequence`), with river level and state over time and the four transitions.
+
+### Real-Time River Simulation (`SIMULATED LIVE`)
+
+The third mode, **Real-Time River Simulation** (`/dashboard?mode=simulated_live&scenario=NAME&state=STATE`), generates a new **fabricated** river reading every 5 minutes, timestamped at the current 5-minute slot of the real clock. Every generated value is labelled `SIMULATED LIVE`. It is **not** a CWC observation, and it can **never** authorize a real-world action. The code is `src/river_simulation.py` and the settings are in `config/river_simulation.json`.
+
+No new evidence, risk or state logic was added. The generator writes the River Agent's normal CSV schema with `source_type=simulated`. After that, the existing components do the work:
+
+| Step | Existing component |
+|---|---|
+| Row validation (NaN/inf, timestamps, station id), QC (70–80 m range, 72.0 m fill value, 1 m spikes), freshness, trend, recent quality | `RiverMonitoringAgent` through `RiverEvidenceService` (simulated mode), judged at the **wall clock** |
+| Evidence gate, reverification policy, evidence layer | `run_river_workflow`, `capability_control`, `evidence_layer` |
+| Risk and disaster state | `assess_flood_risk`, `evaluate_state` (persistence rules unchanged) |
+
+- **Station:** `UPPER_ANICUT_SIM`, a twin of `UPPER_ANICUT`. Its QC rules are taken from the real station at run time (`qc_from_station`), so they can never be weaker. It has its own id so that a fabricated reading can never be attributed to the real station. Its thresholds (warning 75.0 m, danger 75.6 m RL) are TEST values, not official.
+- **Generator:** one reading per slot, never rewritten. Values follow a smooth bounded curve (`tanh`) plus deterministic per-session noise of at most 3 mm. Each value is checked before it is written: it must be finite, inside the QC range, not the 72.0 m placeholder, later than the previous reading and different from the previous value. The first tick adds 6 h of history so the trend and spike checks have data. Readings older than 30 h are dropped.
+- **Weather:** the existing fabricated weather files, re-timed by whole hours so that their profile is centred on the present. They are parsed by the real `WeatherAgent` and labelled simulated.
+- **State:** each session (one per scenario and start state) carries its own `scope: simulated` record in memory. It is never written to `outputs/state/`. The workflow runs once per new reading, so polling never re-evaluates the same observation. Slots missed while nobody was watching are evaluated afterwards at their own times, at most one per 30 min for the last 3 h.
+
+| Scenario | Fabricated river | Weather file | What the existing engines decide (start NORMAL unless noted) |
+|---|---|---|---|
+| `stable` | about 73.40 m, ±0.01 m | light rain | LOW, stays **NORMAL** |
+| `slowly-rising` | +0.12 m/h below warning | heavy, intensifying | HIGH (R5 + R11), **ALERT** at the first reading |
+| `rapidly-rising` | +0.3–0.4 m/h through warning to danger | extreme | CRITICAL, **ALERT** then **EMERGENCY** after 30 min (2 observations) |
+| `falling` (start EMERGENCY) | −0.2 m/h, receding from above warning | easing | MODERATE then LOW, **RECOVERY** after about 2 h. In RECOVERY, `propose_evacuation_plan` and `request_human_emergency_authorization` are denied by state (`CAPABILITY_DENIED`) |
+
+In every scenario and state, `real_world_authorization` is `RESTRICTED` and real-world capabilities are denied with `EVIDENCE_SIMULATED`. The page also refuses a live-simulation response that isn't labelled `SIMULATED LIVE`, or that carries any real-world permission.
+
+```powershell
+python -m src.river_simulation --scenario rapidly-rising --ticks 12 --accelerate   # offline, clock jumps 5 min per tick
+python -m pytest tests/test_river_simulation.py -q
+```
 
 ### What each field shows today (verified 25 Oct 2026)
 

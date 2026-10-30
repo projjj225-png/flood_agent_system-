@@ -19,6 +19,8 @@ data/raw/
 outputs/live/
 outputs/audit/
 outputs/state/
+# Real-Time River Simulation: generated (fabricated) readings, rewritten every 5 minutes
+outputs/simulated_live/
 
 # Workflow audit logs written to outputs/
 outputs/*_audit.jsonl

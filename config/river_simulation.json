@@ -1,0 +1,45 @@
+{
+  "_comment": "Real-Time River Simulation (src/river_simulation.py). Every reading it produces is FABRICATED and labelled SIMULATED LIVE: it is not a CWC observation and can never authorize a real-world action. The simulated station UPPER_ANICUT_SIM is a twin of UPPER_ANICUT: it reuses the real station's QC rules (qc_from_station) so generated readings face exactly the same validation, but it has its own id so no fabricated reading can be attributed to the real station. Thresholds and scenario curves are TEST values, NOT official warning or danger levels.",
+  "station_id": "UPPER_ANICUT_SIM",
+  "twin_of": "UPPER_ANICUT",
+  "qc_from_station": "UPPER_ANICUT",
+  "interval_minutes": 5,
+  "history_hours": 6,
+  "retention_hours": 30,
+  "catch_up_hours": 3,
+  "output_dir": "outputs/simulated_live",
+  "thresholds": {
+    "UPPER_ANICUT_SIM": {
+      "warning_level_m": 75.0,
+      "danger_level_m": 75.6,
+      "reference": "TEST VALUES - not official; chosen above the 2021-2025 CWC telemetry's usual high-flow band (about 74.8-75.0 m RL) for software testing only"
+    }
+  },
+  "scenarios": {
+    "_comment": "level(h) = base_m + amplitude_m * tanh(rate_m_per_hour * h / amplitude_m) + wave_m * sin(2 pi h / wave_period_hours) + noise, h = hours since the session started (negative for the generated history). tanh keeps every curve smooth and bounded inside the QC range; noise is deterministic per session and timestamp, at most noise_m.",
+    "stable": {
+      "description": "Steady river well below the TEST warning level; light fabricated rain.",
+      "base_m": 73.4, "amplitude_m": 1.0, "rate_m_per_hour": 0.0,
+      "wave_m": 0.012, "wave_period_hours": 6, "noise_m": 0.003,
+      "weather": "data/simulated/weather/light_rain.json"
+    },
+    "slowly-rising": {
+      "description": "River rising about 0.12 m/h below the TEST warning level; heavy, intensifying fabricated rain.",
+      "base_m": 73.7, "amplitude_m": 1.2, "rate_m_per_hour": 0.12,
+      "wave_m": 0.0, "wave_period_hours": 6, "noise_m": 0.003,
+      "weather": "data/simulated/weather/heavy_rain_intensifying.json"
+    },
+    "rapidly-rising": {
+      "description": "River rising about 0.4 m/h through the TEST warning level towards the TEST danger level; extreme fabricated rain.",
+      "base_m": 75.1, "amplitude_m": 1.2, "rate_m_per_hour": 0.4,
+      "wave_m": 0.0, "wave_period_hours": 6, "noise_m": 0.003,
+      "weather": "data/simulated/weather/extreme_rain.json"
+    },
+    "falling": {
+      "description": "River receding from above the TEST warning level; rain easing after the event.",
+      "base_m": 74.6, "amplitude_m": 0.9, "rate_m_per_hour": -0.25,
+      "wave_m": 0.0, "wave_period_hours": 6, "noise_m": 0.003,
+      "weather": "data/simulated/weather/easing_after_event.json"
+    }
+  }
+}
