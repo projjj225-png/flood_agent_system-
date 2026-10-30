@@ -2,10 +2,13 @@
 // (src/dashboard_service.py) generated offline; see README.
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import { parseDashboard, parseSequence } from "../api";
+import { parseAnalysis, parseDashboard, parseSequence } from "../api";
+import { AnalysisSections, DataSourcesStrip } from "../components/analysis";
+import type { AnalysisDoc } from "../types";
+import analysisReal from "./fixtures/analysis_real.json";
 import { fmtNum, fmtTime, humanize } from "../format";
 import App, { Dashboard } from "../App";
-import { TimelineSection } from "../components/sections";
+import { KpiCards, RiverSection, riverDataClass, TimelineSection } from "../components/sections";
 import type { DashboardDoc, SequenceDoc } from "../types";
 import realStale from "./fixtures/real_stale.json";
 import realOutage from "./fixtures/real_outage.json";
@@ -299,5 +302,232 @@ describe("real-time river simulation", () => {
 
   it("is never accepted as real data", () => {
     expect(parseDashboard({ ...clone(simulatedLive), mode: "real" }).ok).toBe(false);
+  });
+});
+
+describe("first-page River monitoring card", () => {
+  const river = (doc: unknown) => {
+    const parsed = parseDashboard(doc);
+    if (!parsed.ok) throw new Error(parsed.error);
+    return text(renderToStaticMarkup(<RiverSection doc={parsed.value} />));
+  };
+  const live = simulatedLive as Record<string, any>;
+  const real = realStale as Record<string, any>;
+
+  it("real mode keeps the CWC evidence display", () => {
+    const t = river(realStale);
+    expect(t).toContain(real.river.station_id);
+    expect(t).toContain(fmtNum(real.river.level.value_m, "m", 3));
+    expect(t).toContain("Last known reading — NOT current");
+    expect(t).toMatch(/[\d.]+ days old/);
+    expect(t).toContain("Recent river level");
+    expect(t).not.toContain("SIMULATED LIVE");
+  });
+
+  it("simulated-live mode shows the simulation's reading, never the CWC one", () => {
+    const t = river(simulatedLive);
+    expect(t).toContain("SIMULATED LIVE — NOT CWC DATA");
+    expect(t).toContain("fabricated test data");
+    expect(t).toContain("not actual Cauvery river measurements");
+    expect(t).toContain(live.simulation.station_id);
+    expect(t).toContain(fmtNum(live.river.level.value_m, "m", 3));
+    expect(t).toContain(fmtTime(live.river.level.observed_at));
+    expect(t).toContain(live.river.freshness.status);
+    expect(t).toContain(humanize(live.river.trend.direction));
+    expect(t).toContain(live.river.recent_quality.status);
+    expect(t).toContain(live.risk.risk_level);
+    expect(t).toContain(live.state.evaluation.resulting_state);
+    expect(t).toContain("Simulated river level");
+    expect(t).not.toContain("No simulated river-level series");
+    // Nothing from the real CWC evidence.
+    expect(t).not.toContain(fmtNum(real.river.level.value_m, "m", 3));
+    expect(t).not.toContain("Last known reading — NOT current");
+    expect(t).not.toMatch(/days old/);
+    expect(t).not.toContain("Live fetch");
+  });
+
+  it("charts the simulated series from the response", () => {
+    expect(live.river.series.status).toBe("AVAILABLE");
+    expect(live.river.series.points.length).toBeGreaterThan(0);
+    for (const p of live.river.series.points) expect(Number.isFinite(p.level_m)).toBe(true);
+  });
+
+  it("refuses to show real CWC river evidence inside a simulated-live response", () => {
+    const mixed = clone(simulatedLive) as Record<string, any>;
+    mixed.river = clone(real.river);
+    const t = river(mixed);
+    expect(t).toContain("SIMULATED LIVE — NOT CWC DATA");
+    expect(t).toContain("Real CWC readings are never shown in simulation mode");
+    expect(t).not.toContain(fmtNum(real.river.level.value_m, "m", 3));
+    expect(t).not.toMatch(/days old/);
+  });
+});
+
+describe("real-mode River card: data class, staleness and risk", () => {
+  const t = text(renderToStaticMarkup(<RiverSection doc={parseDashboard(realStale).ok ? (realStale as unknown as DashboardDoc) : (null as never)} />));
+
+  it("labels an old live-feed reading STALE LIVE FEED, never an actual current observation", () => {
+    expect(t).toContain("STALE LIVE FEED");
+    expect(t).not.toContain("ACTUAL CWC OBSERVATION");
+    expect(t).toContain("NOT CURRENT CONDITIONS");
+    expect(t).toContain("latest valid reading in the NWDP live feed was observed");
+    expect(t).toContain("no current reading is available and none is substituted");
+  });
+
+  it("classifies readings by source and freshness", () => {
+    expect(riverDataClass("LIVE_VERIFIED", "FRESH").text).toBe("ACTUAL CWC OBSERVATION");
+    expect(riverDataClass("LIVE_VERIFIED", "STALE").text).toBe("STALE LIVE FEED");
+    expect(riverDataClass("LIVE_UNVERIFIED", "UNAVAILABLE").text).toBe("STALE LIVE FEED");
+    expect(riverDataClass("HISTORICAL_CSV", "STALE").text).toBe("HISTORICAL CWC DATA");
+    expect(riverDataClass("LIVE_UNAVAILABLE", null).text).toBe("NO CWC OBSERVATION");
+  });
+
+  it("puts the same badge on the River level summary card", () => {
+    const kpi = text(renderToStaticMarkup(<KpiCards doc={realStale as unknown as DashboardDoc} />));
+    expect(kpi).toContain("STALE LIVE FEED");
+    expect(kpi).toContain("Last known reading — NOT current");
+  });
+
+  it("summarises repeated issues by code instead of one line per row", () => {
+    const doc = clone(realStale) as Record<string, any>;
+    doc.river.errors = [
+      ...Array.from({ length: 39 }, (_, i) => ({ code: "PLACEHOLDER_VALUE", severity: "error",
+        message: `Row ${i + 2} (2026-08-${String(27 + Math.floor(i / 10)).padStart(2, "0")}T0${i % 10}:00:00+00:00): river_level_m 72.0 is a configured placeholder value, not a measurement.` })),
+      { code: "NON_NUMERIC_LEVEL", severity: "error", message: "Row 50: river_level_m 'NaN' is not a finite number." },
+    ];
+    const html = renderToStaticMarkup(<RiverSection doc={doc as unknown as DashboardDoc} />);
+    const shown = text(html);
+    expect((html.match(/>PLACEHOLDER_VALUE</g) ?? []).length).toBe(1);
+    expect(shown).toContain("PLACEHOLDER_VALUE × 39");
+    expect(shown).toContain("27 Aug");
+    expect(shown).toContain("NON_NUMERIC_LEVEL Row 50: river_level_m");
+    expect(shown).toContain("NaN&#x27; is not a finite number.");
+    expect(shown).toContain("These readings are excluded from all calculations.");
+    expect(shown).not.toMatch(/ 0\.000 m/);  // nothing missing was turned into zero
+  });
+
+  it("shows the deterministic risk assessment", () => {
+    expect(t).toContain("Risk assessment");
+    expect(t).toContain((realStale as Record<string, any>).risk.risk_level);
+  });
+
+  it("never shows the CWC class in simulated-live mode", () => {
+    const live = text(renderToStaticMarkup(<RiverSection doc={simulatedLive as unknown as DashboardDoc} />));
+    expect(live).not.toContain("ACTUAL CWC OBSERVATION");
+    expect(live).not.toContain("HISTORICAL CWC DATA");
+  });
+});
+
+describe("historical analysis and model predictions", () => {
+  const parse = (doc: unknown) => {
+    const r = parseAnalysis(doc);
+    if (!r.ok) throw new Error(r.error);
+    return r.value;
+  };
+  const show = (doc: AnalysisDoc) => text(renderToStaticMarkup(<AnalysisSections doc={doc} />));
+  const real = analysisReal as Record<string, any>;
+  const t = show(parse(analysisReal));
+
+  it("accepts the backend's analysis of the real export", () => {
+    expect(parseAnalysis(analysisReal).ok).toBe(true);
+  });
+
+  it("says the data are historical, not real-time, with the observation time and age", () => {
+    const ua = real.analysis.stations.UPPER_ANICUT.analysis;
+    expect(t).toContain("HISTORICAL DATA — NOT REAL-TIME");
+    expect(t).toContain("HISTORICAL CWC DATA");
+    expect(t).toContain("STALE");
+    expect(t).toContain(fmtTime(ua.latest.observed_at));
+    expect(t).toContain(fmtNum(ua.latest.level_m, "m", 3));
+    expect(t).toContain("Placeholder value");
+  });
+
+  it("shows every model against persistence and publishes nothing that does not beat it", () => {
+    expect(t).toContain("MODEL PREDICTION");
+    expect(t).toContain("0 of 5 horizons published");
+    for (const name of ["persistence", "moving_average_6h", "linear_trend_6h", "ridge_ar_6h"]) expect(t).toContain(name);
+    expect(t).toContain("NOT PUBLISHED");
+    expect(t).toContain("No live forecast");
+    for (const f of real.forecast.live) expect(f.predicted_level_m).toBeNull();
+    expect(t).not.toMatch(/MODEL PREDICTION \d+\.\d{3} m/);   // no predicted level anywhere
+  });
+
+  it("explains that Musiri's upstream relationship is not verified", () => {
+    expect(t).toContain("Upstream relationship NOT verified");
+    expect(t).toContain("not used in forecasts or risk");
+    expect(t).toContain("Mettur Reservoir (reservoir)");
+  });
+
+  it("shows a published horizon's prediction with its interval, labelled", () => {
+    const doc = clone(analysisReal) as Record<string, any>;
+    doc.forecast.evaluation.horizons[0].published = true;
+    Object.assign(doc.forecast.live[0], { status: "FORECAST", published: true, predicted_level_m: 74.512,
+      interval_m: [74.49, 74.53], valid_for: "2026-10-30T07:00:00+00:00" });
+    const shown = show(parse(doc));
+    expect(shown).toContain("MODEL PREDICTION 74.512 m");
+    expect(shown).toContain("74.490");
+  });
+
+  it("rejects predictions for unpublished horizons, mislabelled or authority-claiming documents", () => {
+    const sneaky = clone(analysisReal) as Record<string, any>;
+    sneaky.forecast.live[0].predicted_level_m = 74.5;
+    expect(parseAnalysis(sneaky).ok).toBe(false);
+    expect(parseAnalysis({ ...clone(analysisReal), is_simulated: true }).ok).toBe(false);
+    expect(parseAnalysis({ ...clone(analysisReal), data_label: "REAL DATA" }).ok).toBe(false);
+    const authority = clone(analysisReal) as Record<string, any>;
+    authority.forecast.affects_risk_assessment = true;
+    expect(parseAnalysis(authority).ok).toBe(false);
+    const unlabelled = clone(analysisReal) as Record<string, any>;
+    unlabelled.forecast.label = "CWC OBSERVATION";
+    expect(parseAnalysis(unlabelled).ok).toBe(false);
+    expect(parseAnalysis({ error: "Historical analysis could not be built (OSError)." }).ok).toBe(false);
+  });
+});
+
+describe("data sources strip and placement", () => {
+  const real = realStale as Record<string, any>;
+  const hist = (analysisReal as Record<string, any>).analysis.stations.UPPER_ANICUT.analysis;
+  const strip = (analysis: AnalysisDoc | null, error: string | null = null) => text(renderToStaticMarkup(
+    <DataSourcesStrip doc={realStale as unknown as DashboardDoc} analysis={analysis} analysisError={error} />));
+
+  it("shows the live feed, the historical export and the forecast separately, each with its own date", () => {
+    const t = strip(analysisReal as unknown as AnalysisDoc);
+    expect(t).toContain("NWDP live feed");
+    expect(t).toContain("STALE LIVE FEED");
+    expect(t).toContain(fmtNum(real.river.level.value_m, "m", 3));
+    expect(t).toContain(fmtTime(real.river.level.observed_at));
+    expect(t).toContain("Local CWC export (UPPER_ANICUT)");
+    expect(t).toContain("HISTORICAL CWC DATA");
+    expect(t).toContain(fmtNum(hist.latest.level_m, "m", 3));
+    expect(t).toContain(fmtTime(hist.latest.observed_at));
+    expect(t).toContain(`${hist.accepted_readings} valid readings`);
+    expect(t).toContain("MODEL PREDICTION");
+    expect(t).toContain("No forecast");
+    expect(t).toContain("0 of 5 horizons beat persistence");
+  });
+
+  it("never fills the historical box with the live value while loading or on error", () => {
+    const loading = strip(null);
+    expect(loading).toContain("Loading…");
+    expect(loading.split(fmtNum(real.river.level.value_m, "m", 3)).length - 1).toBe(1);
+    expect(strip(null, "Cannot reach the API")).toContain("Cannot reach the API");
+  });
+
+  it("places the historical analysis directly after River monitoring", () => {
+    const html = renderToStaticMarkup(<Dashboard doc={realStale as unknown as DashboardDoc}
+      afterRiver={<AnalysisSections doc={analysisReal as unknown as AnalysisDoc} />} />);
+    const order = ["river", "historical", "forecast", "stations", "risk"]
+      .map((id) => html.indexOf(`id="${id}-title"`));
+    expect(order.every((i) => i >= 0)).toBe(true);
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+  });
+
+  it("shows the observation periods and the number of valid readings", () => {
+    const t = text(renderToStaticMarkup(<AnalysisSections doc={analysisReal as unknown as AnalysisDoc} />));
+    const st = (analysisReal as Record<string, any>).analysis.stations;
+    expect(t).toContain(`Rows in file ${st.UPPER_ANICUT.load.rows_read}`);
+    expect(t).toContain(`Valid readings ${st.UPPER_ANICUT.analysis.accepted_readings}`);
+    expect(t).toContain(fmtTime(st.MUSIRI.analysis.latest.observed_at));  // Musiri's own latest date
+    expect(t).toContain("Validated on 13086 valid measured readings");
   });
 });

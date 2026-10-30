@@ -16,6 +16,8 @@ Prototype location: **Cauvery River near Upper Anicut, Tamil Nadu, India**
 Data sources: the National Water Data Portal's CWC telemetry API (verified, but its latest Upper Anicut data
 is months old), real historical CWC telemetry 2021–2025, and simulated test data.
 
+- **historical CWC analysis and forecast validation**: Upper Anicut and Musiri from the raw 2021–2025 export, validated against persistence. No forecast horizon beats it, so none is published. See [Historical CWC analysis](#historical-cwc-analysis-and-forecast-validation).
+
 **Not implemented yet:** trust scoring.
 
 ## Project structure
@@ -32,6 +34,8 @@ flood_agent_system/
 │   ├── river_service.py            # Entry point: modes, fallback, conflicts, audit, envelope
 │   ├── river_api.py                # Read-only local HTTP API (incl. /dashboard routes)
 │   ├── river_simulation.py         # Real-Time River Simulation (SIMULATED LIVE, 5-minute readings)
+│   ├── hydro_analysis.py           # Historical CWC analysis + upstream check (display only)
+│   ├── river_forecast.py           # Forecast validation vs persistence (display only)
 │   ├── dashboard_service.py        # Read-only dashboard adapter over the workflow
 │   ├── audit_log.py                # Append-only JSONL audit log
 │   ├── capability_control.py       # State allowlists + evidence gate (never executes actions)
@@ -56,6 +60,9 @@ flood_agent_system/
 │   ├── test_dashboard_api.py            # Dashboard adapter and /dashboard routes
 │   ├── test_evidence_layer.py           # Evidence layer: records, validation, claims, reverification, audit
 │   ├── test_river_simulation.py         # Real-time simulation: generator, QC pipeline, all four states
+│   ├── test_cwc_ingest.py               # Multi-station ingestion of the raw CWC export
+│   ├── test_hydro_analysis.py           # Freshness, trends, gaps, stuck QC, upstream relationship
+│   ├── test_river_forecast.py           # Leakage, chronological split, publishing, separation
 │   └── nwdp_fixtures.py                 # API-shaped fixtures (provenance in the file)
 ├── data/
 │   ├── raw/                        # Put rwl_tel_hr_cwc_009_2021_2025.csv here (gitignored, 103 MB)
@@ -71,6 +78,7 @@ flood_agent_system/
 │   ├── disaster_state.json            # Prototype state-transition rules (NOT official)
 │   ├── evidence_layer.json            # Prototype validation limits for the evidence layer (NOT official)
 │   ├── river_simulation.json          # Real-time simulation: scenarios + TEST thresholds (NOT official)
+│   ├── cwc_stations.json              # Station registry: identity, kind, main-stem order, upstream rule
 │   └── river_thresholds.example.json  # TEST thresholds only, not official levels
 ├── frontend/                 # React + TypeScript + Vite dashboard (see Dashboard)
 ├── outputs/                  # Weather samples, river_evidence.json; live/, audit/, state/ (gitignored)
@@ -1064,6 +1072,64 @@ python -m pytest tests/test_river_simulation.py -q
 - **Dev server only:** `npm run dev` / `preview` with the proxy is for local demonstration. A deployed setup would need a reverse proxy serving `dist/` and forwarding `/api`.
 - **No push updates:** the backend has no push mechanism, so real mode refreshes by polling (every 60 s).
 - **Prototype values:** all thresholds and criteria shown are prototype configuration, not official Cauvery warning levels, and no flood probability is produced.
+
+## Historical CWC analysis and forecast validation
+
+`src/hydro_analysis.py` and `src/river_forecast.py` analyse the raw CWC export `data/cwc/rwl_tel_hr_cwc_009_2021_2025.csv` (31 Cauvery-basin stations, 618,724 rows). They also validate river-level forecasts for **Upper Anicut**, with **Musiri** as the only upstream candidate. The dashboard shows the results in real mode (`GET /dashboard/analysis`). **This is historical data, not a real-time source:** every station in the export ends by 31 Dec 2025.
+
+**Display only.** Neither module is imported by the risk engine, the Disaster State Manager, capability control, the evidence layer or the workflow (a test enforces this). A forecast can never change a risk level, a state or a permission.
+
+### Loading (`src/cwc_adapter.py`, `config/cwc_stations.json`)
+- **One pass:** several stations are read from the original file in a single pass. The file is never modified, and its SHA-256 is recorded.
+- **Station matching:** a row belongs to a station only if `Station` equals the registry's `source_name` exactly. Surrounding spaces are ignored, because the export pads some names. A similar name, such as `UPPER ANICUT WEST`, does not match.
+- **Identity check:** coordinates, zero-gauge RL, river and tributary are checked on every row.
+- **Times:** `Data Acquisition Time` is the observation time; the file has no separate acquisition or download time. It is interpreted at +05:30, which is an assumption.
+- **Bad values:** NaN, empty and non-numeric levels are counted and left out, never read as zero.
+- **Duplicates:** duplicate timestamps with the same value are kept once; conflicting ones are dropped.
+- **Reservoirs:** Mettur is registered as a reservoir and is never compared with a river level.
+
+### Quality control
+- The River Agent's `apply_quality_control` gains an optional stuck-sensor check, `max_constant_run_hours`. It rejects a value that has been held unchanged for longer than the limit.
+- **Musiri** (`config/river_qc.json`): 81.17 m is a fill value. It is about half of all in-range readings and repeats in runs of up to 3,277 h. Values held for more than 6 h are rejected.
+- **Upper Anicut:** QC is unchanged for the evidence pipeline. The analysis adds a stricter 6 h stuck limit (`analysis_max_constant_run_hours`), which removes 134 more readings.
+
+### What the data show (verified 30 Oct 2026)
+
+| | Upper Anicut | Musiri |
+|---|---|---|
+| Rows / accepted after QC | 25,453 / 13,086 | 22,009 / 8,113 |
+| Rejected | 7,459 out of range (1–3 m gauge-height values in 2021; ~1,070 m corruption), 4,059 × 72.0 m fill, 636 spikes, 134 stuck, 79 NaN | 11,284 × 81.17 m fill, 1,541 out of range, 870 stuck, 7 spikes, 194 NaN |
+| Latest accepted reading | 74.900 m, 30 Dec 2025 05:00 IST (**STALE, ~304 days**) | 81.010 m, 13 Dec 2025 16:00 IST (**STALE**) |
+| Hourly completeness | 30.2 %, 1,091 gaps > 3 h | 18.9 %, 1,201 gaps > 3 h |
+
+- **NWDP 2026 feed:** a single read-only query on 30 Oct 2026 found nothing newer than 01 Sep 2026 05:00 among the 5 stations sampled. Upper Anicut's latest record is `72`, the fill value.
+- **Musiri → Upper Anicut is NOT verified.** The two stations are on the same main stem, 16 km apart in a straight line, and the zero-gauge level falls downstream. But Musiri's level changes do not correlate with Upper Anicut's at any lag from 0 to 24 h (best r = −0.139, 596 pairs; the acceptance rule is |r| ≥ 0.3). So Musiri is not used in forecasts or risk. Upper Anicut is a regulated weir pool, which can mask upstream changes.
+
+### Forecast validation
+- **Models:** persistence (the reference), a 6-h moving average, a 6-h linear trend, and a ridge autoregression on the recent level changes. All are plain Python.
+- **Samples:** a sample needs every input hour (t−5 h to t) and the target to be measured readings. Nothing is interpolated.
+- **Split:** chronological, 70/15/15, with an embargo of H + 30 h between parts.
+- **Model choice:** the model and its ridge penalty are chosen on validation; the test part is used once.
+- **Intervals:** the 5–95 % residual quantiles from validation.
+- **Publishing:** a horizon is published only if the chosen model beats persistence by at least 2 % MAE on validation **and** test, and its interval covers at least 80 % of test values. The 2 % margin exists because on a pure random walk, ±0.5 % "wins" happen by chance.
+- **Fresh inputs:** a number is produced only from fresh (≤ 3 h) and complete inputs.
+
+Results on the real export (test period roughly Jun–Dec 2025, ~770–880 test samples per horizon):
+
+| Horizon | Persistence test MAE | Best other model (test MAE, skill) | Published? |
+|---|---|---|---|
+| +1 h | 0.0195 m | ridge 0.0191 m, +2.1 % | No: validation skill below 2 %; interval coverage 66 % |
+| +3 h | 0.0383 m | ridge 0.0383 m, 0.0 % | No |
+| +6 h | 0.1043 m | moving average 0.1023 m, +1.9 % | No: worse than persistence on validation |
+| +12 h | 0.1675 m | moving average 0.1620 m, +3.3 % | No: worse than persistence on validation |
+| +24 h | 0.2320 m | moving average 0.2284 m, +1.6 % | No |
+
+**No horizon is published:** persistence is as good as any model tried. Even if one were published, no live number could be produced, because the newest input is ~304 days old.
+
+```powershell
+python -m src.hydro_analysis        # station summary and upstream check
+python -m src.river_forecast        # per-horizon validation table (--json for everything)
+```
 
 ## Live data: CWC via the National Water Data Portal
 

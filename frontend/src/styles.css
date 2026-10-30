@@ -57,6 +57,7 @@ button:focus-visible, select:focus-visible { outline: 3px solid #60a5fa; outline
 
 main { padding: 20px 28px 8px; max-width: 1500px; margin: 0 auto; }
 
+.strip-heading { font-size: 0.95rem; margin: 0 0 8px; color: var(--muted); }
 .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 18px; }
 .kpi { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
 .kpi h3 { margin: 0 0 6px; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); }

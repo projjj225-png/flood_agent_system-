@@ -11,6 +11,9 @@ Real mode:      live river evidence (mode "live", no historical fallback), live
 Simulated mode: the existing fabricated scenarios (run_risk_scenario) and the
                 flood-cycle sequence (run_state_sequence). Always labelled
                 SIMULATED DATA; never touches the real state record.
+Analysis:       historical analysis and forecast validation of the raw CWC export
+                (src.hydro_analysis, src.river_forecast). Labelled HISTORICAL CWC DATA
+                and MODEL PREDICTION; display only, never input to risk or state.
 Simulated-live: the Real-Time River Simulation (src.river_simulation): fabricated
                 readings every 5 minutes at current timestamps, run through the
                 same workflow. Always labelled SIMULATED LIVE; its state record is
@@ -37,6 +40,8 @@ from typing import Any, Callable
 
 from src.audit_log import AuditLog, redact
 from src.disaster_state_manager import SEQUENCES, STATES, load_state_record, run_state_sequence
+from src.hydro_analysis import analysis_document, load_analysis_inputs
+from src.river_forecast import MAX_INPUT_AGE_HOURS, MODEL_LABEL, evaluate, forecast_now, public
 from src.risk_assessment import WEATHER_SIMULATED_SOURCE_TYPE
 from src.river_agent_workflow import RISK_SCENARIOS, run_risk_scenario, run_river_workflow
 from src.river_monitoring_agent import apply_quality_control, load_observations, parse_timestamp
@@ -53,6 +58,7 @@ MAX_AUDIT_EVENTS = 100
 SIMULATED_LABEL = "SIMULATED DATA"
 REAL_LABEL = "REAL DATA"
 SIMULATED_LIVE_LABEL = LIVE_LABEL  # "SIMULATED LIVE"
+HISTORICAL_LABEL = "HISTORICAL CWC DATA"
 
 SCENARIO_DESCRIPTIONS = {
     "low-rain-valid-river": "Steady river below the TEST warning level, light rain.",
@@ -390,7 +396,8 @@ class DashboardService:
                  weather_fetcher: Callable[[], dict[str, Any]] | None = None,
                  cache_seconds: float = 300.0,
                  monotonic: Callable[[], float] = time.monotonic,
-                 simulation_config: dict[str, Any] | None = None):
+                 simulation_config: dict[str, Any] | None = None,
+                 analysis_loader: Callable[[], dict[str, Any]] | None = None):
         self.service = service
         self.state_file = service.resolve_path(state_file) if state_file else None
         self.audit_path = service.resolve_path(audit_path) if audit_path else None
@@ -402,6 +409,13 @@ class DashboardService:
         self.simulation_config = simulation_config
         self._simulations: SimulationRegistry | None = None  # created on first use
         self._live_docs: dict[tuple, tuple[float, dict[str, Any]]] = {}
+        # Historical analysis: the export is read and models validated once per process,
+        # under their own lock so this slow first load never blocks the other modes.
+        self.analysis_loader = analysis_loader or (
+            lambda: load_analysis_inputs(base_dir=self.service.base_dir))
+        self._analysis_inputs: dict[str, Any] | None = None
+        self._analysis_eval: dict[str, Any] | None = None
+        self._analysis_lock = threading.Lock()
 
     # ---- public ------------------------------------------------------------
 
@@ -448,6 +462,41 @@ class DashboardService:
         return self._cached(("dashboard", mode, scenario, state),
                             lambda: self._real() if mode == "real"
                             else self._simulated(scenario, state))
+
+    def analysis(self) -> dict[str, Any]:
+        """Historical analysis + forecast validation; freshness judged at the clock now."""
+        doc = self._base("analysis", False)
+        doc["data_label"] = HISTORICAL_LABEL
+        try:
+            with self._analysis_lock:
+                if self._analysis_inputs is None:
+                    inputs = self.analysis_loader()
+                    primary = inputs["primary"]
+                    self._analysis_eval = evaluate(inputs["qc"][primary][0], primary)
+                    self._analysis_inputs = inputs
+            inputs, evaluation = self._analysis_inputs, self._analysis_eval
+            now = self.service.clock()
+            doc["analysis"] = analysis_document(inputs, now)
+            live = forecast_now(evaluation, inputs["qc"][inputs["primary"]][0], now)
+            age = live[0]["input_age_hours"] if live else None
+            doc["forecast"] = {
+                "label": MODEL_LABEL, "station_id": inputs["primary"],
+                "evaluation": public(evaluation),
+                "live": live,
+                # Whatever the validation says, no forecast is made from inputs older than this.
+                "input": {"latest_observed_at": live[0]["input_latest_observed_at"] if live else None,
+                          "age_hours": age, "max_age_hours": MAX_INPUT_AGE_HOURS,
+                          "status": "UNAVAILABLE" if age is None else
+                          "FRESH" if age <= MAX_INPUT_AGE_HOURS else "STALE"},
+                "affects_risk_assessment": False, "affects_disaster_state": False,
+                "authorizes_actions": False,
+                "note": ("Model predictions are never CWC measurements. They are shown only for "
+                         "horizons that beat persistence in chronological validation, and only "
+                         "from fresh, complete inputs."),
+            }
+        except Exception as exc:  # never crash the server; never invent data
+            doc["error"] = f"Historical analysis could not be built ({type(exc).__name__})."
+        return sanitize(doc, self.service.base_dir)
 
     def sequence(self, name: str) -> tuple[dict[str, Any], float]:
         if name not in SEQUENCES:

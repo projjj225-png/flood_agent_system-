@@ -349,3 +349,111 @@ export interface ScenarioList {
     data_label?: string;
   };
 }
+
+// ---- /dashboard/analysis: historical CWC analysis and forecast validation ----------
+
+export interface TrendWindow {
+  status?: string;
+  direction?: string | null;
+  level_change_m?: number | null;
+  rate_of_change_m_per_hour?: number | null;
+  duration_hours?: number | null;
+  observations_in_window?: number;
+  reason?: string | null;
+}
+
+export interface StationAnalysis {
+  data_class?: string;
+  status?: string;
+  accepted_readings?: number;
+  rejected_readings?: number;
+  rejected_by_reason?: Record<string, number>;
+  latest?: { level_m?: number; observed_at?: string; basis?: string } | null;
+  freshness?: { status?: string; age_hours?: number | null; max_age_hours?: number; reference_time?: string };
+  is_current?: boolean;
+  trends?: Record<string, TrendWindow>;
+  rolling_24h?: { readings?: number; mean_m?: number | null; std_m?: number | null; min_m?: number; max_m?: number };
+  record?: { max_m?: number; max_at?: string; min_m?: number; min_at?: string; period?: string[]; note?: string };
+  completeness?: { overall?: number | null; by_year?: Record<string, { accepted: number; completeness: number }> };
+  gaps?: { count?: number; missing_hours?: number; threshold_hours?: number; longest?: { from: string; to: string; hours: number }[] };
+}
+
+export interface AnalysisStation {
+  station_id: string;
+  source_name?: string;
+  role?: string;
+  rl_zero_gauge_m?: number;
+  location?: { latitude?: number; longitude?: number };
+  load?: { rows_read?: number; counts?: Record<string, number>; identity?: { verified?: boolean; mismatches?: string[] };
+    first_observed_at?: string | null; last_observed_at?: string | null;
+    provenance?: { raw_file?: string; time_basis?: string; assumed_utc_offset?: string; timestamp_status?: string; datum?: string; datum_status?: string } };
+  analysis?: StationAnalysis;
+}
+
+export interface ModelMetrics {
+  samples?: number;
+  mae_m?: number;
+  rmse_m?: number;
+  bias_m?: number;
+  r2?: number | null;
+  skill_vs_persistence?: number | null;
+}
+
+export interface HorizonEvaluation {
+  horizon_hours: number;
+  published: boolean;
+  reason?: string;
+  selected_model?: string | null;
+  split?: { samples?: { train: number; validation: number; test: number }; periods?: { test?: string[] | null }; embargo_hours?: number };
+  models?: Record<string, { validation?: ModelMetrics; test?: ModelMetrics; interval?: { test_coverage?: number; low_offset_m?: number; high_offset_m?: number } }>;
+}
+
+export interface LiveForecast {
+  horizon_hours: number;
+  label: string;
+  status: string;
+  reason?: string | null;
+  model?: string | null;
+  published?: boolean;
+  predicted_level_m?: number | null;
+  interval_m?: number[] | null;
+  valid_for?: string | null;
+  input_latest_observed_at?: string | null;
+  input_age_hours?: number | null;
+  test_metrics?: ModelMetrics;
+}
+
+export interface AnalysisDoc {
+  schema_version: string;
+  generated_at: string;
+  mode: "analysis";
+  is_simulated: false;
+  data_label: string;
+  error?: string;
+  analysis?: {
+    data_class?: string;
+    source?: { raw_file?: string; note?: string };
+    primary_station?: string;
+    upstream_candidate?: string | null;
+    stations?: Record<string, AnalysisStation>;
+    excluded_stations?: { station_id: string; source_name?: string; kind?: string; reason?: string; last_observed_at?: string | null }[];
+    upstream_relationship?: {
+      verdict?: string; reason?: string; used_in_forecast?: boolean; used_in_risk_assessment?: boolean;
+      estimated_lag_hours?: number | null; best?: { change_hours: number; lag_hours: number; pairs: number; correlation: number | null } | null;
+      acceptance_rule?: { max_lag_hours?: number; min_pairs?: number; min_abs_correlation?: number };
+      metadata?: { same_river?: boolean; both_main_stem?: boolean; straight_line_km?: number; zero_gauge_falls_downstream?: boolean;
+        zero_gauge_rl_m?: { upstream?: number; primary?: number } };
+      note?: string;
+    } | null;
+  };
+  forecast?: {
+    label: string;
+    station_id?: string;
+    evaluation?: { models_compared?: string[]; publishing_rule?: string; data?: { accepted_readings?: number; first?: string; last?: string }; horizons?: HorizonEvaluation[] };
+    live?: LiveForecast[];
+    input?: { latest_observed_at?: string | null; age_hours?: number | null; max_age_hours?: number; status?: string };
+    affects_risk_assessment?: boolean;
+    authorizes_actions?: boolean;
+    note?: string;
+  };
+}

@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { fetchDashboard, fetchHealth, fetchScenarios, fetchSequence, POLL_SECONDS } from "./api";
-import type { DashboardDoc, Mode, ScenarioList, SequenceDoc } from "./types";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { fetchAnalysis, fetchDashboard, fetchHealth, fetchScenarios, fetchSequence, POLL_SECONDS } from "./api";
+import type { AnalysisDoc, DashboardDoc, Mode, ScenarioList, SequenceDoc } from "./types";
 import { fmtTime } from "./format";
 import { Badge, SimulatedBanner, Unavailable } from "./components/common";
 import { LiveSimulationPanel } from "./components/simulation";
+import { AnalysisSections, DataSourcesStrip } from "./components/analysis";
 import {
   AuditSection, EvidenceSection, KpiCards, RiskSection, RiverSection, SafetySection, StateSection,
   TimelineSection, WeatherSection,
@@ -33,7 +34,9 @@ export function Header({ online, doc, mode }: { online: boolean | null; doc: Das
   );
 }
 
-export function Dashboard({ doc }: { doc: DashboardDoc }) {
+/** ``sources`` goes under the summary cards and ``afterRiver`` directly after the River
+ *  monitoring section (real mode: the separately fetched historical analysis). */
+export function Dashboard({ doc, sources, afterRiver }: { doc: DashboardDoc; sources?: ReactNode; afterRiver?: ReactNode }) {
   return (
     <>
       {doc.mode === "simulated_live" ? (
@@ -45,9 +48,11 @@ export function Dashboard({ doc }: { doc: DashboardDoc }) {
         <SimulatedBanner text={`Scenario "${doc.scenario}" (${doc.scenario_description ?? ""}) starting in ${doc.start_state}. Fabricated river and weather data, TEST thresholds; never real conditions, never saved to the real state record.`} />
       )}
       <KpiCards doc={doc} />
+      {sources}
       <div className="layout">
         <WeatherSection doc={doc} />
         <RiverSection doc={doc} />
+        {afterRiver}
         <RiskSection doc={doc} />
         <StateSection doc={doc} />
         <SafetySection doc={doc} />
@@ -88,6 +93,8 @@ export default function App() {
   const [online, setOnline] = useState<boolean | null>(null);
   const [load, setLoad] = useState<Load>({ doc: null, error: null, loading: true, failedAt: null });
   const [seq, setSeq] = useState<{ doc: SequenceDoc | null; error: string | null }>({ doc: null, error: null });
+  // Historical analysis: a separate document, shown in real mode only and never mixed into it.
+  const [analysis, setAnalysis] = useState<{ doc: AnalysisDoc | null; error: string | null }>({ doc: null, error: null });
   const inFlight = useRef<AbortController | null>(null);
 
   const refresh = useCallback(async () => {
@@ -132,6 +139,15 @@ export default function App() {
       .catch(() => undefined);
     return () => controller.abort();
   }, [mode, scenarios, seq.doc]);
+
+  useEffect(() => {
+    if (mode !== "real" || analysis.doc) return;
+    const controller = new AbortController();
+    void fetchAnalysis(controller.signal)
+      .then((r) => setAnalysis(r.ok ? { doc: r.value, error: null } : { doc: null, error: r.error }))
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [mode, analysis.doc]);
 
   const doc = load.doc && load.doc.mode === mode ? load.doc : null;
   return (
@@ -181,8 +197,18 @@ export default function App() {
         )}
         {!doc && load.loading && <Unavailable>Loading {MODE_LABEL[mode].toLowerCase()}…</Unavailable>}
         {!doc && !load.loading && !load.error && <Unavailable>No data.</Unavailable>}
-        {doc && <Dashboard doc={doc} />}
+        {doc && (mode === "real"
+          ? <Dashboard doc={doc}
+              sources={<DataSourcesStrip doc={doc} analysis={analysis.doc} analysisError={analysis.error} />}
+              afterRiver={analysis.doc ? <AnalysisSections doc={analysis.doc} />
+                : <Unavailable>{analysis.error ? `Historical CWC analysis unavailable: ${analysis.error}` : "Loading historical CWC analysis (reading the local export)…"}</Unavailable>} />
+          : <Dashboard doc={doc} />)}
+        {mode === "real" && !doc && analysis.doc && (
+          // The live-feed document failed or is loading: the historical analysis stays reachable.
+          <div className="layout"><AnalysisSections doc={analysis.doc} /></div>
+        )}
         {mode === "simulated" && <TimelineSection seq={seq.doc} error={seq.error} />}
+
       </main>
       <footer className="foot">
         Research prototype. Prototype thresholds are not official flood-warning levels. No real-world

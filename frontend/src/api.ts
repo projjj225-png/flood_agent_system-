@@ -1,7 +1,7 @@
 // API access and runtime validation. The page never trusts a response just
 // because it parsed as JSON: anything malformed, or any real-mode response that
 // contains simulated parts, is rejected and shown as an error.
-import type { DashboardDoc, Mode, ScenarioList, SequenceDoc } from "./types";
+import type { AnalysisDoc, DashboardDoc, Mode, ScenarioList, SequenceDoc } from "./types";
 
 export const API_BASE: string = (import.meta.env?.VITE_API_BASE_URL as string | undefined) ?? "/api";
 const pollEnv = Number(import.meta.env?.VITE_POLL_SECONDS ?? 60);
@@ -10,6 +10,8 @@ export const POLL_SECONDS: number = Number.isFinite(pollEnv) ? Math.max(30, poll
 export type Result<T> = { ok: true; value: T } | { ok: false; error: string; status?: number };
 
 export const SIMULATED_LIVE_LABEL = "SIMULATED LIVE";
+export const HISTORICAL_LABEL = "HISTORICAL CWC DATA";
+export const MODEL_LABEL = "MODEL PREDICTION";
 
 const isObj = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);
@@ -57,6 +59,30 @@ export function parseDashboard(json: unknown): Result<DashboardDoc> {
       return { ok: false, error: "Simulated response claims real-world authority; not shown." };
   }
   return { ok: true, value: json as unknown as DashboardDoc };
+}
+
+/** Validate a /dashboard/analysis response. A historical analysis is never simulated, and a
+ *  number is accepted as a prediction only when the backend published that horizon. */
+export function parseAnalysis(json: unknown): Result<AnalysisDoc> {
+  if (!isObj(json)) return { ok: false, error: "Response is not a JSON object." };
+  if (typeof json.error === "string") return { ok: false, error: json.error };
+  if (json.schema_version !== "1.0" || json.mode !== "analysis")
+    return { ok: false, error: "Not a historical-analysis response." };
+  if (json.is_simulated !== false || json.data_label !== HISTORICAL_LABEL)
+    return { ok: false, error: "Historical analysis is not labelled HISTORICAL CWC DATA; not shown." };
+  const forecast = json.forecast;
+  if (!isObj(forecast) || forecast.label !== MODEL_LABEL)
+    return { ok: false, error: "Forecast block is not labelled MODEL PREDICTION; not shown." };
+  if (forecast.affects_risk_assessment !== false || forecast.authorizes_actions !== false)
+    return { ok: false, error: "Forecast claims to affect risk or authorize actions; not shown." };
+  const live = Array.isArray(forecast.live) ? forecast.live : [];
+  for (const f of live) {
+    if (!isObj(f)) return { ok: false, error: "Forecast entry is malformed." };
+    if (f.predicted_level_m !== null && f.predicted_level_m !== undefined
+        && (f.status !== "FORECAST" || f.published !== true || f.label !== MODEL_LABEL))
+      return { ok: false, error: "A prediction was returned for an unpublished horizon; not shown." };
+  }
+  return { ok: true, value: json as unknown as AnalysisDoc };
 }
 
 export function parseSequence(json: unknown): Result<SequenceDoc> {
@@ -123,4 +149,9 @@ export async function fetchScenarios(signal?: AbortSignal): Promise<Result<Scena
 export async function fetchHealth(signal?: AbortSignal): Promise<boolean> {
   const r = await getJson("/health", signal);
   return r.ok && isObj(r.value) && r.value.status === "ok";
+}
+
+export async function fetchAnalysis(signal?: AbortSignal): Promise<Result<AnalysisDoc>> {
+  const r = await getJson("/dashboard/analysis", signal);
+  return r.ok ? parseAnalysis(r.value) : r;
 }

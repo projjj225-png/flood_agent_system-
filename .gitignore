@@ -11,7 +11,8 @@ __pycache__/
 .idea/
 Thumbs.db
 .DS_Store
-
+# Large local CWC dataset
+data/cwc/rwl_tel_hr_cwc_009_2021_2025.csv
 # Raw CWC export (103 MB, above GitHub's 100 MB file limit). Keep it locally only.
 data/raw/
 

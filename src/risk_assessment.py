@@ -782,6 +782,14 @@ def assess_flood_risk(
         "threshold_status": river["threshold_status"],
         "threshold_is_official": river["threshold_is_official"],
         "threshold_reference": river["threshold_reference"],
+        # Labels only: what kind of reading and thresholds these are. No rule reads them.
+        "threshold_label": ("OFFICIAL" if river["threshold_is_official"] else
+                            "NO_THRESHOLDS_CONFIGURED" if river["threshold_status"] in
+                            (None, "UNKNOWN") else "TEST / RESEARCH THRESHOLDS"),
+        "measurement_basis": ("SIMULATED" if mode == MODE_SIMULATED else
+                              "HISTORICAL_CWC_DATA" if mode == MODE_HISTORICAL else
+                              "ACTUAL_CWC_OBSERVATION" if river["usable_for_hazard"] else
+                              "STALE_OR_UNUSABLE_CWC_OBSERVATION"),
         "cross_source_status": river["cross_status"],
         "conflicts_affecting_current_evidence": river["conflicts_current"],
         "reverification_outcome": river["reverification_outcome"],
@@ -800,6 +808,12 @@ def assess_flood_risk(
         "observed_6h_mm": (wx["observed_6h"] or {}).get("total_mm"),
         "forecast_mm": (wx["forecast"] or {}).get("total_mm"),
         "forecast_hours": (wx["forecast"] or {}).get("hours"),
+        # "observed_*" keeps its historical name; these labels say what the numbers are.
+        "observed_rainfall_basis": ("SIMULATED" if wx["is_simulated"] else
+                                    "NUMERICAL_MODEL_PAST_HOURS (model estimates, not "
+                                    "rain-gauge observations)"),
+        "forecast_rainfall_basis": ("SIMULATED" if wx["is_simulated"] else
+                                    "NUMERICAL_MODEL_FORECAST"),
     }
 
     assessment: dict[str, Any] = {

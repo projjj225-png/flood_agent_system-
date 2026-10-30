@@ -7,6 +7,14 @@
     "invalid_values_m": [72.0],
     "reference": "Prototype QC derived from rwl_tel_hr_cwc_009_2021_2025.csv (not official). Smooth, physically plausible runs stay within 71.0-75.2 m; values outside 70-80 m (e.g. 1-3 m in early 2021, 100-1070 m spikes) are telemetry errors. 72.0 m repeats exactly 4059 times, in runs up to 1084 h and between 73.0x m readings, so it is treated as a fill value. Corrupted readings typically jump by whole metres, hence max_jump_m 1.0."
   },
+  "MUSIRI": {
+    "valid_min_m": 78.0,
+    "valid_max_m": 92.0,
+    "max_jump_m": 1.0,
+    "invalid_values_m": [81.17],
+    "max_constant_run_hours": 6,
+    "reference": "Prototype QC derived from rwl_tel_hr_cwc_009_2021_2025.csv (not official). Zero-gauge RL 78.0 m; plausible readings lie within 80.2-88.1 m, while 0-1 m and 100-800 m values are telemetry errors. 81.17 m makes up about half of all in-range readings and repeats unchanged in runs up to 3277 h, so it is treated as a fill value. Telemetry is reported to the millimetre, so an identical value held for more than 6 h is treated as a stuck sensor."
+  },
   "UPPER_ANICUT_TEST": {
     "valid_min_m": 0.0,
     "valid_max_m": 20.0,

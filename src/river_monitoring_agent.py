@@ -653,9 +653,14 @@ def validate_qc_config(config: dict[str, Any] | None) -> dict[str, dict[str, Any
         if not isinstance(invalid, list):
             raise ValueError(f"{station!r}: invalid_values_m must be a list of numbers.")
         invalid = sorted({round(number(station, "invalid_values_m", v), 3) for v in invalid})
+        stuck = entry.get("max_constant_run_hours")
+        if stuck is not None:
+            stuck = number(station, "max_constant_run_hours", stuck)
+            if stuck <= 0:
+                raise ValueError(f"{station!r}: max_constant_run_hours must be positive.")
         reference = entry.get("reference")
         clean[station] = {"valid_min_m": low, "valid_max_m": high, "max_jump_m": jump,
-                          "invalid_values_m": invalid,
+                          "invalid_values_m": invalid, "max_constant_run_hours": stuck,
                           "reference": reference if isinstance(reference, str) and reference
                           else None}
     return clean
@@ -676,6 +681,11 @@ def apply_quality_control(observations: list[dict[str, Any]],
          readings from the preceding 6 h (raw, so one bad acceptance cannot
          lock the check). With fewer than 3 references the check is skipped
          and counted.
+      3. Stuck-value check (only if max_constant_run_hours is set): a reading
+         equal (at 3 decimals) to the previous in-range reading is rejected once
+         the run of identical values has lasted longer than that many hours. The
+         start of a run is kept: a steady level is real until it lasts implausibly
+         long for telemetry reported to the millimetre.
     Rejected readings are never corrected or replaced; they are just not used.
     """
     ordered = sorted(observations, key=lambda o: o["observed_at"])
@@ -691,6 +701,11 @@ def apply_quality_control(observations: list[dict[str, Any]],
         "rejected_spike": 0,
         "spike_check_skipped": 0,
     }
+    stuck_hours = qc.get("max_constant_run_hours") if qc else None
+    if stuck_hours is not None:  # reported only where the check is configured
+        summary.update(max_constant_run_hours=stuck_hours, rejected_stuck=0)
+    run_value: float | None = None
+    run_start: datetime | None = None
     accepted: list[dict[str, Any]] = []
     rejected: list[dict[str, Any]] = []
     in_range_history: list[dict[str, Any]] = []
@@ -731,6 +746,16 @@ def apply_quality_control(observations: list[dict[str, Any]],
                            f"river_level_m {level} differs from the recent median "
                            f"{round(median, 3)} m by more than {qc['max_jump_m']} m.")
                     continue
+        if stuck_hours is not None:
+            if round(level, 3) == run_value:
+                held = (obs["observed_at"] - run_start).total_seconds() / 3600
+                if held > stuck_hours:
+                    reject(obs, "STUCK_VALUE", "rejected_stuck",
+                           f"river_level_m {level} has not changed for {round(held, 1)} h "
+                           f"(limit {stuck_hours} h); likely a stuck sensor or fill value.")
+                    continue
+            else:
+                run_value, run_start = round(level, 3), obs["observed_at"]
         accepted.append(obs)
     summary["accepted"] = len(accepted)
     return accepted, rejected, summary

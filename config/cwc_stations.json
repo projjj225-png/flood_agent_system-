@@ -1,0 +1,56 @@
+{
+  "_comment": "CWC station registry for multi-station analysis and forecasting (src/cwc_adapter.py, src/hydro_analysis.py, src/river_forecast.py). Identity fields were read from rwl_tel_hr_cwc_009_2021_2025.csv and are re-checked against every row on load. Datums are ASSUMED (the file does not state them). Nothing here is an official threshold.",
+  "raw_file": "data/cwc/rwl_tel_hr_cwc_009_2021_2025.csv",
+  "utc_offset": "+05:30",
+  "primary_station": "UPPER_ANICUT",
+  "upstream_candidate": "MUSIRI",
+  "stations": {
+    "UPPER_ANICUT": {
+      "source_name": "UPPER ANICUT",
+      "kind": "river_gauge",
+      "river": "Cauvery",
+      "tributary": "-",
+      "latitude": 10.88861111,
+      "longitude": 78.58,
+      "rl_zero_gauge_m": 72.6,
+      "datum": "reduced_level",
+      "datum_status": "ASSUMED",
+      "analysis_max_constant_run_hours": 6,
+      "_analysis_note": "analysis_max_constant_run_hours applies to analysis and forecasting only, on top of config/river_qc.json (never weaker). The River Agent's evidence for this station is unchanged."
+    },
+    "MUSIRI": {
+      "source_name": "MUSIRI",
+      "kind": "river_gauge",
+      "river": "Cauvery",
+      "tributary": "-",
+      "latitude": 10.93805556,
+      "longitude": 78.44027778,
+      "rl_zero_gauge_m": 78.0,
+      "datum": "reduced_level",
+      "datum_status": "ASSUMED",
+      "analysis_max_constant_run_hours": 6
+    },
+    "METTUR": {
+      "source_name": "Mettur Reservoir",
+      "kind": "reservoir",
+      "river": "Cauvery",
+      "tributary": "-",
+      "latitude": 11.8,
+      "longitude": 77.8,
+      "rl_zero_gauge_m": 204.222,
+      "datum": "reservoir_level",
+      "datum_status": "ASSUMED",
+      "_note": "A reservoir LEVEL, not a release or a river gauge. Never compared with or used as a river level."
+    }
+  },
+  "main_stem_order": {
+    "downstream_order": ["METTUR", "MUSIRI", "UPPER_ANICUT"],
+    "source": "Course of the Cauvery main stem (Mettur dam -> Erode -> Kodumudi -> Musiri -> Upper Anicut/Mukkombu). Consistent with the file: all three are on the Cauvery main stem (Tributary '-'), and zero-gauge levels fall downstream (Musiri 78.0 m, Upper Anicut 72.6 m). Station order is not proof of a measurable hydraulic relationship: that is tested from the data (upstream_validation)."
+  },
+  "upstream_validation": {
+    "max_lag_hours": 24,
+    "min_pairs": 500,
+    "min_abs_correlation": 0.3,
+    "_comment": "Prototype acceptance rule: an upstream candidate is used only if its level CHANGES correlate with the primary station's changes at some lag 0-24 h with |r| >= 0.3 over >= 500 aligned pairs. Changes, not absolute levels, are compared so differing datums cannot create a spurious relationship."
+  }
+}

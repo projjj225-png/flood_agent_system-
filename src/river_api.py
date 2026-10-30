@@ -73,6 +73,7 @@ ENDPOINTS = [
     "GET /dashboard?mode=simulated&scenario=NAME&state=NORMAL|ALERT|EMERGENCY|RECOVERY",
     "GET /dashboard?mode=simulated_live&scenario=stable|slowly-rising|rapidly-rising|falling"
     "&state=NORMAL|ALERT|EMERGENCY|RECOVERY",
+    "GET /dashboard/analysis   (historical CWC analysis + forecast validation)",
     "GET /dashboard/scenarios",
     "GET /dashboard/sequence?name=flood-cycle|short-rise",
 ]
@@ -141,7 +142,8 @@ def make_handler(provider: EvidenceProvider,
         def _dashboard(self, path: str, query: dict[str, str]) -> None:
             """Read-only dashboard routes. Only whitelisted query keys are accepted."""
             allowed = {"/dashboard": {"mode", "scenario", "state"},
-                       "/dashboard/scenarios": set(), "/dashboard/sequence": {"name"}}
+                       "/dashboard/scenarios": set(), "/dashboard/sequence": {"name"},
+                       "/dashboard/analysis": set()}
             if path not in allowed:
                 return self._send(404, {"error": "not found", "path": path})
             unknown = sorted(set(query) - allowed[path])
@@ -151,6 +153,9 @@ def make_handler(provider: EvidenceProvider,
             try:
                 if path == "/dashboard/scenarios":
                     return self._send(200, dashboard.scenarios())
+                if path == "/dashboard/analysis":
+                    doc = dashboard.analysis()
+                    return self._send(500 if doc.get("error") else 200, doc)
                 if path == "/dashboard/sequence":
                     doc, age = dashboard.sequence(query.get("name", "flood-cycle"))
                 else:
